@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 
 // Generates the Google OAuth 2.0 URL
 export async function GET() {
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+    const clientId = process.env.APP_GMAIL_CLIENT_ID;
+    const redirectUri = process.env.APP_GMAIL_REDIRECT_URI;
 
     if (!clientId || !redirectUri) {
         return NextResponse.json({ error: 'Missing OAuth Configuration' }, { status: 500 });
