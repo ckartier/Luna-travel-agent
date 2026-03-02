@@ -1,6 +1,7 @@
 'use client';
 
 import { MapBackground } from '@/app/components/map/MapBackground';
+import { WeatherWidget } from '@/src/components/widgets/WeatherWidget';
 import {
   Sparkles,
   Plane,
@@ -18,17 +19,45 @@ type WorkflowState = 'IDLE' | 'ANALYSING' | 'DISTRIBUTING' | 'AGENTS_WORKING' | 
 
 // Mock data for validations
 const agentsData = {
-  'agent-transport': { title: 'Transport', data: 'Billet Air France direct (CDG -> MRU) validé. Options Business Class incluses.', icon: <Plane size={24} /> },
-  'agent-accommodation': { title: 'Hébergement', data: '2 suggestions d\'hôtels 5 étoiles (One&Only Le Saint Géran, Lux* Grand Gaube) avec vue mer.', icon: <Hotel size={24} /> },
-  'agent-customer': { title: 'Profil Client', data: 'Client VIP. Préférences : Côté hublot, lit King Size, transferts privés. Budget illimité.', icon: <Users size={24} /> },
-  'agent-itinerary': { title: 'Itinéraire', data: 'Planning de 7 jours incluant croisière catamaran et guide privé pour excursion locale.', icon: <CalendarRange size={24} /> },
+  'agent-transport': {
+    title: 'Transport',
+    data: 'Billet Air France direct (CDG -> MRU) validé. Options Business Class incluses.',
+    icon: <Plane size={24} />,
+    links: [{ name: 'Voir sur AirFrance.fr', url: 'https://www.airfrance.fr' }, { name: 'Comparer Skyscanner', url: 'https://www.skyscanner.fr' }]
+  },
+  'agent-accommodation': {
+    title: 'Hébergement',
+    data: '2 suggestions d\'hôtels 5 étoiles (One&Only Le Saint Géran, Lux* Grand Gaube) avec vue mer.',
+    icon: <Hotel size={24} />,
+    links: [{ name: 'One&Only sur Booking.com', url: 'https://www.booking.com' }, { name: 'Site Officiel Lux*', url: 'https://www.luxresorts.com' }]
+  },
+  'agent-customer': {
+    title: 'Profil Client',
+    data: 'Client VIP. Préférences : Côté hublot, lit King Size, transferts privés. Budget illimité.',
+    icon: <Users size={24} />,
+    links: [{ name: 'Ouvrir Profil CRM', url: '/crm/contacts/1' }]
+  },
+  'agent-itinerary': {
+    title: 'Itinéraire',
+    data: 'Planning de 7 jours incluant croisière catamaran et guide privé pour excursion locale.',
+    icon: <CalendarRange size={24} />,
+    links: [{ name: 'Activité Croisière (GetYourGuide)', url: 'https://www.getyourguide.fr' }]
+  },
 };
 
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
   const [workflowState, setWorkflowState] = useState<WorkflowState>('IDLE');
 
-  const [requestData, setRequestData] = useState({ destination: '', dates: '', budget: '', pax: '' });
+  const [requestData, setRequestData] = useState({
+    destination: '',
+    dates: '',
+    budget: '',
+    pax: '',
+    vibe: '',
+    flexibility: 'Dates Exactes',
+    mustHaves: ''
+  });
   const [validatedAgents, setValidatedAgents] = useState<string[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<keyof typeof agentsData | null>(null);
 
@@ -78,6 +107,15 @@ export default function DashboardPage() {
   return (
     <div className="relative w-full h-full flex flex-col overflow-hidden">
       <MapBackground />
+
+      {/* Weather Widget Header Area (Visible only when destination logic applies) */}
+      <div className="absolute top-6 right-6 z-40 w-96">
+        {requestData.destination.length > 2 && workflowState !== 'ANALYSING' && workflowState !== 'DISTRIBUTING' && (
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+            <WeatherWidget destination={requestData.destination} />
+          </motion.div>
+        )}
+      </div>
 
       {/* Main Orchestration Node Canvas */}
       <div className="flex-1 relative w-full h-full">
@@ -129,13 +167,43 @@ export default function DashboardPage() {
                 <p className="text-gray-500 text-sm text-center font-medium mb-6">Saisissez la demande client pour lancer la recherche web et API multi-agents (n8n style).</p>
 
                 <form onSubmit={handleStartAnalysis} className="flex flex-col gap-4">
-                  <input type="text" placeholder="Destination (ex: Île Maurice)" className="w-full px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700" value={requestData.destination} onChange={e => setRequestData({ ...requestData, destination: e.target.value })} required />
-                  <input type="text" placeholder="Dates (ex: 12-20 Août)" className="w-full px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700" value={requestData.dates} onChange={e => setRequestData({ ...requestData, dates: e.target.value })} />
-                  <div className="flex gap-4">
-                    <input type="text" placeholder="Budget" className="w-1/2 px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700" value={requestData.budget} onChange={e => setRequestData({ ...requestData, budget: e.target.value })} />
-                    <input type="text" placeholder="Passagers" className="w-1/2 px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700" value={requestData.pax} onChange={e => setRequestData({ ...requestData, pax: e.target.value })} />
+                  <div className="space-y-3">
+                    <input type="text" placeholder="Destination (ex: Île Maurice)" className="w-full px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm" value={requestData.destination} onChange={e => setRequestData({ ...requestData, destination: e.target.value })} required />
+
+                    <div className="flex gap-3">
+                      <div className="w-1/2 relative">
+                        <input type="text" placeholder="Dates (ex: 12-20 Août)" className="w-full px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm" value={requestData.dates} onChange={e => setRequestData({ ...requestData, dates: e.target.value })} />
+                      </div>
+                      <select className="w-1/2 px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm appearance-none" value={requestData.flexibility} onChange={e => setRequestData({ ...requestData, flexibility: e.target.value })}>
+                        <option>Dates Exactes</option>
+                        <option>+/- 3 Jours</option>
+                        <option>Mois Flexible</option>
+                      </select>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <input type="text" placeholder="Budget" className="w-1/2 px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm" value={requestData.budget} onChange={e => setRequestData({ ...requestData, budget: e.target.value })} />
+                      <input type="text" placeholder="Passagers" className="w-1/2 px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm" value={requestData.pax} onChange={e => setRequestData({ ...requestData, pax: e.target.value })} />
+                    </div>
+
+                    <select className="w-full px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm appearance-none" value={requestData.vibe} onChange={e => setRequestData({ ...requestData, vibe: e.target.value })}>
+                      <option value="" disabled>Type de Vibe / Expérience</option>
+                      <option>Détente & Spa</option>
+                      <option>Aventure & Nature</option>
+                      <option>Culture & Histoire</option>
+                      <option>Lune de Miel</option>
+                      <option>Affaires / Bleisure</option>
+                    </select>
+
+                    <textarea
+                      placeholder="Must-haves (ex: Vol direct uniquement, Hôtel vue mer...)"
+                      className="w-full px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm resize-none h-20"
+                      value={requestData.mustHaves}
+                      onChange={e => setRequestData({ ...requestData, mustHaves: e.target.value })}
+                    />
                   </div>
-                  <button type="submit" className="mt-4 w-full py-4 bg-gradient-to-br from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-black uppercase tracking-wider text-sm rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:shadow-blue-500/50 flex justify-center items-center gap-2">
+
+                  <button type="submit" className="mt-2 w-full py-4 bg-gradient-to-br from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-black uppercase tracking-wider text-sm rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:shadow-blue-500/50 flex justify-center items-center gap-2">
                     Lancer l'Analyse IA <ArrowRight size={18} />
                   </button>
                 </form>
@@ -259,11 +327,31 @@ export default function DashboardPage() {
                   <p className="text-gray-400 font-bold text-xs uppercase tracking-wider">Résultats API & Scraping Web</p>
                 </div>
               </div>
-              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 mb-8">
+              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 mb-6">
                 <p className="text-gray-800 font-medium leading-relaxed text-sm">
                   {agentsData[selectedAgent].data}
                 </p>
               </div>
+
+              {/* Source Links */}
+              <div className="mb-8">
+                <h4 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-3">Sources & Détails Web</h4>
+                <div className="flex flex-col gap-2">
+                  {agentsData[selectedAgent].links?.map((link, idx) => (
+                    <a
+                      key={idx}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between p-3 rounded-xl bg-blue-50/50 hover:bg-blue-100/50 border border-blue-100 text-blue-700 transition-colors group"
+                    >
+                      <span className="font-semibold text-sm">{link.name}</span>
+                      <ArrowRight size={16} className="text-blue-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex gap-4">
                 <button onClick={() => setSelectedAgent(null)} className="flex-1 py-4 bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-bold rounded-xl transition-all">Consulter plus tard</button>
                 <button onClick={handleValidateAgent} className="flex-[2] py-4 bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 text-white font-bold rounded-xl transition-all flex justify-center items-center gap-2">
