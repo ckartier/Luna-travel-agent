@@ -77,14 +77,14 @@ export default function CRMActivities() {
         <div className="space-y-6 max-w-4xl mx-auto">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Activités & Tâches</h1>
-                    <p className="text-gray-500 font-medium mt-1">Votre ligne du temps pour ne rater aucune opportunité.</p>
+                    <h1 className="font-serif text-3xl font-semibold text-luna-charcoal tracking-tight">Activités & Tâches</h1>
+                    <p className="text-luna-text-muted font-normal mt-1">Votre ligne du temps pour ne rater aucune opportunité.</p>
                 </div>
                 <div className="flex gap-3">
-                    <button onClick={loadActivities} className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold px-4 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-2">
-                        <RefreshCcw size={18} className={loading ? "animate-spin text-blue-500" : "text-gray-400"} />
+                    <button onClick={loadActivities} className="bg-white border border-luna-warm-gray/30 hover:bg-luna-cream text-luna-charcoal font-medium px-4 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-2">
+                        <RefreshCcw size={18} className={loading ? "animate-spin text-luna-accent" : "text-luna-text-muted"} />
                     </button>
-                    <button onClick={() => setIsModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2">
+                    <button onClick={() => setIsModalOpen(true)} className="bg-luna-charcoal hover:bg-[#1a1a1a] text-luna-cream font-medium px-6 py-2.5 rounded-xl shadow-lg transition-all flex items-center gap-2 text-sm">
                         + Nouvelle Tâche
                     </button>
                 </div>
@@ -92,7 +92,7 @@ export default function CRMActivities() {
 
             <div className="relative">
                 {/* Timeline Line */}
-                <div className="absolute left-8 top-4 bottom-4 w-px bg-gray-200" />
+                <div className="absolute left-8 top-4 bottom-4 w-px bg-luna-warm-gray/30" />
 
                 <div className="space-y-6 relative z-10">
                     {activities.map((activity) => {
@@ -114,7 +114,7 @@ export default function CRMActivities() {
                                     <Icon size={24} />
                                 </div>
 
-                                <div className={`flex-1 bg-white p-5 rounded-2xl border ${isDone ? 'border-gray-100 opacity-60' : 'border-gray-200 shadow-sm'} transition-all hover:shadow-md hover:border-blue-200`}>
+                                <div className={`flex-1 bg-white p-5 rounded-2xl border ${isDone ? 'border-luna-warm-gray/15 opacity-60' : 'border-luna-warm-gray/20 shadow-sm'} transition-all hover:shadow-md hover:border-luna-accent/30`}>
                                     <div className="flex justify-between items-start mb-2">
                                         <h3 className={`font-bold text-lg ${isDone ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{activity.title}</h3>
                                         <span className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-3 py-1 rounded-lg">
@@ -136,25 +136,25 @@ export default function CRMActivities() {
 
             {/* Modal Ajout Activité */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-slate-50">
-                            <h2 className="text-xl font-bold text-gray-900">Nouvelle Tâche</h2>
-                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-2"><X size={20} /></button>
+                <div className="fixed inset-0 bg-luna-charcoal/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl w-full max-w-lg shadow-luxury overflow-hidden">
+                        <div className="flex justify-between items-center p-6 border-b border-luna-warm-gray/20 bg-luna-cream">
+                            <h2 className="font-serif text-xl font-semibold text-luna-charcoal">Nouvelle Tâche</h2>
+                            <button onClick={() => setIsModalOpen(false)} className="text-luna-text-muted hover:text-luna-charcoal p-2"><X size={20} /></button>
                         </div>
                         <form onSubmit={handleAddTask} className="p-6 space-y-4">
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Titre de l'action</label>
-                                <input type="text" placeholder="Ex: Appeler Sophie Robert..." required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-900" value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} />
+                                <input type="text" placeholder="Ex: Appeler Sophie Robert..." required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900" value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
                                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Date / Heure prévue</label>
-                                    <input type="text" placeholder="Ex: Demain, 14:00" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-900" value={newTask.time} onChange={e => setNewTask({ ...newTask, time: e.target.value })} />
+                                    <input type="text" placeholder="Ex: Demain, 14:00" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900" value={newTask.time} onChange={e => setNewTask({ ...newTask, time: e.target.value })} />
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Type / Urgent</label>
-                                    <select className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-900 appearance-none bg-white" value={newTask.type} onChange={e => setNewTask({ ...newTask, type: e.target.value as CRMActivity['type'] })}>
+                                    <select className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900 appearance-none bg-white" value={newTask.type} onChange={e => setNewTask({ ...newTask, type: e.target.value as CRMActivity['type'] })}>
                                         <option value="normal">Normal</option>
                                         <option value="urgent">Urgent</option>
                                         <option value="call">Appel</option>
@@ -166,7 +166,7 @@ export default function CRMActivities() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
                                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Couleur Catégorie</label>
-                                    <select className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-900 appearance-none bg-white" value={newTask.color} onChange={e => setNewTask({ ...newTask, color: e.target.value as CRMActivity['color'] })}>
+                                    <select className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900 appearance-none bg-white" value={newTask.color} onChange={e => setNewTask({ ...newTask, color: e.target.value as CRMActivity['color'] })}>
                                         <option value="gray">Gris (Défaut)</option>
                                         <option value="red">Rouge (Alerte)</option>
                                         <option value="blue">Bleu (Appel)</option>
@@ -176,7 +176,7 @@ export default function CRMActivities() {
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Icône Représentative</label>
-                                    <select className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-900 appearance-none bg-white" value={newTask.iconName} onChange={e => setNewTask({ ...newTask, iconName: e.target.value })}>
+                                    <select className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900 appearance-none bg-white" value={newTask.iconName} onChange={e => setNewTask({ ...newTask, iconName: e.target.value })}>
                                         <option value="Calendar">Calendrier</option>
                                         <option value="PhoneCall">Téléphone</option>
                                         <option value="Mail">Email</option>
@@ -186,8 +186,8 @@ export default function CRMActivities() {
                                 </div>
                             </div>
                             <div className="pt-4 flex justify-end gap-3">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 rounded-xl text-gray-600 font-bold hover:bg-gray-100 transition-colors">Annuler</button>
-                                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-blue-500/30 transition-all">Sauvegarder</button>
+                                <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 rounded-xl text-luna-charcoal font-medium hover:bg-luna-cream transition-colors">Annuler</button>
+                                <button type="submit" className="bg-luna-charcoal hover:bg-[#1a1a1a] text-luna-cream font-medium px-6 py-2.5 rounded-xl shadow-lg transition-all">Sauvegarder</button>
                             </div>
                         </form>
                     </div>

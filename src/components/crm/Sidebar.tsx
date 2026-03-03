@@ -8,10 +8,9 @@ import {
     Trello,
     CalendarDays,
     Settings,
-    LogOut,
-    Plane,
+    Compass,
     MessageSquare,
-    Search
+    ArrowLeft
 } from 'lucide-react';
 
 export function CRMSidebar() {
@@ -25,28 +24,16 @@ export function CRMSidebar() {
     ];
 
     return (
-        <div className="w-64 h-full bg-white/60 backdrop-blur-xl border-r border-white shadow-[4px_0_24px_rgba(0,0,0,0.02)] flex flex-col justify-between py-6 z-50">
+        <div className="w-64 h-full bg-luna-cream/80 backdrop-blur-xl border-r border-luna-warm-gray/20 shadow-[4px_0_24px_rgba(0,0,0,0.02)] flex flex-col justify-between py-6 z-50">
             <div>
                 {/* Logo Area */}
                 <div className="px-8 mb-10 flex items-center gap-3">
-                    <div className="bg-gradient-to-br from-blue-600 to-blue-500 text-white p-2 rounded-xl shadow-lg shadow-blue-500/30">
-                        <Plane size={24} className="-rotate-45" />
+                    <div className="bg-luna-charcoal text-luna-accent p-2.5 rounded-xl shadow-lg">
+                        <Compass size={22} strokeWidth={1.5} />
                     </div>
                     <div>
-                        <h1 className="font-black text-xl text-gray-900 tracking-tight leading-none">LUNA</h1>
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Travel CRM</span>
-                    </div>
-                </div>
-
-                {/* Search Bar */}
-                <div className="px-4 mb-6">
-                    <div className="relative group">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={16} />
-                        <input
-                            type="text"
-                            placeholder="Recherche globale..."
-                            className="w-full pl-9 pr-4 py-2.5 bg-white/50 backdrop-blur-md border border-white/80 rounded-xl text-sm font-bold text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white shadow-sm transition-all"
-                        />
+                        <h1 className="font-serif text-xl font-semibold text-luna-charcoal tracking-tight leading-none">Luna</h1>
+                        <span className="text-[10px] font-semibold text-luna-text-muted uppercase tracking-[0.15em]">Travel CRM</span>
                     </div>
                 </div>
 
@@ -60,12 +47,12 @@ export function CRMSidebar() {
                             <Link
                                 key={link.name}
                                 href={link.href}
-                                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all font-bold text-sm ${isActive
-                                    ? 'bg-blue-600 shadow-md shadow-blue-500/20 text-white'
-                                    : 'text-gray-500 hover:bg-white hover:text-blue-600 hover:shadow-sm'
+                                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all font-medium text-sm ${isActive
+                                    ? 'bg-luna-charcoal shadow-md text-luna-cream'
+                                    : 'text-luna-text-muted hover:bg-white hover:text-luna-charcoal hover:shadow-sm'
                                     }`}
                             >
-                                <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                                <Icon size={18} strokeWidth={isActive ? 2 : 1.5} />
                                 {link.name}
                             </Link>
                         );
@@ -76,16 +63,16 @@ export function CRMSidebar() {
             <div className="px-4 flex flex-col gap-1.5">
                 <Link
                     href="/crm/settings"
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-500 hover:bg-white hover:text-gray-800 transition-all font-bold text-sm"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-luna-text-muted hover:bg-white hover:text-luna-charcoal transition-all font-medium text-sm"
                 >
-                    <Settings size={18} />
+                    <Settings size={18} strokeWidth={1.5} />
                     Paramètres
                 </Link>
                 <Link
                     href="/"
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-red-500 hover:bg-red-50 hover:text-red-700 transition-all font-bold text-sm mt-1"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-luna-accent-dark hover:bg-luna-accent/10 transition-all font-medium text-sm mt-1"
                 >
-                    <LogOut size={18} />
+                    <ArrowLeft size={18} strokeWidth={1.5} />
                     Orchestrateur
                 </Link>
             </div>
