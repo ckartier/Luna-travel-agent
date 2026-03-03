@@ -165,10 +165,10 @@ export default function MailsPage() {
         <div className="h-full flex flex-col pt-4">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="font-serif text-2xl font-semibold text-luna-charcoal tracking-tight flex items-center gap-3">
+                    <h1 className="font-serif text-xl md:text-2xl font-semibold text-luna-charcoal tracking-tight flex items-center gap-2 md:gap-3">
                         Boîte de Réception <span className="bg-luna-accent/10 text-luna-accent-dark text-xs py-0.5 px-2.5 rounded-full font-sans font-semibold">{emails.length}</span>
                     </h1>
-                    <p className="text-luna-text-muted text-sm mt-0.5">Analysez les demandes avec Luna AI et dispatchez aux agents.</p>
+                    <p className="text-luna-text-muted text-xs md:text-sm mt-0.5 hidden sm:block">Analysez les demandes avec Luna AI et dispatchez aux agents.</p>
                 </div>
                 <button onClick={fetchEmails} disabled={loading}
                     className="bg-white hover:bg-luna-cream border border-luna-warm-gray/20 text-luna-charcoal font-medium px-3 py-2 rounded-lg shadow-sm transition-all flex items-center gap-2 disabled:opacity-50 text-xs">
@@ -178,7 +178,7 @@ export default function MailsPage() {
 
             <div className="flex-1 bg-white rounded-2xl border border-luna-warm-gray/15 shadow-sm overflow-hidden flex">
                 {/* Email List */}
-                <div className={`w-80 border-r border-luna-warm-gray/10 flex flex-col bg-luna-cream/20 ${selectedEmail ? 'hidden lg:flex' : 'flex w-full'}`}>
+                <div className={`w-full lg:w-80 border-r border-luna-warm-gray/10 flex flex-col bg-luna-cream/20 ${selectedEmail ? 'hidden lg:flex' : 'flex'}`}>
                     <div className="p-3 border-b border-luna-warm-gray/10">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-luna-text-muted/40" size={14} />
@@ -226,9 +226,11 @@ export default function MailsPage() {
                 <div className={`flex-1 flex flex-col bg-white ${!selectedEmail ? 'hidden lg:flex' : 'flex'}`}>
                     {selectedEmail ? (
                         <div className="flex-1 overflow-y-auto flex flex-col h-full">
-                            <div className="p-6 border-b border-luna-warm-gray/10">
-                                <h2 className="font-serif text-xl font-semibold text-luna-charcoal mb-4">{selectedEmail.subject}</h2>
-                                <div className="flex items-center justify-between">
+                            <div className="p-4 md:p-6 border-b border-luna-warm-gray/10">
+                                {/* Mobile back button */}
+                                <button onClick={() => setSelectedEmail(null)} className="lg:hidden text-xs text-sky-500 font-medium mb-3 flex items-center gap-1">← Retour aux emails</button>
+                                <h2 className="font-serif text-lg md:text-xl font-semibold text-luna-charcoal mb-4">{selectedEmail.subject}</h2>
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-full bg-sky-50 flex items-center justify-center text-sky-600 font-semibold text-sm border border-sky-100">
                                             {selectedEmail.sender.charAt(0).toUpperCase()}

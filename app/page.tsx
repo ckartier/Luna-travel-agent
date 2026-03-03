@@ -241,7 +241,7 @@ function DashboardPage() {
       <MapBackground />
 
       {/* Weather Widgets (real API) */}
-      <div className="absolute top-20 right-5 z-40 w-[260px]">
+      <div className="absolute top-16 right-3 md:top-20 md:right-5 z-40 w-[220px] md:w-[260px] hidden md:block">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <WeatherWidget destinations={[
             ...(departureCity.trim() ? [departureCity.trim()] : []),
@@ -263,7 +263,7 @@ function DashboardPage() {
 
           {/* Orbital rings */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-15">
-            {[250, 320, 390].map((size, i) => (
+            {[180, 230, 280].map((size, i) => (
               <motion.div
                 key={i}
                 className="absolute rounded-full border border-sky-300/10"
@@ -352,7 +352,7 @@ function DashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.5, ease: 'easeOut' }}
-                className="glass-card w-[480px] max-h-[85vh] overflow-y-auto p-10 shadow-luxury relative"
+                className="glass-card w-[90vw] max-w-[480px] max-h-[85vh] overflow-y-auto p-6 md:p-10 shadow-luxury relative"
               >
                 <div className="absolute -top-16 -right-16 w-32 h-32 bg-luna-accent/10 rounded-full blur-[60px] pointer-events-none" />
 
@@ -361,7 +361,7 @@ function DashboardPage() {
                   <div className="w-14 h-14 rounded-full bg-luna-charcoal flex-center mb-4 shadow-lg">
                     <LunaLogo size={32} />
                   </div>
-                  <h2 className="font-serif text-3xl font-semibold text-luna-charcoal tracking-tight">Luna</h2>
+                  <h2 className="font-serif text-2xl md:text-3xl font-semibold text-luna-charcoal tracking-tight">Luna</h2>
                   <p className="text-luna-text-muted text-sm font-light tracking-wide mt-1">Votre Concierge Voyage</p>
                 </div>
 
@@ -440,7 +440,7 @@ function DashboardPage() {
                   </div>
 
                   {/* ── DEPARTURE + RETURN ── */}
-                  <div className="flex gap-6">
+                  <div className="flex gap-3 md:gap-6">
                     <div className="flex-1">
                       <label className="input-label">Départ</label>
                       <input type="date" className="input-underline [color-scheme:light]" value={departureDate} onChange={e => setDepartureDate(e.target.value)} />
@@ -454,7 +454,7 @@ function DashboardPage() {
                   {/* Flexibility */}
                   <div>
                     <label className="input-label">Flexibilité</label>
-                    <div className="flex gap-2 mt-1">
+                    <div className="flex gap-1.5 md:gap-2 mt-1 flex-wrap">
                       {['Dates Exactes', '+/- 3 Jours', 'Mois Flexible'].map(opt => (
                         <button key={opt} type="button" onClick={() => setFlexibility(opt)}
                           className={`px-3 py-1.5 rounded-full text-[11px] font-semibold tracking-wide border transition-all ${flexibility === opt
@@ -467,7 +467,7 @@ function DashboardPage() {
                   </div>
 
                   {/* Budget + Pax */}
-                  <div className="flex gap-6">
+                  <div className="flex gap-3 md:gap-6">
                     <div className="flex-1">
                       <label className="input-label">Budget</label>
                       <input type="text" placeholder="ex: 10 000 €" className="input-underline" value={budget} onChange={e => setBudget(e.target.value)} />
@@ -536,7 +536,7 @@ function DashboardPage() {
                 key="ready"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="glass-card w-[540px] max-h-[85vh] overflow-y-auto p-10 shadow-luxury border-2 border-white"
+                className="glass-card w-[90vw] max-w-[540px] max-h-[85vh] overflow-y-auto p-6 md:p-10 shadow-luxury border-2 border-white"
               >
                 <div className="flex items-center gap-3 mb-8 justify-center">
                   <div className="bg-emerald-50 p-3 rounded-full"><CheckCircle2 size={28} className="text-emerald-600" /></div>
@@ -557,7 +557,7 @@ function DashboardPage() {
                 </div>
 
                 {/* Proposal Cards */}
-                <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-8">
                   {[
                     { name: 'Premium Luxe', desc: agentResults?.accommodation?.hotels?.[0]?.name || 'Hôtel 5★', price: agentResults?.accommodation?.hotels?.[0]?.pricePerNight || '890 €/nuit' },
                     { name: 'Vol Recommandé', desc: agentResults?.transport?.flights?.[0]?.airline || 'Air France', price: agentResults?.transport?.flights?.[0]?.price || '3 200 €' },

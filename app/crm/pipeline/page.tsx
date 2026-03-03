@@ -77,17 +77,17 @@ export default function CRMPipeline() {
     return (
         <div className="h-full flex flex-col relative">
             <div className="absolute inset-0 bg-gradient-to-br from-luna-bg to-luna-cream/30 pointer-events-none" />
-            <div className="flex justify-between items-center mb-8 relative z-10">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 md:mb-8 relative z-10 gap-3">
                 <div>
-                    <h1 className="font-serif text-3xl font-semibold text-luna-charcoal tracking-tight">Pipeline des Ventes</h1>
-                    <p className="text-luna-text-muted font-normal mt-1">Gérez vos demandes et devis en cours.</p>
+                    <h1 className="font-serif text-xl md:text-3xl font-semibold text-luna-charcoal tracking-tight">Pipeline des Ventes</h1>
+                    <p className="text-luna-text-muted font-normal text-sm mt-1 hidden sm:block">Gérez vos demandes et devis en cours.</p>
                 </div>
-                <div className="flex gap-3">
-                    <button onClick={loadLeads} className="bg-white border border-luna-warm-gray/30 hover:bg-luna-cream text-luna-charcoal font-medium px-4 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-2">
-                        <RefreshCcw size={18} className={loading ? "animate-spin text-luna-accent" : "text-luna-text-muted"} />
+                <div className="flex gap-2 md:gap-3">
+                    <button onClick={loadLeads} className="bg-white border border-luna-warm-gray/30 hover:bg-luna-cream text-luna-charcoal font-medium px-3 py-2 md:px-4 md:py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-2">
+                        <RefreshCcw size={16} className={loading ? "animate-spin text-luna-accent" : "text-luna-text-muted"} />
                     </button>
-                    <button onClick={() => setIsModalOpen(true)} className="bg-luna-charcoal hover:bg-[#1a1a1a] text-luna-cream font-medium px-6 py-2.5 rounded-xl shadow-lg transition-all flex items-center gap-2 text-sm">
-                        <Plus size={18} /> Ajouter Manuel
+                    <button onClick={() => setIsModalOpen(true)} className="bg-luna-charcoal hover:bg-[#1a1a1a] text-luna-cream font-medium px-4 py-2 md:px-6 md:py-2.5 rounded-xl shadow-lg transition-all flex items-center gap-2 text-xs md:text-sm">
+                        <Plus size={16} /> <span className="hidden sm:inline">Ajouter Manuel</span><span className="sm:hidden">Ajouter</span>
                     </button>
                 </div>
             </div>
@@ -103,13 +103,13 @@ export default function CRMPipeline() {
                     if (stage === 'GAGNÉ') columnColor = "bg-emerald-50/50 border-emerald-100/40";
 
                     return (
-                        <div key={stage} className={`flex-1 min-w-[300px] rounded-3xl p-4 border flex flex-col backdrop-blur-sm shadow-[0_4px_20px_rgb(0,0,0,0.02)] transition-colors ${columnColor}`}>
+                        <div key={stage} className={`flex-1 min-w-[240px] md:min-w-[300px] rounded-3xl p-3 md:p-4 border flex flex-col backdrop-blur-sm shadow-[0_4px_20px_rgb(0,0,0,0.02)] transition-colors ${columnColor}`}>
                             <div className="flex justify-between items-center mb-4 px-2">
                                 <h3 className="font-semibold text-luna-charcoal text-sm tracking-wider uppercase">{stage} <span className="text-luna-text-muted font-normal ml-2">({stageDeals.length})</span></h3>
                                 <button className="text-gray-400 hover:text-gray-600"><MoreHorizontal size={18} /></button>
                             </div>
 
-                            <div className="flex flex-col gap-3 overflow-y-auto flex-1 h-[calc(100vh-280px)] pr-2 scrollbar-thin scrollbar-thumb-gray-200">
+                            <div className="flex flex-col gap-3 overflow-y-auto flex-1 h-[calc(100vh-320px)] md:h-[calc(100vh-280px)] pr-2 scrollbar-thin scrollbar-thumb-gray-200">
                                 {stageDeals.length === 0 && !loading && (
                                     <div className="text-center p-4 border border-dashed border-luna-warm-gray/40 rounded-xl text-luna-text-muted text-sm font-medium mt-2">
                                         Aucun deal
