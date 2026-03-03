@@ -107,23 +107,26 @@ export default function DashboardPage() {
   if (!mounted) return null;
 
   return (
-    <div className="relative w-full h-full flex flex-col overflow-hidden">
+    <div className="relative w-full h-full flex flex-col overflow-hidden bg-black">
       <MapBackground />
+
+      {/* Dark modern overlay to make UI pop over the Mapbox map */}
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] pointer-events-none z-10" />
 
       {/* Glassmorphism Top Navigation Bar */}
       <div className="absolute top-6 left-6 z-40 flex items-center gap-4">
-        <div className="bg-white/90 backdrop-blur-xl px-6 py-3 rounded-2xl flex items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-white/50">
-          <div className="bg-gradient-to-br from-blue-600 to-blue-500 text-white p-1.5 rounded-lg shadow-sm">
+        <div className="bg-gray-900/80 backdrop-blur-xl px-6 py-3 rounded-2xl flex items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.5)] border border-white/10">
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-1.5 rounded-lg shadow-[0_0_15px_rgba(59,130,246,0.5)]">
             <Plane size={18} className="-rotate-45" />
           </div>
-          <span className="font-black text-lg text-gray-900 tracking-tight">LUNA</span>
+          <span className="font-black text-lg text-white tracking-tight">LUNA</span>
         </div>
 
         <Link
           href="/crm"
-          className="bg-white/90 backdrop-blur-xl px-6 py-3 rounded-2xl flex items-center gap-2 shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-white/50 text-gray-600 font-bold hover:text-blue-600 hover:scale-105 transition-all group"
+          className="bg-gray-900/80 backdrop-blur-xl px-6 py-3 rounded-2xl flex items-center gap-2 shadow-[0_8px_30px_rgb(0,0,0,0.5)] border border-white/10 text-gray-300 font-bold hover:text-white hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:scale-105 transition-all group"
         >
-          <LayoutDashboard size={18} className="group-hover:text-blue-500 transition-colors" />
+          <LayoutDashboard size={18} className="text-gray-400 group-hover:text-blue-400 transition-colors" />
           Accéder au CRM
         </Link>
       </div>
@@ -178,52 +181,55 @@ export default function DashboardPage() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-white/80 backdrop-blur-2xl w-[420px] p-8 shadow-[0_30px_80px_-15px_rgba(59,130,246,0.5)] rounded-3xl border border-white/60"
+                className="bg-gray-900/80 backdrop-blur-2xl w-[420px] p-8 shadow-[0_0_80px_-15px_rgba(59,130,246,0.5)] rounded-3xl border border-white/10 relative overflow-hidden"
               >
-                <div className="flex items-center gap-3 mb-6 justify-center text-blue-600">
-                  <div className="bg-blue-100 p-3 rounded-full"><Sparkles size={24} /></div>
-                  <h2 className="text-2xl font-black text-gray-900 tracking-tight">LUNA Orchestrator</h2>
-                </div>
-                <p className="text-gray-500 text-sm text-center font-medium mb-6">Saisissez la demande client pour lancer la recherche web et API multi-agents (n8n style).</p>
+                {/* Subtle animated background glow */}
+                <div className="absolute -top-20 -left-20 w-40 h-40 bg-blue-500/20 rounded-full blur-[50px] pointer-events-none"></div>
 
-                <form onSubmit={handleStartAnalysis} className="flex flex-col gap-4">
-                  <div className="space-y-3">
-                    <input type="text" placeholder="Destination (ex: Île Maurice)" className="w-full px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm" value={requestData.destination} onChange={e => setRequestData({ ...requestData, destination: e.target.value })} required />
+                <div className="flex items-center gap-3 mb-6 justify-center text-blue-400 relative z-10">
+                  <div className="bg-blue-500/20 border border-blue-500/30 p-3 rounded-xl shadow-[0_0_15px_rgba(59,130,246,0.3)]"><Sparkles size={24} /></div>
+                  <h2 className="text-2xl font-black text-white tracking-tight">LUNA Orchestrator</h2>
+                </div>
+                <p className="text-gray-400 text-sm text-center font-medium mb-8 relative z-10">Exprimez le désir de votre client. L'intelligence multi-agents s'occupe du reste.</p>
+
+                <form onSubmit={handleStartAnalysis} className="flex flex-col gap-4 relative z-10">
+                  <div className="space-y-4">
+                    <input type="text" placeholder="Destination (ex: Île Maurice)" className="w-full px-5 py-3.5 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:bg-white/10 font-bold text-white placeholder-gray-500 transition-all shadow-inner" value={requestData.destination} onChange={e => setRequestData({ ...requestData, destination: e.target.value })} required />
 
                     <div className="flex gap-3">
                       <div className="w-1/2 relative group">
-                        <input type="date" className="w-full px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm appearance-none group-hover:bg-gray-50" value={requestData.dates} onChange={e => setRequestData({ ...requestData, dates: e.target.value })} />
+                        <input type="date" className="w-full px-5 py-3.5 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:bg-white/10 font-bold text-white transition-all shadow-inner appearance-none [color-scheme:dark]" value={requestData.dates} onChange={e => setRequestData({ ...requestData, dates: e.target.value })} />
                       </div>
-                      <select className="w-1/2 px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm appearance-none cursor-pointer hover:bg-gray-50" value={requestData.flexibility} onChange={e => setRequestData({ ...requestData, flexibility: e.target.value })}>
-                        <option>Dates Exactes</option>
-                        <option>+/- 3 Jours</option>
-                        <option>Mois Flexible</option>
+                      <select className="w-1/2 px-5 py-3.5 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:bg-white/10 font-bold text-gray-300 transition-all shadow-inner appearance-none cursor-pointer" value={requestData.flexibility} onChange={e => setRequestData({ ...requestData, flexibility: e.target.value })}>
+                        <option className="bg-gray-800">Dates Exactes</option>
+                        <option className="bg-gray-800">+/- 3 Jours</option>
+                        <option className="bg-gray-800">Mois Flexible</option>
                       </select>
                     </div>
 
                     <div className="flex gap-3">
-                      <input type="text" placeholder="Budget" className="w-1/2 px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm" value={requestData.budget} onChange={e => setRequestData({ ...requestData, budget: e.target.value })} />
-                      <input type="text" placeholder="Passagers" className="w-1/2 px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm" value={requestData.pax} onChange={e => setRequestData({ ...requestData, pax: e.target.value })} />
+                      <input type="text" placeholder="Budget" className="w-1/2 px-5 py-3.5 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:bg-white/10 font-bold text-white placeholder-gray-500 transition-all shadow-inner" value={requestData.budget} onChange={e => setRequestData({ ...requestData, budget: e.target.value })} />
+                      <input type="text" placeholder="Passagers" className="w-1/2 px-5 py-3.5 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:bg-white/10 font-bold text-white placeholder-gray-500 transition-all shadow-inner" value={requestData.pax} onChange={e => setRequestData({ ...requestData, pax: e.target.value })} />
                     </div>
 
-                    <select className="w-full px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm appearance-none" value={requestData.vibe} onChange={e => setRequestData({ ...requestData, vibe: e.target.value })}>
-                      <option value="" disabled>Type de Vibe / Expérience</option>
-                      <option>Détente & Spa</option>
-                      <option>Aventure & Nature</option>
-                      <option>Culture & Histoire</option>
-                      <option>Lune de Miel</option>
-                      <option>Affaires / Bleisure</option>
+                    <select className="w-full px-5 py-3.5 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:bg-white/10 font-bold text-gray-300 transition-all shadow-inner appearance-none custom-select" value={requestData.vibe} onChange={e => setRequestData({ ...requestData, vibe: e.target.value })}>
+                      <option value="" disabled className="bg-gray-800">Type de Vibe / Expérience</option>
+                      <option className="bg-gray-800">Détente & Spa</option>
+                      <option className="bg-gray-800">Aventure & Nature</option>
+                      <option className="bg-gray-800">Culture & Histoire</option>
+                      <option className="bg-gray-800">Lune de Miel</option>
+                      <option className="bg-gray-800">Affaires / Bleisure</option>
                     </select>
 
                     <textarea
-                      placeholder="Must-haves (ex: Vol direct uniquement, Hôtel vue mer...)"
-                      className="w-full px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm resize-none h-20"
+                      placeholder="Must-haves (ex: Vol direct uniquement, vue mer...)"
+                      className="w-full px-5 py-3.5 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:bg-white/10 font-bold text-white placeholder-gray-500 transition-all shadow-inner resize-none h-24"
                       value={requestData.mustHaves}
                       onChange={e => setRequestData({ ...requestData, mustHaves: e.target.value })}
                     />
                   </div>
 
-                  <button type="submit" className="mt-2 w-full py-4 bg-gradient-to-br from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-black uppercase tracking-wider text-sm rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:shadow-blue-500/50 flex justify-center items-center gap-2">
+                  <button type="submit" className="mt-4 w-full py-4 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 hover:from-blue-500 hover:via-indigo-400 hover:to-purple-500 text-white font-black uppercase tracking-widest text-sm rounded-xl shadow-[0_0_30px_rgba(79,70,229,0.5)] transition-all hover:shadow-[0_0_50px_rgba(79,70,229,0.8)] flex justify-center items-center gap-3">
                     Lancer l'Analyse IA <ArrowRight size={18} />
                   </button>
                 </form>
@@ -235,16 +241,20 @@ export default function DashboardPage() {
                 key="processing"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="relative cursor-pointer rounded-full bg-white/95 shadow-[0_0_80px_rgba(59,130,246,0.6)] p-2 flex items-center justify-center flex-col w-52 h-52 border-4 border-blue-400 backdrop-blur-xl"
+                className="relative cursor-pointer rounded-full bg-gray-900/90 shadow-[0_0_100px_rgba(59,130,246,0.5)] p-2 flex items-center justify-center flex-col w-56 h-56 border border-white/10 backdrop-blur-xl"
               >
-                {workflowState === 'ANALYSING' && <div className="absolute inset-0 rounded-full border-[6px] border-t-blue-500 border-r-transparent border-b-blue-300 border-l-transparent animate-spin opacity-50"></div>}
-                {workflowState === 'GENERATING_PROPOSALS' && <div className="absolute inset-0 max-w-full max-h-full rounded-full border-[6px] border-t-emerald-500 border-r-transparent border-b-emerald-300 border-l-transparent animate-[spin_0.5s_linear_infinite] opacity-80"></div>}
+                {/* Glowing ring borders */}
+                <div className="absolute inset-0 rounded-full border border-blue-500/30"></div>
+                <div className="absolute inset-2 rounded-full border border-indigo-500/20"></div>
 
-                <div className={`mb-3 bg-blue-50 p-4 rounded-full text-blue-600 ${workflowState === 'DISTRIBUTING' || workflowState === 'GENERATING_PROPOSALS' ? 'animate-pulse' : ''}`}>
-                  <Sparkles className="w-12 h-12" strokeWidth={1.5} />
+                {workflowState === 'ANALYSING' && <div className="absolute inset-0 rounded-full border-[4px] border-t-blue-400 border-r-transparent border-b-cyan-400 border-l-transparent animate-spin opacity-80 shadow-[0_0_20px_rgba(59,130,246,0.8)]"></div>}
+                {workflowState === 'GENERATING_PROPOSALS' && <div className="absolute inset-0 rounded-full border-[4px] border-t-emerald-400 border-r-transparent border-b-emerald-200 border-l-transparent animate-[spin_0.5s_linear_infinite] opacity-100 shadow-[0_0_30px_rgba(16,185,129,0.8)]"></div>}
+
+                <div className={`mb-4 bg-blue-500/10 p-5 rounded-full text-blue-400 shadow-[inset_0_0_20px_rgba(59,130,246,0.2)] ${workflowState === 'DISTRIBUTING' || workflowState === 'GENERATING_PROPOSALS' ? 'animate-pulse' : ''}`}>
+                  <Sparkles className="w-14 h-14 drop-shadow-[0_0_10px_rgba(59,130,246,0.8)]" strokeWidth={1.5} />
                 </div>
-                <h3 className="font-black text-blue-900 tracking-wide text-xl text-center leading-tight">LUNA</h3>
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1 text-center bg-gray-100 px-3 py-1 rounded-full">
+                <h3 className="font-black text-white tracking-widest text-2xl text-center leading-tight">LUNA</h3>
+                <p className="text-[9px] text-blue-300 font-black uppercase tracking-widest mt-2 text-center bg-blue-900/40 border border-blue-500/30 px-4 py-1.5 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.3)]">
                   {workflowState === 'ANALYSING' && 'Analyse Initiale'}
                   {workflowState === 'DISTRIBUTING' && 'Dispatch n8n'}
                   {workflowState === 'AGENTS_WORKING' && 'Recherche Active'}
@@ -395,11 +405,11 @@ function AnimatedPath({ d, state }: { d: string, state: WorkflowState }) {
     animationClass = "opacity-40 stroke-gray-300";
 
     if (state === 'DISTRIBUTING') {
-      animationClass = "opacity-80 stroke-blue-500 animate-[dash_2s_ease-out_forwards]";
+      animationClass = "opacity-80 stroke-blue-500 animate-[dash_2s_ease-out_forwards] drop-shadow-[0_0_12px_rgba(59,130,246,0.8)]";
     } else if (state === 'GENERATING_PROPOSALS') {
-      animationClass = "opacity-80 stroke-emerald-500 animate-[dashReverse_2s_ease-out_forwards]";
+      animationClass = "opacity-80 stroke-emerald-400 animate-[dashReverse_2s_ease-out_forwards] drop-shadow-[0_0_12px_rgba(16,185,129,0.8)]";
     } else if (state === 'VALIDATION') {
-      animationClass = "opacity-40 stroke-blue-300";
+      animationClass = "opacity-30 stroke-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]";
     }
   }
 
@@ -415,7 +425,7 @@ function AnimatedPath({ d, state }: { d: string, state: WorkflowState }) {
           100% { stroke-dasharray: 200; stroke-dashoffset: 200; }
         }
       `}</style>
-      <path d={d} strokeWidth="3" fill="none" className={`transition-all duration-1000 ${animationClass}`} />
+      <path d={d} strokeWidth="3.5" fill="none" className={`transition-all duration-1000 ${animationClass}`} strokeLinecap="round" />
     </>
   );
 }
@@ -425,24 +435,27 @@ function WorkflowNode({ id, title, subtitle, icon, position, state, isValidated,
   if (state === 'VALIDATION' && !isValidated) mode = 'READY_TO_VALIDATE';
   if (isValidated) mode = 'VALIDATED';
 
-  // Base styling depending on the state of the agent
-  let borderClass = "border-amber-300";
-  let bgClass = "bg-white/90 backdrop-blur-md";
-  let textClass = "text-gray-900";
+  // Premium Dark UI for nodes
+  let borderClass = "border-amber-500/40 shadow-[0_10px_30px_rgba(245,158,11,0.15)]";
+  let bgClass = "bg-gray-900/85 backdrop-blur-xl hover:bg-gray-800 transition-all";
+  let textClass = "text-white";
   let statusText = "En recherche web/API...";
-  let statusColor = "text-amber-500 bg-amber-50";
+  let statusColor = "text-amber-400 bg-amber-500/10 border border-amber-500/20";
+  let iconBg = "bg-white/5 text-gray-300 shadow-inner";
 
   if (mode === 'READY_TO_VALIDATE') {
-    borderClass = "border-blue-500";
-    bgClass = "bg-blue-50/95 backdrop-blur-md cursor-pointer hover:bg-blue-100 hover:scale-110 shadow-xl shadow-blue-500/20";
+    borderClass = "border-blue-500/60 shadow-[0_10px_40px_rgba(59,130,246,0.3)] hover:shadow-[0_10px_60px_rgba(59,130,246,0.5)]";
+    bgClass = "bg-gray-900/95 backdrop-blur-xl cursor-pointer hover:bg-gray-800 hover:scale-110 ring-2 ring-blue-500/20";
     statusText = "Résultats Prêts !";
-    statusColor = "text-blue-600 bg-blue-100";
+    statusColor = "text-blue-300 bg-blue-500/20 border border-blue-500/30";
+    iconBg = "bg-blue-600/20 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.4)]";
   } else if (mode === 'VALIDATED') {
-    borderClass = "border-emerald-500";
-    bgClass = "bg-emerald-50/95 backdrop-blur-md";
-    textClass = "text-emerald-950";
-    statusText = "Validé, prêt pour devis";
-    statusColor = "text-emerald-700 bg-emerald-100";
+    borderClass = "border-emerald-500/50 shadow-[0_10px_30px_rgba(16,185,129,0.2)]";
+    bgClass = "bg-gray-900/85 backdrop-blur-xl relative overflow-hidden";
+    textClass = "text-emerald-50";
+    statusText = "Validé pour Devis";
+    statusColor = "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20";
+    iconBg = "bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.5)]";
   }
 
   return (
@@ -454,13 +467,15 @@ function WorkflowNode({ id, title, subtitle, icon, position, state, isValidated,
       style={{ top: position.y, left: position.x, transform: 'translate(-50%, -50%)' }}
       onClick={onClick}
     >
-      <div className={`rounded-2xl p-4 flex items-center gap-4 transition-all duration-500 border-2 ${borderClass} ${bgClass} shadow-lg w-64`}>
-        <div className={`p-3 rounded-full shadow-sm flex-shrink-0 ${mode === 'VALIDATED' ? 'bg-emerald-500 text-white' : 'bg-white text-gray-700'}`}>
+      <div className={`rounded-[2rem] p-4 flex items-center gap-4 border ${borderClass} ${bgClass} w-64`}>
+        {mode === 'VALIDATED' && <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent pointer-events-none" />}
+
+        <div className={`p-3 rounded-[1.2rem] flex-shrink-0 relative z-10 transition-colors duration-500 ${iconBg}`}>
           {mode === 'VALIDATED' ? <CheckCircle2 size={24} /> : icon}
         </div>
-        <div className="flex flex-col pr-2">
-          <h3 className={`font-black text-xs uppercase tracking-widest ${textClass}`}>{title}</h3>
-          <p className={`text-[10px] font-bold uppercase tracking-wider mt-1 px-2 py-0.5 rounded-full w-max ${statusColor}`}>{statusText}</p>
+        <div className="flex flex-col pr-2 relative z-10">
+          <h3 className={`font-black text-[11px] uppercase tracking-widest ${textClass}`}>{title}</h3>
+          <p className={`text-[9px] font-black uppercase tracking-widest mt-1.5 px-2.5 py-1 rounded-full w-max ${statusColor}`}>{statusText}</p>
         </div>
 
         {/* Notification Badge */}

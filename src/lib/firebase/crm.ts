@@ -16,10 +16,13 @@ import {
 export interface CRMLead {
     id?: string;
     clientId?: string;
+    clientName?: string;
     destination: string;
     dates: string;
     budget: string;
     pax: string;
+    days?: number;
+    links?: { title: string, url: string }[];
     vibe?: string;
     flexibility?: string;
     mustHaves?: string;

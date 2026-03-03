@@ -10,7 +10,8 @@ import {
     Settings,
     LogOut,
     Plane,
-    MessageSquare
+    MessageSquare,
+    Search
 } from 'lucide-react';
 
 export function CRMSidebar() {
@@ -37,8 +38,20 @@ export function CRMSidebar() {
                     </div>
                 </div>
 
+                {/* Search Bar */}
+                <div className="px-4 mb-6">
+                    <div className="relative group">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={16} />
+                        <input
+                            type="text"
+                            placeholder="Recherche globale..."
+                            className="w-full pl-9 pr-4 py-2.5 bg-white/50 backdrop-blur-md border border-white/80 rounded-xl text-sm font-bold text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white shadow-sm transition-all"
+                        />
+                    </div>
+                </div>
+
                 {/* Navigation */}
-                <nav className="flex flex-col gap-2 px-4">
+                <nav className="flex flex-col gap-1.5 px-4">
                     {links.map((link) => {
                         const Icon = link.icon;
                         const isActive = pathname === link.href || (pathname.startsWith(link.href) && link.href !== '/crm');
@@ -47,12 +60,12 @@ export function CRMSidebar() {
                             <Link
                                 key={link.name}
                                 href={link.href}
-                                className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all font-bold ${isActive
+                                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all font-bold text-sm ${isActive
                                     ? 'bg-blue-600 shadow-md shadow-blue-500/20 text-white'
                                     : 'text-gray-500 hover:bg-white hover:text-blue-600 hover:shadow-sm'
                                     }`}
                             >
-                                <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                                <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                                 {link.name}
                             </Link>
                         );
@@ -60,20 +73,19 @@ export function CRMSidebar() {
                 </nav>
             </div>
 
-            {/* Bottom Actions */}
-            <div className="px-4 flex flex-col gap-2">
+            <div className="px-4 flex flex-col gap-1.5">
                 <Link
                     href="/crm/settings"
-                    className="flex items-center gap-4 px-4 py-3 rounded-xl text-gray-500 hover:bg-white hover:text-gray-800 transition-all font-bold"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-500 hover:bg-white hover:text-gray-800 transition-all font-bold text-sm"
                 >
-                    <Settings size={20} />
+                    <Settings size={18} />
                     Paramètres
                 </Link>
                 <Link
                     href="/"
-                    className="flex items-center gap-4 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 hover:text-red-700 transition-all font-bold mt-2"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-red-500 hover:bg-red-50 hover:text-red-700 transition-all font-bold text-sm mt-1"
                 >
-                    <LogOut size={20} />
+                    <LogOut size={18} />
                     Orchestrateur
                 </Link>
             </div>

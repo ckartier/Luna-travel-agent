@@ -20,7 +20,29 @@ const data = [
     { name: 'Juil', revenue: 3490 },
 ];
 
+import { useState, useEffect } from 'react';
+import { getLeads, getContacts } from '@/src/lib/firebase/crm';
+
 export default function CRMDashboard() {
+    const [counts, setCounts] = useState({ leads: 0, contacts: 0, activeTrips: 0 });
+
+    useEffect(() => {
+        const fetchKPIs = async () => {
+            try {
+                const [leads, contacts] = await Promise.all([getLeads(), getContacts()]);
+                const activeTrips = leads.filter(l => l.status === 'WON' || l.status === 'PROPOSAL_READY').length;
+                setCounts({
+                    leads: leads.length,
+                    contacts: contacts.length,
+                    activeTrips
+                });
+            } catch (error) {
+                console.error("Failed to fetch KPIs", error);
+            }
+        };
+        fetchKPIs();
+    }, []);
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center mb-8">
@@ -42,9 +64,9 @@ export default function CRMDashboard() {
             {/* KPI Cards */}
             <div className="grid grid-cols-4 gap-6">
                 <KPICard title="Revenus Générés" value="124 500 €" trend="+14%" icon={TrendingUp} color="blue" />
-                <KPICard title="Nouveaux Leads (IA)" value="48" trend="+6" icon={Target} color="emerald" />
-                <KPICard title="Clients Actifs" value="112" trend="+2%" icon={Users} color="purple" />
-                <KPICard title="Voyages en cours" value="14" trend="-1" icon={PlaneTakeoff} color="amber" />
+                <KPICard title="Total Leads (Demandes)" value={counts.leads.toString()} trend="+6" icon={Target} color="emerald" />
+                <KPICard title="Clients Actifs" value={counts.contacts.toString()} trend="+2%" icon={Users} color="purple" />
+                <KPICard title="Demandes en cours" value={counts.activeTrips.toString()} trend="+1" icon={PlaneTakeoff} color="amber" />
             </div>
 
             <div className="grid grid-cols-3 gap-6 mt-8">
