@@ -26,8 +26,9 @@ export default function CRMPipeline() {
     const [deals, setDeals] = useState<Deal[]>(mockDeals);
 
     return (
-        <div className="h-full flex flex-col">
-            <div className="flex justify-between items-center mb-8">
+        <div className="h-full flex flex-col relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-blue-50/30 pointer-events-none" />
+            <div className="flex justify-between items-center mb-8 relative z-10">
                 <div>
                     <h1 className="text-3xl font-black text-gray-900 tracking-tight">Pipeline des Ventes</h1>
                     <p className="text-gray-500 font-medium mt-1">Gérez vos demandes et devis en cours (Glisser-Déposer visuel).</p>
@@ -37,11 +38,18 @@ export default function CRMPipeline() {
                 </button>
             </div>
 
-            <div className="flex-1 flex gap-6 overflow-x-auto pb-4">
+            <div className="flex-1 flex gap-6 overflow-x-auto pb-4 relative z-10">
                 {STAGES.map((stage) => {
                     const stageDeals = deals.filter(d => d.stage === stage);
+
+                    let columnColor = "bg-slate-100/50 border-slate-200/60";
+                    if (stage === 'NOUVEAU') columnColor = "bg-blue-50/50 border-blue-100/60";
+                    if (stage === 'IA EN COURS') columnColor = "bg-purple-50/50 border-purple-100/60";
+                    if (stage === 'DEVIS ENVOYÉ') columnColor = "bg-amber-50/50 border-amber-100/60";
+                    if (stage === 'GAGNÉ') columnColor = "bg-emerald-50/50 border-emerald-100/60";
+
                     return (
-                        <div key={stage} className="flex-1 min-w-[300px] bg-slate-100/50 rounded-3xl p-4 border border-slate-200/60 flex flex-col">
+                        <div key={stage} className={`flex-1 min-w-[300px] rounded-3xl p-4 border flex flex-col backdrop-blur-sm shadow-[0_4px_20px_rgb(0,0,0,0.02)] transition-colors ${columnColor}`}>
                             <div className="flex justify-between items-center mb-4 px-2">
                                 <h3 className="font-bold text-gray-700 text-sm tracking-wider uppercase">{stage} <span className="text-gray-400 font-normal ml-2">({stageDeals.length})</span></h3>
                                 <button className="text-gray-400 hover:text-gray-600"><MoreHorizontal size={18} /></button>

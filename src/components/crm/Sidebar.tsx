@@ -9,14 +9,15 @@ import {
     CalendarDays,
     Settings,
     LogOut,
-    Plane
+    Plane,
+    MessageSquare
 } from 'lucide-react';
 
 export function CRMSidebar() {
     const pathname = usePathname();
-
     const links = [
         { name: 'Dashboard', href: '/crm', icon: LayoutDashboard },
+        { name: 'Boîte de Réception', href: '/crm/mails', icon: MessageSquare },
         { name: 'Pipeline', href: '/crm/pipeline', icon: Trello },
         { name: 'Contacts', href: '/crm/contacts', icon: Users },
         { name: 'Activités', href: '/crm/activities', icon: CalendarDays },

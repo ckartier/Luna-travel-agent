@@ -50,3 +50,59 @@ export async function getEmailContent(messageId: string) {
         throw error;
     }
 }
+
+export async function listEmails(query: string = '', maxResults: number = 20) {
+    const gmail = getGmailClient();
+
+    try {
+        const res = await gmail.users.messages.list({
+            userId: 'me',
+            maxResults,
+            q: query,
+        });
+
+        const messages = res.data.messages || [];
+
+        // Fetch basic metadata (subject, sender, date) for each message in the list
+        const detailedMessages = await Promise.all(
+            messages.map(async (msg) => {
+                if (!msg.id) return null;
+                try {
+                    const detail = await gmail.users.messages.get({
+                        userId: 'me',
+                        id: msg.id,
+                        format: 'metadata',
+                        metadataHeaders: ['Subject', 'From', 'Date'],
+                    });
+
+                    const headers = detail.data.payload?.headers;
+                    const subject = headers?.find(h => h.name === 'Subject')?.value || 'No Subject';
+                    const sender = headers?.find(h => h.name === 'From')?.value || 'Unknown Sender';
+                    const date = headers?.find(h => h.name === 'Date')?.value || new Date().toISOString();
+
+                    // Simple snippet for preview
+                    const snippet = detail.data.snippet || '';
+
+                    return {
+                        id: msg.id,
+                        threadId: msg.threadId,
+                        subject,
+                        sender,
+                        date,
+                        snippet,
+                        labelIds: detail.data.labelIds || []
+                    };
+                } catch (e) {
+                    console.error(`Error fetching metadata for msg ${msg.id}`, e);
+                    return null;
+                }
+            })
+        );
+
+        return detailedMessages.filter(Boolean); // Remove any nulls from failed fetches
+    } catch (error) {
+        console.error('Error listing emails:', error);
+        throw error;
+    }
+}
+

@@ -10,8 +10,10 @@ import {
   Users,
   CheckCircle2,
   ArrowRight,
-  Send
+  Send,
+  LayoutDashboard
 } from 'lucide-react';
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -108,6 +110,24 @@ export default function DashboardPage() {
     <div className="relative w-full h-full flex flex-col overflow-hidden">
       <MapBackground />
 
+      {/* Glassmorphism Top Navigation Bar */}
+      <div className="absolute top-6 left-6 z-40 flex items-center gap-4">
+        <div className="bg-white/90 backdrop-blur-xl px-6 py-3 rounded-2xl flex items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-white/50">
+          <div className="bg-gradient-to-br from-blue-600 to-blue-500 text-white p-1.5 rounded-lg shadow-sm">
+            <Plane size={18} className="-rotate-45" />
+          </div>
+          <span className="font-black text-lg text-gray-900 tracking-tight">LUNA</span>
+        </div>
+
+        <Link
+          href="/crm"
+          className="bg-white/90 backdrop-blur-xl px-6 py-3 rounded-2xl flex items-center gap-2 shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-white/50 text-gray-600 font-bold hover:text-blue-600 hover:scale-105 transition-all group"
+        >
+          <LayoutDashboard size={18} className="group-hover:text-blue-500 transition-colors" />
+          Accéder au CRM
+        </Link>
+      </div>
+
       {/* Weather Widget Header Area (Visible only when destination logic applies) */}
       <div className="absolute top-6 right-6 z-40 w-96">
         {requestData.destination.length > 2 && workflowState !== 'ANALYSING' && workflowState !== 'DISTRIBUTING' && (
@@ -158,7 +178,7 @@ export default function DashboardPage() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-white/90 backdrop-blur-xl w-[400px] p-8 shadow-[0_20px_60px_-15px_rgba(59,130,246,0.3)] rounded-3xl border-2 border-white"
+                className="bg-white/80 backdrop-blur-2xl w-[420px] p-8 shadow-[0_30px_80px_-15px_rgba(59,130,246,0.5)] rounded-3xl border border-white/60"
               >
                 <div className="flex items-center gap-3 mb-6 justify-center text-blue-600">
                   <div className="bg-blue-100 p-3 rounded-full"><Sparkles size={24} /></div>
@@ -171,10 +191,10 @@ export default function DashboardPage() {
                     <input type="text" placeholder="Destination (ex: Île Maurice)" className="w-full px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm" value={requestData.destination} onChange={e => setRequestData({ ...requestData, destination: e.target.value })} required />
 
                     <div className="flex gap-3">
-                      <div className="w-1/2 relative">
-                        <input type="text" placeholder="Dates (ex: 12-20 Août)" className="w-full px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm" value={requestData.dates} onChange={e => setRequestData({ ...requestData, dates: e.target.value })} />
+                      <div className="w-1/2 relative group">
+                        <input type="date" className="w-full px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm appearance-none group-hover:bg-gray-50" value={requestData.dates} onChange={e => setRequestData({ ...requestData, dates: e.target.value })} />
                       </div>
-                      <select className="w-1/2 px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm appearance-none" value={requestData.flexibility} onChange={e => setRequestData({ ...requestData, flexibility: e.target.value })}>
+                      <select className="w-1/2 px-4 py-3 rounded-xl bg-gray-50/80 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold text-gray-700 transition-colors shadow-sm appearance-none cursor-pointer hover:bg-gray-50" value={requestData.flexibility} onChange={e => setRequestData({ ...requestData, flexibility: e.target.value })}>
                         <option>Dates Exactes</option>
                         <option>+/- 3 Jours</option>
                         <option>Mois Flexible</option>
