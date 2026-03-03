@@ -107,11 +107,11 @@ export default function DashboardPage() {
   if (!mounted) return null;
 
   return (
-    <div className="relative w-full h-full flex flex-col overflow-hidden bg-slate-900/80">
+    <div className="relative w-full h-full flex flex-col overflow-hidden bg-gray-500/50">
       <MapBackground />
 
       {/* Modern overlay for map visibility & readability */}
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[1px] pointer-events-none z-10" />
+      <div className="absolute inset-0 bg-gray-400/40 backdrop-blur-[1px] pointer-events-none z-10" />
 
       {/* Compact Top Navigation Bar */}
       <div className="absolute top-4 left-4 z-40 flex items-center gap-3">
@@ -131,13 +131,11 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* Weather Widget Header Area (Visible at all times if destination exists) */}
+      {/* Weather Widget Header Area (Toujours visible avec Paris par défaut si vide) */}
       <div className="absolute top-4 right-4 z-40 w-[300px]">
-        {requestData.destination.length > 2 && (
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-            <WeatherWidget destination={requestData.destination} />
-          </motion.div>
-        )}
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+          <WeatherWidget destination={requestData.destination.trim() ? requestData.destination : 'Paris'} />
+        </motion.div>
       </div>
 
       {/* Main Orchestration Node Canvas */}
