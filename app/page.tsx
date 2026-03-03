@@ -107,34 +107,34 @@ export default function DashboardPage() {
   if (!mounted) return null;
 
   return (
-    <div className="relative w-full h-full flex flex-col overflow-hidden bg-black">
+    <div className="relative w-full h-full flex flex-col overflow-hidden bg-slate-900/80">
       <MapBackground />
 
-      {/* Dark modern overlay to make UI pop over the Mapbox map */}
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] pointer-events-none z-10" />
+      {/* Modern overlay for map visibility & readability */}
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[1px] pointer-events-none z-10" />
 
-      {/* Glassmorphism Top Navigation Bar */}
-      <div className="absolute top-6 left-6 z-40 flex items-center gap-4">
-        <div className="bg-gray-900/80 backdrop-blur-xl px-6 py-3 rounded-2xl flex items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.5)] border border-white/10">
-          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-1.5 rounded-lg shadow-[0_0_15px_rgba(59,130,246,0.5)]">
-            <Plane size={18} className="-rotate-45" />
+      {/* Compact Top Navigation Bar */}
+      <div className="absolute top-4 left-4 z-40 flex items-center gap-3">
+        <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl flex items-center gap-2 border border-white/20">
+          <div className="text-white">
+            <Plane size={16} className="-rotate-45" />
           </div>
-          <span className="font-black text-lg text-white tracking-tight">LUNA</span>
+          <span className="font-bold text-sm text-white tracking-tight">LUNA</span>
         </div>
 
         <Link
           href="/crm"
-          className="bg-gray-900/80 backdrop-blur-xl px-6 py-3 rounded-2xl flex items-center gap-2 shadow-[0_8px_30px_rgb(0,0,0,0.5)] border border-white/10 text-gray-300 font-bold hover:text-white hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:scale-105 transition-all group"
+          className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl flex items-center gap-2 border border-white/20 text-white font-medium hover:bg-white/20 transition-all group text-sm"
         >
-          <LayoutDashboard size={18} className="text-gray-400 group-hover:text-blue-400 transition-colors" />
-          Accéder au CRM
+          <LayoutDashboard size={16} />
+          CRM
         </Link>
       </div>
 
-      {/* Weather Widget Header Area (Visible only when destination logic applies) */}
-      <div className="absolute top-6 right-6 z-40 w-96">
-        {requestData.destination.length > 2 && workflowState !== 'ANALYSING' && workflowState !== 'DISTRIBUTING' && (
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+      {/* Weather Widget Header Area (Visible at all times if destination exists) */}
+      <div className="absolute top-4 right-4 z-40 w-[300px]">
+        {requestData.destination.length > 2 && (
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
             <WeatherWidget destination={requestData.destination} />
           </motion.div>
         )}

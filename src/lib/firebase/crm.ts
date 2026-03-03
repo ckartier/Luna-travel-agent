@@ -43,9 +43,22 @@ export interface CRMContact {
     updatedAt: Timestamp | Date;
 }
 
+export interface CRMActivity {
+    id?: string;
+    type: 'urgent' | 'call' | 'email' | 'meeting' | 'message' | 'done' | 'normal';
+    title: string;
+    time: string;
+    status: 'PENDING' | 'DONE';
+    color: 'red' | 'blue' | 'purple' | 'emerald' | 'amber' | 'gray';
+    iconName: string;
+    createdAt: Timestamp | Date;
+    updatedAt: Timestamp | Date;
+}
+
 // Collections
 const leadsCollection = collection(db, 'leads');
 const contactsCollection = collection(db, 'contacts');
+const activitiesCollection = collection(db, 'activities');
 
 // Leads CRUD
 export const createLead = async (leadData: Omit<CRMLead, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -85,4 +98,28 @@ export const getContacts = async () => {
     const q = query(contactsCollection, orderBy('lastName', 'asc'));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CRMContact));
+};
+
+// Activities CRUD
+export const createActivity = async (activityData: Omit<CRMActivity, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const docRef = await addDoc(activitiesCollection, {
+        ...activityData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+    return docRef.id;
+};
+
+export const getActivities = async () => {
+    const q = query(activitiesCollection, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CRMActivity));
+};
+
+export const updateActivityStatus = async (id: string, status: CRMActivity['status']) => {
+    const activityRef = doc(db, 'activities', id);
+    await updateDoc(activityRef, {
+        status,
+        updatedAt: new Date()
+    });
 };

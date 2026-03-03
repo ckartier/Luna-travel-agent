@@ -1,17 +1,78 @@
 'use client';
 
-import { Calendar, Clock, CheckCircle2, PhoneCall, Mail, AlertTriangle, MessageSquare } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calendar, Clock, CheckCircle2, PhoneCall, Mail, AlertTriangle, MessageSquare, RefreshCcw, X, Plus } from 'lucide-react';
+import { getActivities, createActivity, updateActivityStatus, CRMActivity } from '@/src/lib/firebase/crm';
 
-const activities = [
-    { id: 1, type: 'urgent', title: 'Relancer M. Dupont (Devis Maldives)', time: 'Aujourd\'hui, 10:00', icon: AlertTriangle, color: 'red' },
-    { id: 2, type: 'call', title: 'Appel découverte : Lune de Miel Bali', time: 'Aujourd\'hui, 14:30', icon: PhoneCall, color: 'blue' },
-    { id: 3, type: 'email', title: 'Envoyer sélection hôtels à Sophie Robert', time: 'Aujourd\'hui, 16:00', icon: Mail, color: 'purple' },
-    { id: 4, type: 'done', title: 'Vérification dispo One&Only Le Saint Géran', time: 'Hier, 18:45', icon: CheckCircle2, color: 'emerald' },
-    { id: 5, type: 'meeting', title: 'Point visio avec partenaire local (Japon)', time: 'Hier, 11:00', icon: Calendar, color: 'amber' },
-    { id: 6, type: 'message', title: 'WhatsApp reçu : "Validation du devis NY"', time: 'Lundi, 09:15', icon: MessageSquare, color: 'emerald' },
-];
+const iconMap: Record<string, any> = {
+    'AlertTriangle': AlertTriangle,
+    'PhoneCall': PhoneCall,
+    'Mail': Mail,
+    'CheckCircle2': CheckCircle2,
+    'Calendar': Calendar,
+    'MessageSquare': MessageSquare
+};
 
 export default function CRMActivities() {
+    const [activities, setActivities] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [newTask, setNewTask] = useState({
+        title: '',
+        time: '',
+        type: 'normal' as CRMActivity['type'],
+        color: 'gray' as CRMActivity['color'],
+        iconName: 'Calendar'
+    });
+
+    const loadActivities = async () => {
+        setLoading(true);
+        try {
+            const data = await getActivities();
+            const formatted = data.map(a => ({
+                ...a,
+                icon: iconMap[a.iconName] || Calendar
+            }));
+            setActivities(formatted);
+        } catch (error) {
+            console.error("Failed to load activities", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadActivities();
+    }, []);
+
+    const handleAddTask = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await createActivity({
+                title: newTask.title,
+                time: newTask.time,
+                type: newTask.type,
+                color: newTask.color,
+                status: 'PENDING',
+                iconName: newTask.iconName
+            });
+            setIsModalOpen(false);
+            setNewTask({ title: '', time: '', type: 'normal', color: 'gray', iconName: 'Calendar' });
+            loadActivities();
+        } catch (error) {
+            console.error("Failed to add task", error);
+        }
+    };
+
+    const handleMarkDone = async (id: string) => {
+        try {
+            await updateActivityStatus(id, 'DONE');
+            loadActivities();
+        } catch (error) {
+            console.error("Failed to update task", error);
+        }
+    };
+
     return (
         <div className="space-y-6 max-w-4xl mx-auto">
             <div className="flex justify-between items-center mb-8">
@@ -19,9 +80,14 @@ export default function CRMActivities() {
                     <h1 className="text-3xl font-black text-gray-900 tracking-tight">Activités & Tâches</h1>
                     <p className="text-gray-500 font-medium mt-1">Votre ligne du temps pour ne rater aucune opportunité.</p>
                 </div>
-                <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2">
-                    + Nouvelle Tâche
-                </button>
+                <div className="flex gap-3">
+                    <button onClick={loadActivities} className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold px-4 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-2">
+                        <RefreshCcw size={18} className={loading ? "animate-spin text-blue-500" : "text-gray-400"} />
+                    </button>
+                    <button onClick={() => setIsModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2">
+                        + Nouvelle Tâche
+                    </button>
+                </div>
             </div>
 
             <div className="relative">
@@ -31,15 +97,16 @@ export default function CRMActivities() {
                 <div className="space-y-6 relative z-10">
                     {activities.map((activity) => {
                         const Icon = activity.icon;
-                        const colorMap: any = {
+                        const colorMap: Record<string, string> = {
                             red: 'bg-red-100 text-red-600 border-red-200',
                             blue: 'bg-blue-100 text-blue-600 border-blue-200',
                             purple: 'bg-purple-100 text-purple-600 border-purple-200',
                             emerald: 'bg-emerald-100 text-emerald-600 border-emerald-200',
                             amber: 'bg-amber-100 text-amber-600 border-amber-200',
+                            gray: 'bg-gray-100 text-gray-600 border-gray-200',
                         };
 
-                        const isDone = activity.type === 'done';
+                        const isDone = activity.status === 'DONE' || activity.type === 'done';
 
                         return (
                             <div key={activity.id} className="flex gap-6 items-start group">
@@ -56,7 +123,7 @@ export default function CRMActivities() {
                                     </div>
                                     {!isDone && (
                                         <div className="flex gap-3 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button className="text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-lg transition-colors">Marquer Fait</button>
+                                            <button onClick={() => handleMarkDone(activity.id)} className="text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-lg transition-colors">Marquer Fait</button>
                                             <button className="text-xs font-bold text-gray-500 bg-gray-50 hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors">Reporter</button>
                                         </div>
                                     )}
@@ -66,6 +133,66 @@ export default function CRMActivities() {
                     })}
                 </div>
             </div>
+
+            {/* Modal Ajout Activité */}
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-slate-50">
+                            <h2 className="text-xl font-bold text-gray-900">Nouvelle Tâche</h2>
+                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-2"><X size={20} /></button>
+                        </div>
+                        <form onSubmit={handleAddTask} className="p-6 space-y-4">
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Titre de l'action</label>
+                                <input type="text" placeholder="Ex: Appeler Sophie Robert..." required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-900" value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Date / Heure prévue</label>
+                                    <input type="text" placeholder="Ex: Demain, 14:00" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-900" value={newTask.time} onChange={e => setNewTask({ ...newTask, time: e.target.value })} />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Type / Urgent</label>
+                                    <select className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-900 appearance-none bg-white" value={newTask.type} onChange={e => setNewTask({ ...newTask, type: e.target.value as CRMActivity['type'] })}>
+                                        <option value="normal">Normal</option>
+                                        <option value="urgent">Urgent</option>
+                                        <option value="call">Appel</option>
+                                        <option value="email">Email</option>
+                                        <option value="meeting">Réunion / RDV</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Couleur Catégorie</label>
+                                    <select className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-900 appearance-none bg-white" value={newTask.color} onChange={e => setNewTask({ ...newTask, color: e.target.value as CRMActivity['color'] })}>
+                                        <option value="gray">Gris (Défaut)</option>
+                                        <option value="red">Rouge (Alerte)</option>
+                                        <option value="blue">Bleu (Appel)</option>
+                                        <option value="purple">Violet (Projet)</option>
+                                        <option value="amber">Orange (Attente)</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Icône Représentative</label>
+                                    <select className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-900 appearance-none bg-white" value={newTask.iconName} onChange={e => setNewTask({ ...newTask, iconName: e.target.value })}>
+                                        <option value="Calendar">Calendrier</option>
+                                        <option value="PhoneCall">Téléphone</option>
+                                        <option value="Mail">Email</option>
+                                        <option value="AlertTriangle">Attention (!)</option>
+                                        <option value="MessageSquare">Message</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="pt-4 flex justify-end gap-3">
+                                <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 rounded-xl text-gray-600 font-bold hover:bg-gray-100 transition-colors">Annuler</button>
+                                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-blue-500/30 transition-all">Sauvegarder</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
