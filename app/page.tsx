@@ -170,85 +170,143 @@ export default function DashboardPage() {
         </motion.div>
       </div>
 
-      {/* ═══ ANIMATED SVG CONNECTIONS ═══ */}
+      {/* ═══ ANIMATED SVG CURVED CONNECTIONS ═══ */}
       {isProcessing && (
-        <svg className="absolute inset-0 w-full h-full pointer-events-none z-15" style={{ overflow: 'visible' }}>
-          <defs>
-            <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#b8956a" stopOpacity="0.1" />
-              <stop offset="50%" stopColor="#b8956a" stopOpacity="0.8" />
-              <stop offset="100%" stopColor="#b8956a" stopOpacity="0.1" />
-            </linearGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-          </defs>
+        <>
+          <style>{`
+            @keyframes dashFlow {
+              0% { stroke-dashoffset: 24; }
+              100% { stroke-dashoffset: 0; }
+            }
+            @keyframes pulseTravel0 {
+              0% { offset-distance: 0%; opacity: 0; }
+              10% { opacity: 1; }
+              90% { opacity: 1; }
+              100% { offset-distance: 100%; opacity: 0; }
+            }
+            @keyframes pulseTravel1 {
+              0% { offset-distance: 0%; opacity: 0; }
+              10% { opacity: 1; }
+              90% { opacity: 1; }
+              100% { offset-distance: 100%; opacity: 0; }
+            }
+            @keyframes pulseTravel2 {
+              0% { offset-distance: 0%; opacity: 0; }
+              10% { opacity: 1; }
+              90% { opacity: 1; }
+              100% { offset-distance: 100%; opacity: 0; }
+            }
+            @keyframes pulseTravel3 {
+              0% { offset-distance: 0%; opacity: 0; }
+              10% { opacity: 1; }
+              90% { opacity: 1; }
+              100% { offset-distance: 100%; opacity: 0; }
+            }
+          `}</style>
+          <svg className="absolute inset-0 w-full h-full pointer-events-none z-15" viewBox="0 0 1000 1000" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
+            <defs>
+              <filter id="glowBlue">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+              <filter id="glowGreen">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+            </defs>
 
-          {/* Connection lines from center to each agent */}
-          {(['transport', 'accommodation', 'client', 'itinerary'] as AgentKey[]).map((agent, i) => {
-            const isActive = activeAgents.includes(agent);
-            const isValidated = validatedAgents.includes(agent);
-            // Positions: top, left, right, bottom
-            const positions = [
-              { x1: '50%', y1: '50%', x2: '50%', y2: '18%' },
-              { x1: '50%', y1: '50%', x2: '18%', y2: '50%' },
-              { x1: '50%', y1: '50%', x2: '82%', y2: '50%' },
-              { x1: '50%', y1: '50%', x2: '50%', y2: '82%' },
-            ];
-            const pos = positions[i];
+            {/* Curved paths: center (500,500) to each agent position */}
+            {(['transport', 'accommodation', 'client', 'itinerary'] as AgentKey[]).map((agent, i) => {
+              const isActive = activeAgents.includes(agent);
+              const isValidated = validatedAgents.includes(agent);
 
-            return (
-              <g key={agent} filter="url(#glow)">
-                {/* Static connection line */}
-                <motion.line
-                  x1={pos.x1} y1={pos.y1} x2={pos.x2} y2={pos.y2}
-                  stroke={isValidated ? '#10b981' : '#b8956a'}
-                  strokeWidth="2"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: isActive ? 0.3 : 0 }}
-                  transition={{ duration: 0.6, delay: i * 0.2 }}
-                  strokeDasharray="8 4"
-                />
+              // Curved bezier paths from center to: top, left, right, bottom
+              const curvePaths = [
+                'M 500 500 Q 380 350, 500 180',   // → top (curve left)
+                'M 500 500 Q 350 380, 180 500',   // → left (curve up)
+                'M 500 500 Q 650 380, 820 500',   // → right (curve up)
+                'M 500 500 Q 380 650, 500 820',   // → bottom (curve left)
+              ];
 
-                {/* Animated pulse traveling along line */}
-                {isActive && !isValidated && workflowState !== 'VALIDATION' && (
-                  <motion.circle
-                    r="4"
-                    fill="#b8956a"
-                    initial={{ opacity: 0 }}
-                    animate={{
-                      cx: [pos.x1, pos.x2],
-                      cy: [pos.y1, pos.y2],
-                      opacity: [0, 1, 1, 0],
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                      delay: i * 0.3,
-                      ease: 'easeInOut',
-                    }}
-                  />
-                )}
+              const pathD = curvePaths[i];
+              const pathId = `curve-${agent}`;
+              const strokeColor = isValidated ? '#10b981' : '#87CEEB';
+              const glowFilter = isValidated ? 'url(#glowGreen)' : 'url(#glowBlue)';
 
-                {/* Validated checkmark pulse */}
-                {isValidated && (
-                  <motion.circle
-                    r="5"
-                    fill="#10b981"
-                    initial={{ opacity: 0 }}
-                    animate={{
-                      cx: [pos.x2, pos.x1],
-                      cy: [pos.y2, pos.y1],
-                      opacity: [1, 0.6, 0],
-                    }}
-                    transition={{ duration: 1.2, ease: 'easeOut' }}
-                  />
-                )}
-              </g>
-            );
-          })}
-        </svg>
+              return (
+                <g key={agent}>
+                  {/* Hidden path for reference */}
+                  <path id={pathId} d={pathD} fill="none" stroke="none" />
+
+                  {/* Visible curved line */}
+                  {isActive && (
+                    <motion.path
+                      d={pathD}
+                      fill="none"
+                      stroke={strokeColor}
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      filter={glowFilter}
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 0.5 }}
+                      transition={{ duration: 0.8, delay: i * 0.15, ease: 'easeOut' }}
+                      strokeDasharray="12 6"
+                      style={{ animation: isActive && !isValidated ? 'dashFlow 1s linear infinite' : 'none' }}
+                    />
+                  )}
+
+                  {/* Sky blue glow line underneath */}
+                  {isActive && (
+                    <motion.path
+                      d={pathD}
+                      fill="none"
+                      stroke={strokeColor}
+                      strokeWidth="6"
+                      strokeLinecap="round"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 0.12 }}
+                      transition={{ duration: 0.8, delay: i * 0.15, ease: 'easeOut' }}
+                    />
+                  )}
+
+                  {/* Animated pulse dot traveling along the curve — loops forever */}
+                  {isActive && !isValidated && (
+                    <>
+                      <circle r="5" fill="#87CEEB" filter="url(#glowBlue)"
+                        style={{
+                          offsetPath: `path('${pathD}')`,
+                          animation: `pulseTravel${i} 2s ease-in-out ${i * 0.4}s infinite`,
+                          opacity: 0,
+                        }}
+                      />
+                      {/* Second pulse staggered */}
+                      <circle r="3.5" fill="#b0e0ff" filter="url(#glowBlue)"
+                        style={{
+                          offsetPath: `path('${pathD}')`,
+                          animation: `pulseTravel${i} 2s ease-in-out ${i * 0.4 + 1}s infinite`,
+                          opacity: 0,
+                        }}
+                      />
+                    </>
+                  )}
+
+                  {/* Validated: green pulse returns to center */}
+                  {isValidated && (
+                    <circle r="6" fill="#10b981" filter="url(#glowGreen)"
+                      style={{
+                        offsetPath: `path('${pathD}')`,
+                        offsetDistance: '100%',
+                        animation: `pulseTravel${i} 1.5s ease-out 0s 1`,
+                        animationDirection: 'reverse',
+                        animationFillMode: 'forwards',
+                      }}
+                    />
+                  )}
+                </g>
+              );
+            })}
+          </svg>
+        </>
       )}
 
       {/* ═══ MAIN CONTENT ═══ */}
@@ -540,10 +598,10 @@ export default function DashboardPage() {
                 <motion.div
                   whileHover={canValidate ? { scale: 1.05 } : {}}
                   className={`rounded-2xl p-4 flex items-center gap-3.5 border w-56 transition-all relative overflow-hidden ${isValidated
-                      ? 'border-emerald-400/40 bg-white/95 backdrop-blur-xl shadow-md'
-                      : canValidate
-                        ? 'border-luna-accent/50 bg-white/95 backdrop-blur-xl shadow-lg cursor-pointer ring-1 ring-luna-accent/20'
-                        : 'border-luna-warm-gray/30 bg-luna-cream/95 backdrop-blur-xl shadow-md'
+                    ? 'border-emerald-400/40 bg-white/95 backdrop-blur-xl shadow-md'
+                    : canValidate
+                      ? 'border-luna-accent/50 bg-white/95 backdrop-blur-xl shadow-lg cursor-pointer ring-1 ring-luna-accent/20'
+                      : 'border-luna-warm-gray/30 bg-luna-cream/95 backdrop-blur-xl shadow-md'
                     }`}
                 >
                   {isValidated && <div className="absolute inset-0 bg-gradient-to-r from-emerald-50/50 to-transparent pointer-events-none rounded-2xl" />}
