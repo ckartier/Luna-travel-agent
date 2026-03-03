@@ -1,17 +1,25 @@
 @import "tailwindcss";
 
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @theme {
-  --color-luna-bg: #e2e8f0;
-  --color-luna-glass: rgba(255, 255, 255, 0.85);
-  --color-luna-glass-border: rgba(255, 255, 255, 0.6);
-  --color-luna-accent: #3b82f6;
-  --color-luna-text: #1e293b;
-  --color-luna-text-muted: #64748b;
+  --color-luna-bg: #f5f0eb;
+  --color-luna-glass: rgba(255, 255, 255, 0.88);
+  --color-luna-glass-border: rgba(255, 255, 255, 0.7);
+  --color-luna-accent: #b8956a;
+  --color-luna-accent-dark: #8b6f47;
+  --color-luna-charcoal: #2c2c2c;
+  --color-luna-text: #2c2c2c;
+  --color-luna-text-muted: #8a8680;
+  --color-luna-warm-gray: #c4beb6;
+  --color-luna-cream: #faf8f5;
 
-  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-sans: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-serif: "Playfair Display", "Georgia", serif;
 
-  --shadow-glass: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
-  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.5);
+  --shadow-glass: 0 16px 48px -12px rgba(0, 0, 0, 0.08);
+  --shadow-luxury: 0 24px 64px -16px rgba(44, 44, 44, 0.12);
+  --shadow-glow: 0 0 30px rgba(184, 149, 106, 0.2);
 }
 
 @layer base {
@@ -35,5 +43,22 @@
 
   .flex-center {
     @apply flex items-center justify-center;
+  }
+
+  .font-serif {
+    font-family: var(--font-serif);
+  }
+
+  /* Premium underline input style */
+  .input-underline {
+    @apply w-full bg-transparent border-0 border-b border-luna-warm-gray/50 
+           px-0 py-3 text-luna-charcoal font-normal text-[15px]
+           placeholder:text-luna-text-muted/60 placeholder:font-light
+           focus:outline-none focus:border-luna-accent focus:ring-0
+           transition-colors duration-300;
+  }
+
+  .input-label {
+    @apply text-[11px] uppercase tracking-[0.15em] font-medium text-luna-text-muted mb-1 block;
   }
 }
