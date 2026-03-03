@@ -179,10 +179,10 @@ export default function DashboardPage() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-gray-900/80 backdrop-blur-2xl w-[420px] p-8 shadow-[0_0_80px_-15px_rgba(59,130,246,0.5)] rounded-3xl border border-white/10 relative overflow-hidden"
+                className="bg-gray-900/80 backdrop-blur-2xl w-[420px] p-8 shadow-[0_0_80px_-15px_rgba(107,114,128,0.5)] rounded-3xl border border-white/10 relative overflow-hidden"
               >
                 {/* Subtle animated background glow */}
-                <div className="absolute -top-20 -left-20 w-40 h-40 bg-blue-500/20 rounded-full blur-[50px] pointer-events-none"></div>
+                <div className="absolute -top-20 -left-20 w-40 h-40 bg-gray-500/20 rounded-full blur-[50px] pointer-events-none"></div>
 
                 <div className="flex items-center gap-3 mb-6 justify-center text-blue-400 relative z-10">
                   <div className="bg-blue-500/20 border border-blue-500/30 p-3 rounded-xl shadow-[0_0_15px_rgba(59,130,246,0.3)]"><Sparkles size={24} /></div>

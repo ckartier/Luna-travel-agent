@@ -37,7 +37,7 @@ export function MapBackground() {
     if (!mounted) return null;
 
     return (
-        <div className="absolute inset-0 w-full h-full bg-[#e2e8f0] -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 w-full h-full bg-[#d4d4d4] -z-10 overflow-hidden pointer-events-none">
 
             {mapboxToken ? (
                 <div className="absolute inset-0"> {/* Removed opacity and mix-blend-multiply to keep planes visible */}
@@ -70,7 +70,7 @@ export function MapBackground() {
                                     >
                                         {/* Trajectory tail line behind plane */}
                                         <div
-                                            className="absolute h-[60px] w-[2px] bg-gradient-to-t from-transparent to-blue-400/60 blur-[1px]"
+                                            className="absolute h-[60px] w-[2px] bg-gradient-to-t from-transparent to-gray-500/60 blur-[1px]"
                                             style={{
                                                 transformOrigin: 'top center',
                                                 transform: `rotate(${plane.rotate + 180}deg) translateY(10px)`
@@ -78,10 +78,10 @@ export function MapBackground() {
                                         />
 
                                         {/* Airplane glow */}
-                                        <div className="absolute w-8 h-8 bg-blue-400/30 rounded-full blur-md"></div>
+                                        <div className="absolute w-8 h-8 bg-gray-400/30 rounded-full blur-md"></div>
 
                                         <Plane
-                                            className="w-5 h-5 text-blue-500 relative z-10 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]"
+                                            className="w-5 h-5 text-gray-600 relative z-10 drop-shadow-[0_0_8px_rgba(107,114,128,0.8)]"
                                             style={{ transform: `rotate(${plane.rotate}deg)` }}
                                             fill="currentColor"
                                         />
@@ -110,7 +110,7 @@ export function MapBackground() {
                         return (
                             <div key={plane.id} className="absolute flex flex-col items-center gap-1" style={{ top, left }}>
                                 <motion.div animate={{ y: [0, -10, 0], x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 4 + Math.random() * 2, ease: "easeInOut" }}>
-                                    <Plane className="w-5 h-5 text-blue-500 drop-shadow-md" style={{ transform: `rotate(${plane.rotate}deg)` }} fill="currentColor" />
+                                    <Plane className="w-5 h-5 text-gray-600 drop-shadow-md" style={{ transform: `rotate(${plane.rotate}deg)` }} fill="currentColor" />
                                 </motion.div>
                                 <div className="glass-pill px-2 py-0.5 text-[9px] font-bold text-gray-700 bg-white/70">
                                     {plane.label}
@@ -122,7 +122,7 @@ export function MapBackground() {
             )}
 
             {/* Center glowing orb behind the super agent */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-blue-300 rounded-full blur-[100px] opacity-40 mix-blend-multiply pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-gray-400 rounded-full blur-[100px] opacity-40 mix-blend-multiply pointer-events-none" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-white rounded-full blur-[120px] opacity-50 pointer-events-none" />
         </div>
     );
