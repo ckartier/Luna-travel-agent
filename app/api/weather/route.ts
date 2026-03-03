@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 
-const OWM_KEY = '439d4b804bc8187953eb36d2a8c26a02'; // Free demo key from OpenWeatherMap samples
-
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const city = searchParams.get('city');
@@ -11,71 +9,59 @@ export async function GET(request: Request) {
     }
 
     try {
-        // Step 1: Geocode city name → lat/lon
+        // Step 1: Geocode city using Open-Meteo Geocoding API
         const geoRes = await fetch(
-            `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(city)}&limit=1&appid=${OWM_KEY}`,
+            `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=fr&format=json`,
             { next: { revalidate: 3600 } }
         );
         const geoData = await geoRes.json();
 
-        if (!geoData || geoData.length === 0) {
+        if (!geoData.results || geoData.results.length === 0) {
             return NextResponse.json({ error: 'City not found', city }, { status: 404 });
         }
 
-        const { lat, lon, name, country } = geoData[0];
+        const { latitude: lat, longitude: lon, name, country } = geoData.results[0];
 
-        // Step 2: Get current weather
+        // Step 2: Get weather data using Open-Meteo Weather API
         const weatherRes = await fetch(
-            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OWM_KEY}&units=metric&lang=fr`,
-            { next: { revalidate: 600 } } // Cache 10 min
+            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`,
+            { next: { revalidate: 600 } }
         );
-        const weather = await weatherRes.json();
+        const data = await weatherRes.json();
 
-        // Step 3: Get 5-day / 3-hour forecast
-        const forecastRes = await fetch(
-            `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${OWM_KEY}&units=metric&lang=fr`,
-            { next: { revalidate: 1800 } } // Cache 30 min
-        );
-        const forecastData = await forecastRes.json();
+        // Helper to map WMO weather codes to our simple conditions
+        const getCondition = (code: number) => {
+            if (code <= 3) return { main: 'Clear', desc: 'Dégagé / Nuageux' };
+            if (code <= 49) return { main: 'Clouds', desc: 'Brouillard' };
+            if (code <= 69) return { main: 'Drizzle', desc: 'Bruine' };
+            if (code <= 79) return { main: 'Snow', desc: 'Neige' };
+            if (code <= 99) return { main: 'Rain', desc: 'Averses / Orages' };
+            return { main: 'Clear', desc: 'Dégagé' };
+        };
 
-        // Process daily forecast (take noon entry per day)
-        const dailyMap = new Map<string, any>();
-        if (forecastData.list) {
-            for (const entry of forecastData.list) {
-                const date = entry.dt_txt.split(' ')[0];
-                const hour = parseInt(entry.dt_txt.split(' ')[1].split(':')[0]);
-                // Prefer noon (12:00) reading for each day
-                if (!dailyMap.has(date) || hour === 12) {
-                    dailyMap.set(date, {
-                        date,
-                        temp: Math.round(entry.main.temp),
-                        tempMin: Math.round(entry.main.temp_min),
-                        tempMax: Math.round(entry.main.temp_max),
-                        condition: entry.weather[0]?.main || 'Clear',
-                        description: entry.weather[0]?.description || '',
-                        icon: entry.weather[0]?.icon || '01d',
-                        humidity: entry.main.humidity,
-                        wind: Math.round(entry.wind.speed * 3.6), // m/s → km/h
-                    });
-                }
-            }
-        }
+        const currentCond = getCondition(data.current.weather_code);
 
-        const forecast = Array.from(dailyMap.values()).slice(0, 5);
+        const forecast = data.daily.time.slice(0, 5).map((date: string, i: number) => {
+            const dayCond = getCondition(data.daily.weather_code[i]);
+            return {
+                date,
+                temp: Math.round(data.daily.temperature_2m_max[i]), // using max temp for day preview
+                condition: dayCond.main,
+                humidity: data.current.relative_humidity_2m, // fallback
+                wind: Math.round(data.current.wind_speed_10m), // fallback
+            };
+        });
 
         return NextResponse.json({
             city: name,
             country,
-            lat,
-            lon,
             current: {
-                temp: Math.round(weather.main?.temp),
-                feelsLike: Math.round(weather.main?.feels_like),
-                humidity: weather.main?.humidity,
-                wind: Math.round((weather.wind?.speed || 0) * 3.6),
-                condition: weather.weather?.[0]?.main || 'Clear',
-                description: weather.weather?.[0]?.description || '',
-                icon: weather.weather?.[0]?.icon || '01d',
+                temp: Math.round(data.current.temperature_2m),
+                feelsLike: Math.round(data.current.apparent_temperature),
+                humidity: data.current.relative_humidity_2m,
+                wind: Math.round(data.current.wind_speed_10m),
+                condition: currentCond.main,
+                description: currentCond.desc,
             },
             forecast,
         });

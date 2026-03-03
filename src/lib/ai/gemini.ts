@@ -3,20 +3,20 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 function getModel() {
-    return genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  return genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 }
 
 // ─── TRANSPORT AGENT ────────────────────────────────────────────────
 export async function searchTransport(params: {
-    destinations: { city: string }[];
-    departureDate: string;
-    returnDate: string;
-    pax: string;
+  destinations: { city: string }[];
+  departureDate: string;
+  returnDate: string;
+  pax: string;
 }) {
-    const model = getModel();
-    const destList = params.destinations.map(d => d.city).join(' → ');
+  const model = getModel();
+  const destList = params.destinations.map(d => d.city).join(' → ');
 
-    const prompt = `Tu es un agent spécialiste du transport aérien pour une agence de voyage de luxe.
+  const prompt = `Tu es un agent spécialiste du transport aérien pour une agence de voyage de luxe.
 
 Recherche les meilleures options de vol pour:
 - Itinéraire: ${destList}
@@ -41,27 +41,27 @@ Réponds en JSON avec ce format exact:
   "sources": ["url1", "url2"]
 }`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    try {
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        return jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: text, flights: [] };
-    } catch {
-        return { summary: text, flights: [] };
-    }
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    return jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: text, flights: [] };
+  } catch {
+    return { summary: text, flights: [] };
+  }
 }
 
 // ─── ACCOMMODATION AGENT ────────────────────────────────────────────
 export async function searchAccommodation(params: {
-    destinations: { city: string }[];
-    vibe: string;
-    budget: string;
-    pax: string;
+  destinations: { city: string }[];
+  vibe: string;
+  budget: string;
+  pax: string;
 }) {
-    const model = getModel();
-    const destList = params.destinations.map(d => d.city).join(', ');
+  const model = getModel();
+  const destList = params.destinations.map(d => d.city).join(', ');
 
-    const prompt = `Tu es un agent spécialiste de l'hébergement haut de gamme pour une agence de voyage de luxe.
+  const prompt = `Tu es un agent spécialiste de l'hébergement haut de gamme pour une agence de voyage de luxe.
 
 Recherche les meilleurs hôtels pour:
 - Destinations: ${destList}
@@ -85,26 +85,26 @@ Réponds en JSON avec ce format exact:
   "sources": ["url1", "url2"]
 }`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    try {
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        return jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: text, hotels: [] };
-    } catch {
-        return { summary: text, hotels: [] };
-    }
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    return jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: text, hotels: [] };
+  } catch {
+    return { summary: text, hotels: [] };
+  }
 }
 
 // ─── CLIENT PROFILE AGENT ──────────────────────────────────────────
 export async function analyzeClientProfile(params: {
-    pax: string;
-    vibe: string;
-    budget: string;
-    mustHaves: string;
+  pax: string;
+  vibe: string;
+  budget: string;
+  mustHaves: string;
 }) {
-    const model = getModel();
+  const model = getModel();
 
-    const prompt = `Tu es un agent CRM spécialiste du profil client pour une agence de voyage de luxe.
+  const prompt = `Tu es un agent CRM spécialiste du profil client pour une agence de voyage de luxe.
 
 Analyse ce profil voyageur et donne des recommandations personnalisées:
 - Voyageurs: ${params.pax || '2 adultes'}
@@ -124,28 +124,28 @@ Réponds en JSON avec ce format exact:
   "recommendations": ["reco1", "reco2", "reco3"]
 }`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    try {
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        return jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: text, profile: {} };
-    } catch {
-        return { summary: text, profile: {} };
-    }
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    return jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: text, profile: {} };
+  } catch {
+    return { summary: text, profile: {} };
+  }
 }
 
 // ─── ITINERARY PLANNER AGENT ────────────────────────────────────────
 export async function planItinerary(params: {
-    destinations: { city: string }[];
-    departureDate: string;
-    returnDate: string;
-    vibe: string;
-    mustHaves: string;
+  destinations: { city: string }[];
+  departureDate: string;
+  returnDate: string;
+  vibe: string;
+  mustHaves: string;
 }) {
-    const model = getModel();
-    const destList = params.destinations.map(d => d.city).join(' → ');
+  const model = getModel();
+  const destList = params.destinations.map(d => d.city).join(' → ');
 
-    const prompt = `Tu es un agent spécialiste de la planification d'itinéraires pour une agence de voyage de luxe.
+  const prompt = `Tu es un agent spécialiste de la planification d'itinéraires pour une agence de voyage de luxe.
 
 Crée un itinéraire jour par jour pour:
 - Destinations: ${destList}
@@ -170,12 +170,12 @@ Réponds en JSON avec ce format exact:
   "tips": ["conseil1", "conseil2"]
 }`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    try {
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        return jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: text, days: [] };
-    } catch {
-        return { summary: text, days: [] };
-    }
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    return jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: text, days: [] };
+  } catch {
+    return { summary: text, days: [] };
+  }
 }

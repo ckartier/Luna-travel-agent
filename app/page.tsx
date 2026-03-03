@@ -3,7 +3,6 @@
 import { MapBackground } from '@/app/components/map/MapBackground';
 import { WeatherWidget } from '@/src/components/widgets/WeatherWidget';
 import {
-  Compass,
   Plane,
   Hotel,
   CalendarRange,
@@ -11,15 +10,17 @@ import {
   CheckCircle2,
   ArrowRight,
   Send,
-  LayoutDashboard,
   MapPin,
   Plus,
   X,
   Loader2
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState, useEffect, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createLead } from '@/src/lib/firebase/crm';
+import { LunaLogo } from '@/app/components/LunaLogo';
 
 type WorkflowState = 'IDLE' | 'ANALYSING' | 'DISTRIBUTING' | 'AGENTS_WORKING' | 'VALIDATION' | 'GENERATING_PROPOSALS' | 'PROPOSALS_READY';
 
@@ -37,7 +38,15 @@ interface Destination {
   city: string;
 }
 
-export default function DashboardPage() {
+export default function DashboardPageWrapper() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-luna-bg" />}>
+      <DashboardPage />
+    </Suspense>
+  );
+}
+
+function DashboardPage() {
   const [mounted, setMounted] = useState(false);
   const [workflowState, setWorkflowState] = useState<WorkflowState>('IDLE');
   const [destinations, setDestinations] = useState<Destination[]>([{ id: '1', city: '' }]);
@@ -55,8 +64,44 @@ export default function DashboardPage() {
   const [selectedAgent, setSelectedAgent] = useState<AgentKey | null>(null);
   const [activeAgents, setActiveAgents] = useState<AgentKey[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+
+  // Auto-fill from CRM email dispatch (URL params)
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const autoStart = searchParams.get('autoStart');
+    if (autoStart === 'true' && workflowState === 'IDLE') {
+      const dest = searchParams.get('dest');
+      const from = searchParams.get('from');
+      const dep = searchParams.get('dep');
+      const ret = searchParams.get('ret');
+      const b = searchParams.get('budget');
+      const p = searchParams.get('pax');
+      const v = searchParams.get('vibe');
+      const n = searchParams.get('notes');
+
+      if (dest) setDestinations([{ id: '1', city: dest }]);
+      if (from) setDepartureCity(from);
+      if (dep) setDepartureDate(dep);
+      if (ret) setReturnDate(ret);
+      if (b) setBudget(b);
+      if (p) setPax(p);
+      if (v) setVibe(v);
+      if (n) setMustHaves(n);
+
+      // Auto-start analysis after a short delay
+      setTimeout(() => {
+        setValidatedAgents([]);
+        setActiveAgents([]);
+        setAgentResults(null);
+        setWorkflowState('ANALYSING');
+      }, 500);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // Orchestration state machine
   useEffect(() => {
@@ -149,20 +194,51 @@ export default function DashboardPage() {
     setAgentResults(null);
   };
 
+  const handleExportToCRM = async () => {
+    setIsExporting(true);
+    try {
+      // Gather links from agent results
+      const links: { title: string; url: string }[] = [];
+      if (agentResults?.transport?.flights) {
+        agentResults.transport.flights.forEach((f: any) => {
+          if (f.url) links.push({ title: `${f.airline} - ${f.route}`, url: f.url });
+        });
+      }
+      if (agentResults?.accommodation?.hotels) {
+        agentResults.accommodation.hotels.forEach((h: any) => {
+          if (h.url) links.push({ title: `${h.name}`, url: h.url });
+        });
+      }
+
+      await createLead({
+        clientName: 'Nouveau Client Internet',
+        destination: destinations.filter(d => d.city.trim()).map(d => d.city).join(', '),
+        dates: `${departureDate || 'TBD'} - ${returnDate || 'TBD'}`,
+        budget: budget || 'Non communiqué',
+        pax: pax || 'Non précisé',
+        days: agentResults?.itinerary?.days?.length || 7,
+        vibe: vibe || 'Non spécifié',
+        flexibility: flexibility || 'Non spécifiée',
+        mustHaves: mustHaves || 'Aucun',
+        links: links.length > 0 ? links : undefined,
+        status: 'PROPOSAL_READY',
+      });
+      router.push('/crm');
+    } catch (error) {
+      console.error('Erreur CRM:', error);
+      alert("Erreur lors de l'enregistrement dans le CRM. Vérifiez la connexion Firebase.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (!mounted) return null;
 
   const isProcessing = workflowState !== 'IDLE' && workflowState !== 'PROPOSALS_READY';
 
   return (
-    <div ref={containerRef} className="relative w-full h-full flex flex-col overflow-hidden bg-[#f0ebe4]">
+    <div ref={containerRef} className="relative w-full h-full flex flex-col overflow-hidden">
       <MapBackground />
-
-      {/* CRM Quick Access */}
-      <div className="absolute top-4 left-4 z-40 flex items-center gap-3">
-        <Link href="/crm" className="glass-pill px-4 py-2 flex items-center gap-2 text-luna-text-muted hover:text-luna-charcoal font-medium transition-all text-sm shadow-sm hover:shadow-md">
-          <LayoutDashboard size={15} /> CRM
-        </Link>
-      </div>
 
       {/* Weather Widgets (real API) */}
       <div className="absolute top-20 right-5 z-40 w-[260px]">
@@ -174,32 +250,93 @@ export default function DashboardPage() {
         </motion.div>
       </div>
 
-      {/* ═══ ORBITAL ANIMATION (no wires) ═══ */}
+      {/* ═══ ORBITAL RINGS + FLOWING CURRENT WIRES ═══ */}
       {isProcessing && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-15">
-          {/* Concentric orbital rings */}
-          {[200, 260, 320].map((size, i) => (
-            <motion.div
-              key={i}
-              className="absolute rounded-full border border-sky-300/15"
-              style={{ width: size, height: size }}
-              animate={{ rotate: i % 2 === 0 ? 360 : -360, opacity: [0.15, 0.35, 0.15] }}
-              transition={{ duration: 8 + i * 4, repeat: Infinity, ease: 'linear' }}
-            >
-              {/* Orbiting dot */}
+        <>
+          {/* CSS for flowing current animation */}
+          <style>{`
+            @keyframes wirePulse {
+              0% { stroke-dashoffset: 1000; }
+              100% { stroke-dashoffset: 0; }
+            }
+          `}</style>
+
+          {/* Orbital rings */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-15">
+            {[250, 320, 390].map((size, i) => (
               <motion.div
-                className="absolute w-2 h-2 rounded-full bg-sky-400/60 shadow-[0_0_8px_rgba(135,206,235,0.5)]"
-                style={{ top: -4, left: '50%', marginLeft: -4 }}
-              />
-            </motion.div>
-          ))}
-          {/* Center glow pulse */}
-          <motion.div
-            className="absolute w-40 h-40 rounded-full bg-sky-200/10"
-            animate={{ scale: [1, 1.3, 1], opacity: [0.05, 0.15, 0.05] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-          />
-        </div>
+                key={i}
+                className="absolute rounded-full border border-sky-300/10"
+                style={{ width: size, height: size }}
+                animate={{ rotate: i % 2 === 0 ? 360 : -360 }}
+                transition={{ duration: 15 + i * 5, repeat: Infinity, ease: 'linear' }}
+              >
+                <div className="absolute w-1 h-1 rounded-full bg-sky-400 shadow-[0_0_8px_rgba(135,206,235,0.8)]" style={{ top: -2, left: '50%', marginLeft: -2 }} />
+              </motion.div>
+            ))}
+          </div>
+
+          {/* SVG wires with smooth flowing current */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none z-14" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+            <defs>
+              <filter id="wireGlowSmooth" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+              <linearGradient id="wireGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#87CEEB" stopOpacity="0.1" />
+                <stop offset="50%" stopColor="#87CEEB" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#87CEEB" stopOpacity="0.1" />
+              </linearGradient>
+            </defs>
+
+            {(['transport', 'accommodation', 'client', 'itinerary'] as AgentKey[]).map((agent, i) => {
+              const isActive = activeAgents.includes(agent);
+              const isValidated = validatedAgents.includes(agent);
+              if (!isActive) return null;
+
+              const curvePaths = [
+                'M 500 460 C 470 320, 530 220, 540 180',
+                'M 460 500 C 320 470, 220 530, 180 490',
+                'M 540 500 C 680 470, 780 530, 820 490',
+                'M 500 540 C 470 680, 530 780, 540 820',
+              ];
+
+              const pathD = curvePaths[i];
+              const glowColor = isValidated ? '#10b981' : '#0ea5e9'; // emerald vs light blue
+
+              return (
+                <g key={agent}>
+                  {/* Subtle static background wire */}
+                  <motion.path
+                    d={pathD}
+                    fill="none"
+                    stroke={glowColor}
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.15 }}
+                    transition={{ duration: 1, delay: i * 0.1 }}
+                  />
+                  {/* Smooth animated comet flow */}
+                  <motion.path
+                    d={pathD}
+                    fill="none"
+                    stroke={glowColor}
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    filter="url(#wireGlowSmooth)"
+                    strokeDasharray="150 850"
+                    style={{ animation: `wirePulse ${3 + (i * 0.2)}s linear infinite` }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: isValidated ? 0.9 : 0.6 }}
+                    transition={{ duration: 1, delay: i * 0.1 }}
+                  />
+                </g>
+              );
+            })}
+          </svg>
+        </>
       )}
 
       {/* ═══ MAIN CONTENT ═══ */}
@@ -222,7 +359,7 @@ export default function DashboardPage() {
                 {/* Header */}
                 <div className="flex flex-col items-center mb-8">
                   <div className="w-14 h-14 rounded-full bg-luna-charcoal flex-center mb-4 shadow-lg">
-                    <Compass className="w-7 h-7 text-luna-accent" strokeWidth={1.5} />
+                    <LunaLogo size={32} />
                   </div>
                   <h2 className="font-serif text-3xl font-semibold text-luna-charcoal tracking-tight">Luna</h2>
                   <p className="text-luna-text-muted text-sm font-light tracking-wide mt-1">Votre Concierge Voyage</p>
@@ -369,7 +506,7 @@ export default function DashboardPage() {
               </motion.div>
             )}
 
-            {/* ═══ PROCESSING: LUNA ORB ═══ */}
+            {/* ═══ PROCESSING: MINIMAL STATUS ═══ */}
             {isProcessing && (
               <motion.div
                 key="processing"
@@ -377,47 +514,19 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-                className="relative rounded-full bg-luna-cream/95 shadow-luxury p-2 flex-center flex-col w-52 h-52 border border-luna-warm-gray/30 backdrop-blur-xl cursor-pointer"
+                className="glass-pill px-5 py-3 flex items-center gap-3 shadow-glass z-30"
               >
-                {/* Outer ring animations */}
-                <motion.div
-                  className="absolute inset-0 rounded-full border-2 border-luna-accent/20"
-                  animate={{ scale: [1, 1.15, 1], opacity: [0.2, 0.5, 0.2] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                <motion.div
-                  className="absolute inset-[-8px] rounded-full border border-luna-accent/10"
-                  animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.3, 0.1] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-                />
-
-                {/* Spinner */}
-                {(workflowState === 'ANALYSING' || workflowState === 'AGENTS_WORKING') && (
-                  <motion.div
-                    className="absolute inset-1 rounded-full border-[2.5px] border-t-luna-accent border-r-transparent border-b-luna-accent-dark border-l-transparent"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                  />
-                )}
-                {workflowState === 'GENERATING_PROPOSALS' && (
-                  <motion.div
-                    className="absolute inset-1 rounded-full border-[2.5px] border-t-emerald-500 border-r-transparent border-b-emerald-300 border-l-transparent"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' }}
-                  />
-                )}
-
-                <div className={`mb-2 p-4 rounded-full bg-luna-charcoal/5 text-luna-accent ${workflowState === 'DISTRIBUTING' || workflowState === 'GENERATING_PROPOSALS' ? 'animate-pulse' : ''}`}>
-                  <Compass className="w-12 h-12" strokeWidth={1.2} />
-                </div>
-                <h3 className="font-serif text-lg font-semibold text-luna-charcoal">Luna</h3>
-                <p className="text-[8px] text-luna-accent-dark font-bold uppercase tracking-[0.2em] mt-1.5 bg-luna-accent/10 border border-luna-accent/20 px-3 py-1 rounded-full">
-                  {workflowState === 'ANALYSING' && 'Analyse en cours'}
-                  {workflowState === 'DISTRIBUTING' && 'Distribution'}
-                  {workflowState === 'AGENTS_WORKING' && 'Recherche active'}
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${workflowState === 'VALIDATION' ? 'bg-amber-400' : 'bg-sky-400'}`}></span>
+                  <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${workflowState === 'VALIDATION' ? 'bg-amber-500' : 'bg-sky-500'}`}></span>
+                </span>
+                <span className="text-xs text-luna-charcoal font-medium tracking-wide">
+                  {workflowState === 'ANALYSING' && 'Analyse en cours…'}
+                  {workflowState === 'DISTRIBUTING' && 'Distribution aux agents…'}
+                  {workflowState === 'AGENTS_WORKING' && 'Recherche active…'}
                   {workflowState === 'VALIDATION' && `Validation ${validatedAgents.length}/4`}
-                  {workflowState === 'GENERATING_PROPOSALS' && 'Finalisation'}
-                </p>
+                  {workflowState === 'GENERATING_PROPOSALS' && 'Finalisation…'}
+                </span>
               </motion.div>
             )}
 
@@ -471,8 +580,8 @@ export default function DashboardPage() {
 
                 <div className="flex gap-3">
                   <button onClick={resetWorkflow} className="flex-1 py-3.5 bg-white border border-luna-warm-gray/30 hover:bg-luna-cream text-luna-charcoal font-medium text-sm rounded-xl transition-all">Nouveau Voyage</button>
-                  <button className="flex-[2] py-3.5 bg-luna-charcoal hover:bg-[#1a1a1a] text-luna-cream font-medium text-sm tracking-wider uppercase rounded-xl transition-all flex justify-center items-center gap-2 shadow-lg">
-                    Exporter vers CRM <Send size={16} />
+                  <button onClick={handleExportToCRM} disabled={isExporting} className="flex-[2] py-3.5 bg-luna-charcoal hover:bg-[#1a1a1a] text-luna-cream font-medium text-sm tracking-wider uppercase rounded-xl transition-all flex justify-center items-center gap-2 shadow-lg disabled:opacity-70">
+                    {isExporting ? 'Exportation...' : 'Exporter vers CRM'} <Send size={16} />
                   </button>
                 </div>
               </motion.div>
@@ -551,17 +660,17 @@ export default function DashboardPage() {
         </AnimatePresence>
       </div>
 
-      {/* ═══ AGENT VALIDATION MODAL ═══ */}
+      {/* ═══ AGENT VALIDATION MODAL — PREMIUM ═══ */}
       <AnimatePresence>
         {selectedAgent && agentResults && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-luna-charcoal/40 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-luna-charcoal/30 backdrop-blur-md"
             onClick={() => setSelectedAgent(null)}
           >
             <motion.div
-              initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }}
-              className="bg-white/95 backdrop-blur-xl rounded-3xl border border-luna-warm-gray/20 p-8 max-w-2xl w-full shadow-luxury max-h-[85vh] overflow-y-auto"
+              initial={{ scale: 0.92, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }}
+              className="bg-white/98 backdrop-blur-2xl rounded-3xl border border-luna-warm-gray/10 max-w-2xl w-full shadow-[0_32px_80px_rgba(0,0,0,0.12)] max-h-[85vh] overflow-hidden flex flex-col"
               onClick={e => e.stopPropagation()}
             >
               {(() => {
@@ -572,100 +681,106 @@ export default function DashboardPage() {
 
                 return (
                   <>
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="p-3.5 bg-sky-50 text-sky-600 rounded-2xl border border-sky-100"><Icon size={24} /></div>
-                      <div className="flex-1">
-                        <h2 className="font-serif text-xl font-semibold text-luna-charcoal">{meta.title}</h2>
-                        <p className="text-luna-text-muted text-xs uppercase tracking-wider font-medium">Résultats de recherche</p>
-                      </div>
-                      <button onClick={() => setSelectedAgent(null)} className="p-2 text-luna-text-muted hover:text-luna-charcoal hover:bg-luna-cream rounded-xl transition-colors">
-                        <X size={18} />
-                      </button>
-                    </div>
-
-                    <div className="bg-luna-cream/60 p-5 rounded-2xl border border-luna-warm-gray/15 mb-6">
-                      <p className="text-luna-charcoal font-normal leading-relaxed text-sm">{summary}</p>
-                    </div>
-
-                    {/* Transport: Flights (show all, with clickable search links) */}
-                    {selectedAgent === 'transport' && data?.flights?.length > 0 && (
-                      <div className="space-y-2.5 mb-6">
-                        <div className="flex justify-between items-center">
-                          <h4 className="input-label">Options de vol ({data.flights.length})</h4>
+                    {/* Premium gradient header */}
+                    <div className="bg-gradient-to-r from-sky-50 via-white to-sky-50/50 px-8 py-5 border-b border-luna-warm-gray/10 flex-shrink-0">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-gradient-to-br from-sky-100 to-sky-50 text-sky-600 rounded-2xl border border-sky-100 shadow-sm"><Icon size={22} /></div>
+                        <div className="flex-1">
+                          <h2 className="font-serif text-xl font-semibold text-luna-charcoal">{meta.title}</h2>
+                          <p className="text-luna-text-muted text-[10px] uppercase tracking-[0.15em] font-semibold mt-0.5">Résultats de recherche</p>
                         </div>
-                        {data.flights.map((f: any, i: number) => (
-                          <a key={i} href={`https://www.google.com/travel/flights?q=${encodeURIComponent((f.route || f.airline || '') + ' ' + (departureDate || ''))}`} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-luna-warm-gray/15 hover:border-sky-300 hover:shadow-md transition-all group cursor-pointer">
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-2">
-                                <span className="w-6 h-6 rounded-md bg-sky-50 flex items-center justify-center text-[10px] font-bold text-sky-600">{i + 1}</span>
-                                <span className="font-semibold text-sm text-luna-charcoal group-hover:text-sky-600 transition-colors">{f.airline} — {f.class}</span>
-                              </div>
-                              <span className="font-serif font-bold text-luna-accent-dark">{f.price}</span>
-                            </div>
-                            <p className="text-xs text-luna-text-muted mt-1.5 ml-8">{f.route} • {f.duration} • {f.stops} escale(s)</p>
-                            <p className="text-[10px] text-sky-500 mt-1.5 ml-8 font-medium group-hover:underline">Voir sur Google Flights →</p>
-                          </a>
-                        ))}
+                        <button onClick={() => setSelectedAgent(null)} className="p-2 text-luna-text-muted hover:text-luna-charcoal hover:bg-luna-cream rounded-xl transition-colors">
+                          <X size={18} />
+                        </button>
                       </div>
-                    )}
+                    </div>
 
-                    {/* Accommodation: Hotels (show all, with clickable links) */}
-                    {selectedAgent === 'accommodation' && data?.hotels?.length > 0 && (
-                      <div className="space-y-2.5 mb-6">
-                        <h4 className="input-label">Hôtels sélectionnés ({data.hotels.length})</h4>
-                        {data.hotels.map((h: any, i: number) => (
-                          <a key={i} href={`https://www.google.com/travel/hotels?q=${encodeURIComponent(h.name + ' ' + (destinations[0]?.city || ''))}`} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-luna-warm-gray/15 hover:border-sky-300 hover:shadow-md transition-all group cursor-pointer">
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-2">
-                                <span className="w-6 h-6 rounded-md bg-amber-50 flex items-center justify-center text-[10px] font-bold text-amber-600">{i + 1}</span>
-                                <span className="font-semibold text-sm text-luna-charcoal group-hover:text-sky-600 transition-colors">{h.name}</span>
-                              </div>
-                              <span className="font-serif font-bold text-luna-accent-dark">{h.pricePerNight}/nuit</span>
-                            </div>
-                            <p className="text-xs text-luna-text-muted mt-1.5 ml-8">{'★'.repeat(h.stars || 5)} • {h.highlights?.join(', ')}</p>
-                            <p className="text-[10px] text-sky-500 mt-1.5 ml-8 font-medium group-hover:underline">Voir sur Google Hotels →</p>
-                          </a>
-                        ))}
+                    {/* Scrollable content */}
+                    <div className="overflow-y-auto p-8 flex-1">
+                      <div className="bg-sky-50/40 p-5 rounded-2xl border border-sky-100/30 mb-6">
+                        <p className="text-luna-charcoal font-normal leading-relaxed text-sm">{summary}</p>
                       </div>
-                    )}
 
-                    {/* Itinerary: Days (show all) */}
-                    {selectedAgent === 'itinerary' && data?.days?.length > 0 && (
-                      <div className="space-y-2.5 mb-6">
-                        <h4 className="input-label">Planning jour par jour ({data.days.length} jours)</h4>
-                        {data.days.map((d: any, i: number) => (
-                          <div key={i} className="bg-white p-4 rounded-xl border border-luna-warm-gray/15">
-                            <h5 className="font-semibold text-sm text-luna-charcoal flex items-center gap-2">
-                              <span className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center text-[10px] font-bold text-emerald-600">J{d.day}</span>
-                              {d.title}
-                            </h5>
-                            <div className="text-xs text-luna-text-muted mt-2 ml-8 space-y-1">
-                              <p>🌅 {d.morning}</p>
-                              <p>🌤️ {d.afternoon}</p>
-                              <p>🌙 {d.evening}</p>
-                            </div>
+                      {/* Transport: Flights (show all, with clickable search links) */}
+                      {selectedAgent === 'transport' && data?.flights?.length > 0 && (
+                        <div className="space-y-2.5 mb-6">
+                          <div className="flex justify-between items-center">
+                            <h4 className="input-label">Options de vol ({data.flights.length})</h4>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                          {data.flights.map((f: any, i: number) => (
+                            <a key={i} href={f.url || '#'} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-luna-warm-gray/15 hover:border-sky-300 hover:shadow-md transition-all group cursor-pointer">
+                              <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-6 h-6 rounded-md bg-sky-50 flex items-center justify-center text-[10px] font-bold text-sky-600">{i + 1}</span>
+                                  <span className="font-semibold text-sm text-luna-charcoal group-hover:text-sky-600 transition-colors">{f.airline} — {f.class}</span>
+                                </div>
+                                <span className="font-serif font-bold text-luna-accent-dark">{f.price}</span>
+                              </div>
+                              <p className="text-xs text-luna-text-muted mt-1.5 ml-8">{f.route} • {f.duration} • {f.stops} escale(s)</p>
+                              <p className="text-[10px] text-sky-500 mt-1.5 ml-8 font-medium group-hover:underline">Réserver sur {f.domain || f.airline} →</p>
+                            </a>
+                          ))}
+                        </div>
+                      )}
 
-                    {/* Client: Recommendations (show all) */}
-                    {selectedAgent === 'client' && data?.recommendations?.length > 0 && (
-                      <div className="space-y-2 mb-6">
-                        <h4 className="input-label">Recommandations ({data.recommendations.length})</h4>
-                        {data.recommendations.map((r: string, i: number) => (
-                          <div key={i} className="bg-white p-3.5 rounded-xl border border-luna-warm-gray/15 text-sm text-luna-charcoal flex items-start gap-2.5">
-                            <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" /> {r}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                      {/* Accommodation: Hotels (show all, with clickable links) */}
+                      {selectedAgent === 'accommodation' && data?.hotels?.length > 0 && (
+                        <div className="space-y-2.5 mb-6">
+                          <h4 className="input-label">Hôtels sélectionnés ({data.hotels.length})</h4>
+                          {data.hotels.map((h: any, i: number) => (
+                            <a key={i} href={h.url || '#'} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-luna-warm-gray/15 hover:border-sky-300 hover:shadow-md transition-all group cursor-pointer">
+                              <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-6 h-6 rounded-md bg-amber-50 flex items-center justify-center text-[10px] font-bold text-amber-600">{i + 1}</span>
+                                  <span className="font-semibold text-sm text-luna-charcoal group-hover:text-sky-600 transition-colors">{h.name}</span>
+                                </div>
+                                <span className="font-serif font-bold text-luna-accent-dark">{h.pricePerNight}/nuit</span>
+                              </div>
+                              <p className="text-xs text-luna-text-muted mt-1.5 ml-8">{'★'.repeat(h.stars || 5)} • {h.highlights?.join(', ')}</p>
+                              <p className="text-[10px] text-sky-500 mt-1.5 ml-8 font-medium group-hover:underline">Réserver sur {h.domain || h.name} →</p>
+                            </a>
+                          ))}
+                        </div>
+                      )}
 
-                    <div className="flex gap-3 sticky bottom-0 bg-white/80 backdrop-blur-md pt-4 -mx-2 px-2">
-                      <button onClick={() => setSelectedAgent(null)} className="flex-1 py-3.5 bg-white border border-luna-warm-gray/30 hover:bg-luna-cream text-luna-charcoal font-medium text-sm rounded-xl transition-all">Plus tard</button>
-                      <button onClick={handleValidateAgent} className="flex-[2] py-3.5 bg-luna-charcoal hover:bg-[#1a1a1a] text-luna-cream font-medium text-sm tracking-wider uppercase rounded-xl transition-all flex justify-center items-center gap-2 shadow-lg">
-                        Valider <CheckCircle2 size={16} />
-                      </button>
+                      {/* Itinerary: Days (show all) */}
+                      {selectedAgent === 'itinerary' && data?.days?.length > 0 && (
+                        <div className="space-y-2.5 mb-6">
+                          <h4 className="input-label">Planning jour par jour ({data.days.length} jours)</h4>
+                          {data.days.map((d: any, i: number) => (
+                            <div key={i} className="bg-white p-4 rounded-xl border border-luna-warm-gray/15">
+                              <h5 className="font-semibold text-sm text-luna-charcoal flex items-center gap-2">
+                                <span className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center text-[10px] font-bold text-emerald-600">J{d.day}</span>
+                                {d.title}
+                              </h5>
+                              <div className="text-xs text-luna-text-muted mt-2 ml-8 space-y-1">
+                                <p>🌅 {d.morning}</p>
+                                <p>🌤️ {d.afternoon}</p>
+                                <p>🌙 {d.evening}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Client: Recommendations (show all) */}
+                      {selectedAgent === 'client' && data?.recommendations?.length > 0 && (
+                        <div className="space-y-2 mb-6">
+                          <h4 className="input-label">Recommandations ({data.recommendations.length})</h4>
+                          {data.recommendations.map((r: string, i: number) => (
+                            <div key={i} className="bg-white p-3.5 rounded-xl border border-luna-warm-gray/15 text-sm text-luna-charcoal flex items-start gap-2.5">
+                              <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" /> {r}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex gap-3 sticky bottom-0 bg-white/90 backdrop-blur-md pt-5 border-t border-luna-warm-gray/10 -mx-8 px-8 pb-1 flex-shrink-0">
+                        <button onClick={() => setSelectedAgent(null)} className="flex-1 py-3 bg-white border border-luna-warm-gray/20 hover:bg-luna-cream text-luna-charcoal font-medium text-sm rounded-xl transition-all">Plus tard</button>
+                        <button onClick={handleValidateAgent} className="flex-[2] py-3 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-semibold text-sm tracking-wider uppercase rounded-xl transition-all flex justify-center items-center gap-2 shadow-lg shadow-sky-500/20">
+                          Valider <CheckCircle2 size={16} />
+                        </button>
+                      </div>
                     </div>
                   </>
                 );
