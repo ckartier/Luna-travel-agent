@@ -24,21 +24,24 @@ Recherche les meilleures options de vol pour:
 - Date retour: ${params.returnDate}
 - Passagers: ${params.pax}
 
-Réponds en JSON avec ce format exact:
+IMPORTANT: Pour chaque vol, inclus une URL réelle vers le site de la compagnie aérienne (ex: https://www.airfrance.fr, https://www.emirates.com/fr/, etc.) et le nom de domaine.
+
+Réponds UNIQUEMENT en JSON valide, sans texte avant ou après:
 {
   "flights": [
     {
       "airline": "nom compagnie",
-      "route": "CDG → MRU",
+      "route": "CDG → HKG",
       "class": "Business/Economy/First",
       "price": "prix estimé en €",
       "duration": "durée",
       "stops": "nombre d'escales",
+      "url": "https://www.compagnie.com",
+      "domain": "compagnie.com",
       "recommendation": "pourquoi cette option"
     }
   ],
-  "summary": "résumé court de la meilleure option",
-  "sources": ["url1", "url2"]
+  "summary": "résumé court"
 }`;
 
   const result = await model.generateContent(prompt);
@@ -69,7 +72,9 @@ Recherche les meilleurs hôtels pour:
 - Budget: ${params.budget || 'Premium'}
 - Voyageurs: ${params.pax || '2'}
 
-Réponds en JSON avec ce format exact:
+IMPORTANT: Pour chaque hôtel, inclus une URL réelle vers le site officiel de l'hôtel (ex: https://www.fourseasons.com, https://www.rosewoodhotels.com, etc.) et le nom de domaine.
+
+Réponds UNIQUEMENT en JSON valide, sans texte avant ou après:
 {
   "hotels": [
     {
@@ -78,11 +83,12 @@ Réponds en JSON avec ce format exact:
       "stars": 5,
       "pricePerNight": "prix estimé en €",
       "highlights": ["vue mer", "spa", "suite"],
+      "url": "https://www.hotel.com",
+      "domain": "hotel.com",
       "recommendation": "pourquoi cet hôtel"
     }
   ],
-  "summary": "résumé court de la meilleure option",
-  "sources": ["url1", "url2"]
+  "summary": "résumé court"
 }`;
 
   const result = await model.generateContent(prompt);
@@ -112,7 +118,9 @@ Analyse ce profil voyageur et donne des recommandations personnalisées:
 - Budget: ${params.budget || 'Non précisé'}
 - Must-haves: ${params.mustHaves || 'Aucun'}
 
-Réponds en JSON avec ce format exact:
+IMPORTANT: Pour chaque recommandation, inclus un lien URL utile si possible (site de réservation, activité, lieu, etc.).
+
+Réponds UNIQUEMENT en JSON valide, sans texte avant ou après:
 {
   "profile": {
     "segment": "Luxe/Premium/Standard",
@@ -121,7 +129,13 @@ Réponds en JSON avec ce format exact:
     "loyaltyTips": "comment fidéliser ce client"
   },
   "summary": "résumé court du profil client",
-  "recommendations": ["reco1", "reco2", "reco3"]
+  "recommendations": [
+    {
+      "text": "description de la recommandation",
+      "url": "https://lien-utile.com",
+      "type": "activité/service/lieu"
+    }
+  ]
 }`;
 
   const result = await model.generateContent(prompt);
@@ -153,7 +167,9 @@ Crée un itinéraire jour par jour pour:
 - Ambiance: ${params.vibe || 'Découverte & Détente'}
 - Must-haves: ${params.mustHaves || 'Aucun'}
 
-Réponds en JSON avec ce format exact:
+IMPORTANT: Pour chaque journée, inclus des URLs réelles vers les lieux et activités mentionnés (Google Maps, TripAdvisor, sites officiels, etc).
+
+Réponds UNIQUEMENT en JSON valide, sans texte avant ou après:
 {
   "days": [
     {
@@ -161,8 +177,11 @@ Réponds en JSON avec ce format exact:
       "title": "Titre du jour",
       "destination": "ville",
       "morning": "activité du matin",
+      "morningUrl": "https://lien-vers-lieu-ou-activité.com",
       "afternoon": "activité de l'après-midi",
+      "afternoonUrl": "https://lien-vers-lieu-ou-activité.com",
       "evening": "activité du soir",
+      "eveningUrl": "https://lien-vers-lieu-ou-activité.com",
       "highlight": "moment fort de la journée"
     }
   ],

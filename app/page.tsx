@@ -19,16 +19,16 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createLead } from '@/src/lib/firebase/crm';
+import { createLead, createContact } from '@/src/lib/firebase/crm';
 import { LunaLogo } from '@/app/components/LunaLogo';
 
 type WorkflowState = 'IDLE' | 'ANALYSING' | 'DISTRIBUTING' | 'AGENTS_WORKING' | 'VALIDATION' | 'GENERATING_PROPOSALS' | 'PROPOSALS_READY';
 
 const agentMeta = {
-  transport: { title: 'Transport', subtitle: 'Vols & Routings', icon: Plane, angle: -90 },
-  accommodation: { title: 'Hébergement', subtitle: 'Hôtels & Resorts', icon: Hotel, angle: 180 },
-  client: { title: 'Profil Client', subtitle: 'CRM Analyse', icon: Users, angle: 0 },
-  itinerary: { title: 'Itinéraire', subtitle: 'Planning Jour/Jour', icon: CalendarRange, angle: 90 },
+  transport: { title: 'Transport', subtitle: 'Vols & Routings', icon: Plane, angle: -90, color: '#0ea5e9', gradient: 'from-sky-500 to-cyan-400' },
+  accommodation: { title: 'Hébergement', subtitle: 'Hôtels & Resorts', icon: Hotel, angle: 180, color: '#f59e0b', gradient: 'from-amber-500 to-orange-400' },
+  client: { title: 'Profil Client', subtitle: 'CRM Analyse', icon: Users, angle: 0, color: '#8b5cf6', gradient: 'from-violet-500 to-purple-400' },
+  itinerary: { title: 'Itinéraire', subtitle: 'Planning Jour/Jour', icon: CalendarRange, angle: 90, color: '#10b981', gradient: 'from-emerald-500 to-teal-400' },
 };
 
 type AgentKey = keyof typeof agentMeta;
@@ -210,8 +210,26 @@ function DashboardPage() {
         });
       }
 
-      await createLead({
-        clientName: 'Nouveau Client Internet',
+      // Create contact first
+      const clientName = searchParams?.get('clientName') || 'Nouveau Client';
+      const clientEmail = searchParams?.get('clientEmail') || '';
+      let contactId: string | undefined;
+      try {
+        contactId = await createContact({
+          firstName: clientName.split(' ')[0] || 'Nouveau',
+          lastName: clientName.split(' ').slice(1).join(' ') || 'Client',
+          email: clientEmail || `client-${Date.now()}@luna.travel`,
+          vipLevel: 'Premium',
+          preferences: [vibe || 'Luxe', ...destinations.filter(d => d.city.trim()).map(d => d.city)],
+        });
+      } catch (e) {
+        console.warn('Contact creation skipped:', e);
+      }
+
+      // Create lead linked to contact
+      const leadId = await createLead({
+        clientName,
+        clientId: contactId,
         destination: destinations.filter(d => d.city.trim()).map(d => d.city).join(', '),
         dates: `${departureDate || 'TBD'} - ${returnDate || 'TBD'}`,
         budget: budget || 'Non communiqué',
@@ -223,10 +241,10 @@ function DashboardPage() {
         links: links.length > 0 ? links : undefined,
         status: 'PROPOSAL_READY',
       });
-      router.push('/crm');
-    } catch (error) {
+      router.push('/crm/pipeline');
+    } catch (error: any) {
       console.error('Erreur CRM:', error);
-      alert("Erreur lors de l'enregistrement dans le CRM. Vérifiez la connexion Firebase.");
+      alert(`Erreur CRM: ${error?.message || 'Connexion Firebase échouée. Vérifiez votre réseau.'}`);
     } finally {
       setIsExporting(false);
     }
@@ -589,7 +607,7 @@ function DashboardPage() {
           </AnimatePresence>
         </div>
 
-        {/* ═══ SATELLITE AGENT NODES ═══ */}
+        {/* ═══ SATELLITE AGENT NODES — HIGHTECH ═══ */}
         <AnimatePresence>
           {isProcessing && (['transport', 'accommodation', 'client', 'itinerary'] as AgentKey[]).map((agentKey, i) => {
             const meta = agentMeta[agentKey];
@@ -598,61 +616,90 @@ function DashboardPage() {
             const isValidated = validatedAgents.includes(agentKey);
             const canValidate = workflowState === 'VALIDATION' && !isValidated && agentResults;
 
-            // Position: top, left, right, bottom
             const positionMap = [
-              { top: '14%', left: '50%' },
-              { top: '50%', left: '14%' },
-              { top: '50%', left: '86%' },
-              { top: '82%', left: '50%' },
+              { top: '10%', left: '50%' },
+              { top: '50%', left: '10%' },
+              { top: '50%', left: '90%' },
+              { top: '88%', left: '50%' },
             ];
             const pos = positionMap[i];
 
             return (
               <motion.div
                 key={agentKey}
-                initial={{ opacity: 0, scale: 0.3 }}
-                animate={{ opacity: isActive ? 1 : 0, scale: isActive ? 1 : 0.3 }}
+                initial={{ opacity: 0, scale: 0.3, y: 20 }}
+                animate={{ opacity: isActive ? 1 : 0, scale: isActive ? 1 : 0.3, y: 0 }}
                 exit={{ opacity: 0, scale: 0.3 }}
-                transition={{ type: 'spring', stiffness: 200, damping: 20, delay: isActive ? 0 : i * 0.15 }}
+                transition={{ type: 'spring', stiffness: 200, damping: 20, delay: isActive ? i * 0.1 : 0 }}
                 className="absolute z-20 pointer-events-auto"
                 style={{ top: pos.top, left: pos.left, transform: 'translate(-50%, -50%)' }}
                 onClick={() => canValidate && setSelectedAgent(agentKey)}
               >
                 <motion.div
-                  whileHover={canValidate ? { scale: 1.05 } : {}}
-                  className={`rounded-2xl p-4 flex items-center gap-3.5 border w-56 transition-all relative overflow-hidden ${isValidated
-                    ? 'border-emerald-400/40 bg-white/95 backdrop-blur-xl shadow-md'
-                    : canValidate
-                      ? 'border-luna-accent/50 bg-white/95 backdrop-blur-xl shadow-lg cursor-pointer ring-1 ring-luna-accent/20'
-                      : 'border-luna-warm-gray/30 bg-luna-cream/95 backdrop-blur-xl shadow-md'
-                    }`}
+                  whileHover={canValidate ? { scale: 1.06, y: -2 } : {}}
+                  className={`rounded-2xl overflow-hidden transition-all relative ${canValidate ? 'cursor-pointer' : ''}`}
+                  style={{ width: 220 }}
                 >
-                  {isValidated && <div className="absolute inset-0 bg-gradient-to-r from-emerald-50/50 to-transparent pointer-events-none rounded-2xl" />}
+                  {/* Glassmorphism background */}
+                  <div className={`absolute inset-0 backdrop-blur-2xl ${isValidated ? 'bg-white/95' : 'bg-[#0f172a]/90'}`} />
 
-                  <div className={`p-2.5 rounded-xl flex-shrink-0 relative z-10 transition-colors ${isValidated ? 'bg-emerald-500 text-white' : canValidate ? 'bg-luna-accent/15 text-luna-accent-dark' : 'bg-luna-charcoal/5 text-luna-text-muted'
-                    }`}>
-                    {isValidated ? <CheckCircle2 size={20} /> : <Icon size={20} />}
-                  </div>
-                  <div className="flex flex-col relative z-10">
-                    <h3 className="font-semibold text-[11px] uppercase tracking-wider text-luna-charcoal">{meta.title}</h3>
-                    <p className={`text-[9px] font-semibold uppercase tracking-wider mt-1 px-2 py-0.5 rounded-full w-max ${isValidated ? 'text-emerald-600 bg-emerald-50 border border-emerald-200' : canValidate ? 'text-luna-accent-dark bg-luna-accent/10 border border-luna-accent/20' : 'text-luna-text-muted bg-luna-charcoal/5'
-                      }`}>
-                      {isValidated ? 'Validé ✓' : canValidate ? 'Résultats prêts' : 'Recherche...'}
-                    </p>
-                  </div>
+                  {/* Colored top accent line */}
+                  <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${meta.gradient}`} />
 
-                  {/* Notification ping */}
-                  {canValidate && (
-                    <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-luna-accent opacity-50" />
-                      <span className="relative inline-flex rounded-full h-5 w-5 bg-luna-accent text-white font-bold text-[10px] justify-center items-center shadow-sm">!</span>
-                    </span>
+                  {/* Glow effect */}
+                  {(canValidate || isValidated) && (
+                    <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[30px] opacity-30" style={{ backgroundColor: meta.color }} />
                   )}
 
-                  {/* Working spinner */}
-                  {!isValidated && !canValidate && isActive && (
-                    <Loader2 size={14} className="absolute top-2 right-2 text-luna-accent animate-spin" />
-                  )}
+                  <div className="relative z-10 p-4 flex items-center gap-3">
+                    {/* Icon with colored ring */}
+                    <div className={`relative flex-shrink-0`}>
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isValidated ? 'bg-emerald-500' : `bg-gradient-to-br ${meta.gradient}`}`} style={{ boxShadow: `0 4px 15px ${meta.color}40` }}>
+                        {isValidated ? <CheckCircle2 size={18} className="text-white" /> : <Icon size={18} className="text-white" />}
+                      </div>
+                      {/* Signal ring */}
+                      {!isValidated && isActive && (
+                        <motion.div
+                          className="absolute inset-0 rounded-xl border-2"
+                          style={{ borderColor: meta.color }}
+                          animate={{ scale: [1, 1.3, 1], opacity: [0.6, 0, 0.6] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                        />
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <h3 className={`font-semibold text-xs tracking-wide ${isValidated ? 'text-luna-charcoal' : 'text-white'}`}>{meta.title}</h3>
+                      <p className={`text-[10px] mt-0.5 ${isValidated ? 'text-emerald-600' : canValidate ? 'text-sky-300' : 'text-white/50'}`}>
+                        {isValidated ? '✓ Validé' : canValidate ? '● Résultats prêts' : meta.subtitle}
+                      </p>
+
+                      {/* Progress bar */}
+                      {!isValidated && isActive && (
+                        <div className="mt-2 h-[3px] rounded-full bg-white/10 overflow-hidden">
+                          <motion.div
+                            className={`h-full rounded-full bg-gradient-to-r ${meta.gradient}`}
+                            initial={{ width: '0%' }}
+                            animate={{ width: canValidate ? '100%' : '65%' }}
+                            transition={{ duration: canValidate ? 0.5 : 8, ease: 'easeOut' }}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Status indicator */}
+                    {canValidate && (
+                      <div className="flex-shrink-0">
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-50" style={{ backgroundColor: meta.color }} />
+                          <span className="relative inline-flex rounded-full h-3 w-3" style={{ backgroundColor: meta.color }} />
+                        </span>
+                      </div>
+                    )}
+                    {!isValidated && !canValidate && isActive && (
+                      <Loader2 size={14} className="flex-shrink-0 text-white/40 animate-spin" />
+                    )}
+                  </div>
                 </motion.div>
               </motion.div>
             );
@@ -743,7 +790,7 @@ function DashboardPage() {
                         </div>
                       )}
 
-                      {/* Itinerary: Days (show all) */}
+                      {/* Itinerary: Days with clickable links */}
                       {selectedAgent === 'itinerary' && data?.days?.length > 0 && (
                         <div className="space-y-2.5 mb-6">
                           <h4 className="input-label">Planning jour par jour ({data.days.length} jours)</h4>
@@ -753,25 +800,55 @@ function DashboardPage() {
                                 <span className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center text-[10px] font-bold text-emerald-600">J{d.day}</span>
                                 {d.title}
                               </h5>
-                              <div className="text-xs text-luna-text-muted mt-2 ml-8 space-y-1">
-                                <p>🌅 {d.morning}</p>
-                                <p>🌤️ {d.afternoon}</p>
-                                <p>🌙 {d.evening}</p>
+                              <div className="text-xs text-luna-text-muted mt-2 ml-8 space-y-1.5">
+                                <p className="flex items-start gap-1">
+                                  <span>🌅</span>
+                                  <span className="flex-1">{d.morning}
+                                    {d.morningUrl && <a href={d.morningUrl} target="_blank" rel="noopener noreferrer" className="ml-1 text-sky-500 hover:text-sky-600 font-medium hover:underline">→ Voir</a>}
+                                  </span>
+                                </p>
+                                <p className="flex items-start gap-1">
+                                  <span>🌤️</span>
+                                  <span className="flex-1">{d.afternoon}
+                                    {d.afternoonUrl && <a href={d.afternoonUrl} target="_blank" rel="noopener noreferrer" className="ml-1 text-sky-500 hover:text-sky-600 font-medium hover:underline">→ Voir</a>}
+                                  </span>
+                                </p>
+                                <p className="flex items-start gap-1">
+                                  <span>🌙</span>
+                                  <span className="flex-1">{d.evening}
+                                    {d.eveningUrl && <a href={d.eveningUrl} target="_blank" rel="noopener noreferrer" className="ml-1 text-sky-500 hover:text-sky-600 font-medium hover:underline">→ Voir</a>}
+                                  </span>
+                                </p>
                               </div>
                             </div>
                           ))}
                         </div>
                       )}
 
-                      {/* Client: Recommendations (show all) */}
+                      {/* Client: Recommendations with clickable links */}
                       {selectedAgent === 'client' && data?.recommendations?.length > 0 && (
                         <div className="space-y-2 mb-6">
                           <h4 className="input-label">Recommandations ({data.recommendations.length})</h4>
-                          {data.recommendations.map((r: string, i: number) => (
-                            <div key={i} className="bg-white p-3.5 rounded-xl border border-luna-warm-gray/15 text-sm text-luna-charcoal flex items-start gap-2.5">
-                              <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" /> {r}
-                            </div>
-                          ))}
+                          {data.recommendations.map((r: any, i: number) => {
+                            const text = typeof r === 'string' ? r : r?.text || r;
+                            const url = typeof r === 'object' ? r?.url : null;
+                            const type = typeof r === 'object' ? r?.type : null;
+                            return (
+                              <div key={i} className="bg-white p-3.5 rounded-xl border border-luna-warm-gray/15 text-sm text-luna-charcoal">
+                                <div className="flex items-start gap-2.5">
+                                  <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+                                  <div className="flex-1">
+                                    <span>{text}</span>
+                                    {url && (
+                                      <a href={url} target="_blank" rel="noopener noreferrer" className="block mt-1 text-xs text-sky-500 hover:text-sky-600 font-medium hover:underline">
+                                        {type ? `Voir ${type}` : 'Voir le lien'} →
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
 
