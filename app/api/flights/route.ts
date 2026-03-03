@@ -31,7 +31,10 @@ export async function GET() {
                     lng: state[5],
                     lat: state[6],
                     rotate: state[10] || 0,
-                    label: state[1].trim()
+                    label: state[1].trim(),
+                    origin_country: state[2] || 'Unknown',
+                    altitude: state[7] || null,
+                    velocity: state[9] || null,
                 }));
 
             return NextResponse.json({ flights: livePlanes, live: true });

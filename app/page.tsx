@@ -41,6 +41,7 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
   const [workflowState, setWorkflowState] = useState<WorkflowState>('IDLE');
   const [destinations, setDestinations] = useState<Destination[]>([{ id: '1', city: '' }]);
+  const [departureCity, setDepartureCity] = useState('');
   const [departureDate, setDepartureDate] = useState('');
   const [returnDate, setReturnDate] = useState('');
   const [budget, setBudget] = useState('');
@@ -93,6 +94,7 @@ export default function DashboardPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          departureCity,
           destinations: destinations.filter(d => d.city.trim()),
           departureDate,
           returnDate,
@@ -152,9 +154,8 @@ export default function DashboardPage() {
   const isProcessing = workflowState !== 'IDLE' && workflowState !== 'PROPOSALS_READY';
 
   return (
-    <div ref={containerRef} className="relative w-full h-full flex flex-col overflow-hidden bg-[#e8e2da]/60">
+    <div ref={containerRef} className="relative w-full h-full flex flex-col overflow-hidden bg-[#f0ebe4]">
       <MapBackground />
-      <div className="absolute inset-0 bg-[#f5f0eb]/30 pointer-events-none z-10" />
 
       {/* CRM Quick Access */}
       <div className="absolute top-4 left-4 z-40 flex items-center gap-3">
@@ -163,150 +164,42 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* Weather Widget */}
-      <div className="absolute top-28 right-6 z-40 w-[280px]">
+      {/* Weather Widgets (real API) */}
+      <div className="absolute top-20 right-5 z-40 w-[260px]">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <WeatherWidget destination={destinations[0]?.city?.trim() || 'Paris'} />
+          <WeatherWidget destinations={[
+            ...(departureCity.trim() ? [departureCity.trim()] : []),
+            ...destinations.filter(d => d.city.trim()).map(d => d.city.trim()),
+          ].filter(Boolean)} />
         </motion.div>
       </div>
 
-      {/* ═══ ANIMATED SVG CURVED CONNECTIONS ═══ */}
+      {/* ═══ ORBITAL ANIMATION (no wires) ═══ */}
       {isProcessing && (
-        <>
-          <style>{`
-            @keyframes dashFlow {
-              0% { stroke-dashoffset: 24; }
-              100% { stroke-dashoffset: 0; }
-            }
-            @keyframes pulseTravel0 {
-              0% { offset-distance: 0%; opacity: 0; }
-              10% { opacity: 1; }
-              90% { opacity: 1; }
-              100% { offset-distance: 100%; opacity: 0; }
-            }
-            @keyframes pulseTravel1 {
-              0% { offset-distance: 0%; opacity: 0; }
-              10% { opacity: 1; }
-              90% { opacity: 1; }
-              100% { offset-distance: 100%; opacity: 0; }
-            }
-            @keyframes pulseTravel2 {
-              0% { offset-distance: 0%; opacity: 0; }
-              10% { opacity: 1; }
-              90% { opacity: 1; }
-              100% { offset-distance: 100%; opacity: 0; }
-            }
-            @keyframes pulseTravel3 {
-              0% { offset-distance: 0%; opacity: 0; }
-              10% { opacity: 1; }
-              90% { opacity: 1; }
-              100% { offset-distance: 100%; opacity: 0; }
-            }
-          `}</style>
-          <svg className="absolute inset-0 w-full h-full pointer-events-none z-15" viewBox="0 0 1000 1000" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
-            <defs>
-              <filter id="glowBlue">
-                <feGaussianBlur stdDeviation="4" result="blur" />
-                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-              </filter>
-              <filter id="glowGreen">
-                <feGaussianBlur stdDeviation="4" result="blur" />
-                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-              </filter>
-            </defs>
-
-            {/* Curved paths: center (500,500) to each agent position */}
-            {(['transport', 'accommodation', 'client', 'itinerary'] as AgentKey[]).map((agent, i) => {
-              const isActive = activeAgents.includes(agent);
-              const isValidated = validatedAgents.includes(agent);
-
-              // Curved bezier paths from center to: top, left, right, bottom
-              const curvePaths = [
-                'M 500 500 Q 380 350, 500 180',   // → top (curve left)
-                'M 500 500 Q 350 380, 180 500',   // → left (curve up)
-                'M 500 500 Q 650 380, 820 500',   // → right (curve up)
-                'M 500 500 Q 380 650, 500 820',   // → bottom (curve left)
-              ];
-
-              const pathD = curvePaths[i];
-              const pathId = `curve-${agent}`;
-              const strokeColor = isValidated ? '#10b981' : '#87CEEB';
-              const glowFilter = isValidated ? 'url(#glowGreen)' : 'url(#glowBlue)';
-
-              return (
-                <g key={agent}>
-                  {/* Hidden path for reference */}
-                  <path id={pathId} d={pathD} fill="none" stroke="none" />
-
-                  {/* Visible curved line */}
-                  {isActive && (
-                    <motion.path
-                      d={pathD}
-                      fill="none"
-                      stroke={strokeColor}
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      filter={glowFilter}
-                      initial={{ pathLength: 0, opacity: 0 }}
-                      animate={{ pathLength: 1, opacity: 0.5 }}
-                      transition={{ duration: 0.8, delay: i * 0.15, ease: 'easeOut' }}
-                      strokeDasharray="12 6"
-                      style={{ animation: isActive && !isValidated ? 'dashFlow 1s linear infinite' : 'none' }}
-                    />
-                  )}
-
-                  {/* Sky blue glow line underneath */}
-                  {isActive && (
-                    <motion.path
-                      d={pathD}
-                      fill="none"
-                      stroke={strokeColor}
-                      strokeWidth="6"
-                      strokeLinecap="round"
-                      initial={{ pathLength: 0, opacity: 0 }}
-                      animate={{ pathLength: 1, opacity: 0.12 }}
-                      transition={{ duration: 0.8, delay: i * 0.15, ease: 'easeOut' }}
-                    />
-                  )}
-
-                  {/* Animated pulse dot traveling along the curve — loops forever */}
-                  {isActive && !isValidated && (
-                    <>
-                      <circle r="5" fill="#87CEEB" filter="url(#glowBlue)"
-                        style={{
-                          offsetPath: `path('${pathD}')`,
-                          animation: `pulseTravel${i} 2s ease-in-out ${i * 0.4}s infinite`,
-                          opacity: 0,
-                        }}
-                      />
-                      {/* Second pulse staggered */}
-                      <circle r="3.5" fill="#b0e0ff" filter="url(#glowBlue)"
-                        style={{
-                          offsetPath: `path('${pathD}')`,
-                          animation: `pulseTravel${i} 2s ease-in-out ${i * 0.4 + 1}s infinite`,
-                          opacity: 0,
-                        }}
-                      />
-                    </>
-                  )}
-
-                  {/* Validated: green pulse returns to center */}
-                  {isValidated && (
-                    <circle r="6" fill="#10b981" filter="url(#glowGreen)"
-                      style={{
-                        offsetPath: `path('${pathD}')`,
-                        offsetDistance: '100%',
-                        animation: `pulseTravel${i} 1.5s ease-out 0s 1`,
-                        animationDirection: 'reverse',
-                        animationFillMode: 'forwards',
-                      }}
-                    />
-                  )}
-                </g>
-              );
-            })}
-          </svg>
-        </>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-15">
+          {/* Concentric orbital rings */}
+          {[200, 260, 320].map((size, i) => (
+            <motion.div
+              key={i}
+              className="absolute rounded-full border border-sky-300/15"
+              style={{ width: size, height: size }}
+              animate={{ rotate: i % 2 === 0 ? 360 : -360, opacity: [0.15, 0.35, 0.15] }}
+              transition={{ duration: 8 + i * 4, repeat: Infinity, ease: 'linear' }}
+            >
+              {/* Orbiting dot */}
+              <motion.div
+                className="absolute w-2 h-2 rounded-full bg-sky-400/60 shadow-[0_0_8px_rgba(135,206,235,0.5)]"
+                style={{ top: -4, left: '50%', marginLeft: -4 }}
+              />
+            </motion.div>
+          ))}
+          {/* Center glow pulse */}
+          <motion.div
+            className="absolute w-40 h-40 rounded-full bg-sky-200/10"
+            animate={{ scale: [1, 1.3, 1], opacity: [0.05, 0.15, 0.05] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </div>
       )}
 
       {/* ═══ MAIN CONTENT ═══ */}
@@ -336,6 +229,21 @@ export default function DashboardPage() {
                 </div>
 
                 <form onSubmit={handleStartAnalysis} className="flex flex-col gap-5">
+
+                  {/* ── DEPARTURE CITY ── */}
+                  <div>
+                    <label className="input-label">Départ de</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Ville de départ (ex: Paris)"
+                        className="input-underline pr-8"
+                        value={departureCity}
+                        onChange={e => setDepartureCity(e.target.value)}
+                      />
+                      <Plane className="absolute right-0 top-3 w-4 h-4 text-luna-text-muted/40" strokeWidth={1.5} />
+                    </div>
+                  </div>
 
                   {/* ── DESTINATIONS (Multi) ── */}
                   <div>
@@ -376,12 +284,18 @@ export default function DashboardPage() {
                         </motion.div>
                       ))}
                     </div>
-                    {destinations.length > 1 && (
-                      <div className="flex items-center gap-1 mt-2">
+                    {/* Route summary */}
+                    {(departureCity.trim() || destinations.filter(d => d.city.trim()).length > 1) && (
+                      <div className="flex items-center gap-1 mt-2 flex-wrap">
+                        {departureCity.trim() && (
+                          <span className="flex items-center text-[10px] font-semibold text-luna-charcoal">
+                            <Plane size={10} className="mr-0.5" />{departureCity}
+                          </span>
+                        )}
                         {destinations.filter(d => d.city.trim()).map((d, i) => (
                           <span key={d.id} className="flex items-center text-[10px] font-semibold text-luna-accent-dark">
-                            {i > 0 && <ArrowRight size={10} className="mx-1 text-luna-warm-gray" />}
-                            {d.city || '...'}
+                            <ArrowRight size={10} className="mx-1 text-luna-warm-gray" />
+                            {d.city}
                           </span>
                         ))}
                       </div>
@@ -647,7 +561,7 @@ export default function DashboardPage() {
           >
             <motion.div
               initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }}
-              className="glass-card p-8 max-w-lg w-full shadow-luxury max-h-[80vh] overflow-y-auto"
+              className="bg-white/95 backdrop-blur-xl rounded-3xl border border-luna-warm-gray/20 p-8 max-w-2xl w-full shadow-luxury max-h-[85vh] overflow-y-auto"
               onClick={e => e.stopPropagation()}
             >
               {(() => {
@@ -659,72 +573,95 @@ export default function DashboardPage() {
                 return (
                   <>
                     <div className="flex items-center gap-4 mb-6">
-                      <div className="p-3.5 bg-luna-cream text-luna-accent-dark rounded-2xl border border-luna-warm-gray/20"><Icon size={24} /></div>
-                      <div>
+                      <div className="p-3.5 bg-sky-50 text-sky-600 rounded-2xl border border-sky-100"><Icon size={24} /></div>
+                      <div className="flex-1">
                         <h2 className="font-serif text-xl font-semibold text-luna-charcoal">{meta.title}</h2>
                         <p className="text-luna-text-muted text-xs uppercase tracking-wider font-medium">Résultats de recherche</p>
                       </div>
+                      <button onClick={() => setSelectedAgent(null)} className="p-2 text-luna-text-muted hover:text-luna-charcoal hover:bg-luna-cream rounded-xl transition-colors">
+                        <X size={18} />
+                      </button>
                     </div>
 
-                    <div className="bg-luna-cream p-6 rounded-2xl border border-luna-warm-gray/20 mb-6">
+                    <div className="bg-luna-cream/60 p-5 rounded-2xl border border-luna-warm-gray/15 mb-6">
                       <p className="text-luna-charcoal font-normal leading-relaxed text-sm">{summary}</p>
                     </div>
 
-                    {/* Dynamic Details */}
+                    {/* Transport: Flights (show all, with clickable search links) */}
                     {selectedAgent === 'transport' && data?.flights?.length > 0 && (
-                      <div className="space-y-3 mb-6">
-                        <h4 className="input-label">Options de vol</h4>
-                        {data.flights.slice(0, 3).map((f: any, i: number) => (
-                          <div key={i} className="bg-white p-4 rounded-xl border border-luna-warm-gray/20">
+                      <div className="space-y-2.5 mb-6">
+                        <div className="flex justify-between items-center">
+                          <h4 className="input-label">Options de vol ({data.flights.length})</h4>
+                        </div>
+                        {data.flights.map((f: any, i: number) => (
+                          <a key={i} href={`https://www.google.com/travel/flights?q=${encodeURIComponent((f.route || f.airline || '') + ' ' + (departureDate || ''))}`} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-luna-warm-gray/15 hover:border-sky-300 hover:shadow-md transition-all group cursor-pointer">
                             <div className="flex justify-between items-center">
-                              <span className="font-semibold text-sm text-luna-charcoal">{f.airline} — {f.class}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="w-6 h-6 rounded-md bg-sky-50 flex items-center justify-center text-[10px] font-bold text-sky-600">{i + 1}</span>
+                                <span className="font-semibold text-sm text-luna-charcoal group-hover:text-sky-600 transition-colors">{f.airline} — {f.class}</span>
+                              </div>
                               <span className="font-serif font-bold text-luna-accent-dark">{f.price}</span>
                             </div>
-                            <p className="text-xs text-luna-text-muted mt-1">{f.route} • {f.duration} • {f.stops} escale(s)</p>
-                          </div>
+                            <p className="text-xs text-luna-text-muted mt-1.5 ml-8">{f.route} • {f.duration} • {f.stops} escale(s)</p>
+                            <p className="text-[10px] text-sky-500 mt-1.5 ml-8 font-medium group-hover:underline">Voir sur Google Flights →</p>
+                          </a>
                         ))}
                       </div>
                     )}
 
+                    {/* Accommodation: Hotels (show all, with clickable links) */}
                     {selectedAgent === 'accommodation' && data?.hotels?.length > 0 && (
-                      <div className="space-y-3 mb-6">
-                        <h4 className="input-label">Hôtels sélectionnés</h4>
-                        {data.hotels.slice(0, 3).map((h: any, i: number) => (
-                          <div key={i} className="bg-white p-4 rounded-xl border border-luna-warm-gray/20">
+                      <div className="space-y-2.5 mb-6">
+                        <h4 className="input-label">Hôtels sélectionnés ({data.hotels.length})</h4>
+                        {data.hotels.map((h: any, i: number) => (
+                          <a key={i} href={`https://www.google.com/travel/hotels?q=${encodeURIComponent(h.name + ' ' + (destinations[0]?.city || ''))}`} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-luna-warm-gray/15 hover:border-sky-300 hover:shadow-md transition-all group cursor-pointer">
                             <div className="flex justify-between items-center">
-                              <span className="font-semibold text-sm text-luna-charcoal">{h.name}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="w-6 h-6 rounded-md bg-amber-50 flex items-center justify-center text-[10px] font-bold text-amber-600">{i + 1}</span>
+                                <span className="font-semibold text-sm text-luna-charcoal group-hover:text-sky-600 transition-colors">{h.name}</span>
+                              </div>
                               <span className="font-serif font-bold text-luna-accent-dark">{h.pricePerNight}/nuit</span>
                             </div>
-                            <p className="text-xs text-luna-text-muted mt-1">{'★'.repeat(h.stars || 5)} • {h.highlights?.join(', ')}</p>
-                          </div>
+                            <p className="text-xs text-luna-text-muted mt-1.5 ml-8">{'★'.repeat(h.stars || 5)} • {h.highlights?.join(', ')}</p>
+                            <p className="text-[10px] text-sky-500 mt-1.5 ml-8 font-medium group-hover:underline">Voir sur Google Hotels →</p>
+                          </a>
                         ))}
                       </div>
                     )}
 
+                    {/* Itinerary: Days (show all) */}
                     {selectedAgent === 'itinerary' && data?.days?.length > 0 && (
-                      <div className="space-y-3 mb-6">
-                        <h4 className="input-label">Planning jour par jour</h4>
-                        {data.days.slice(0, 4).map((d: any, i: number) => (
-                          <div key={i} className="bg-white p-4 rounded-xl border border-luna-warm-gray/20">
-                            <h5 className="font-semibold text-sm text-luna-charcoal">Jour {d.day}: {d.title}</h5>
-                            <p className="text-xs text-luna-text-muted mt-1">🌅 {d.morning} • 🌤️ {d.afternoon} • 🌙 {d.evening}</p>
+                      <div className="space-y-2.5 mb-6">
+                        <h4 className="input-label">Planning jour par jour ({data.days.length} jours)</h4>
+                        {data.days.map((d: any, i: number) => (
+                          <div key={i} className="bg-white p-4 rounded-xl border border-luna-warm-gray/15">
+                            <h5 className="font-semibold text-sm text-luna-charcoal flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center text-[10px] font-bold text-emerald-600">J{d.day}</span>
+                              {d.title}
+                            </h5>
+                            <div className="text-xs text-luna-text-muted mt-2 ml-8 space-y-1">
+                              <p>🌅 {d.morning}</p>
+                              <p>🌤️ {d.afternoon}</p>
+                              <p>🌙 {d.evening}</p>
+                            </div>
                           </div>
                         ))}
                       </div>
                     )}
 
+                    {/* Client: Recommendations (show all) */}
                     {selectedAgent === 'client' && data?.recommendations?.length > 0 && (
                       <div className="space-y-2 mb-6">
-                        <h4 className="input-label">Recommandations</h4>
+                        <h4 className="input-label">Recommandations ({data.recommendations.length})</h4>
                         {data.recommendations.map((r: string, i: number) => (
-                          <div key={i} className="bg-white p-3 rounded-xl border border-luna-warm-gray/20 text-sm text-luna-charcoal flex items-center gap-2">
-                            <CheckCircle2 size={14} className="text-luna-accent flex-shrink-0" /> {r}
+                          <div key={i} className="bg-white p-3.5 rounded-xl border border-luna-warm-gray/15 text-sm text-luna-charcoal flex items-start gap-2.5">
+                            <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" /> {r}
                           </div>
                         ))}
                       </div>
                     )}
 
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 sticky bottom-0 bg-white/80 backdrop-blur-md pt-4 -mx-2 px-2">
                       <button onClick={() => setSelectedAgent(null)} className="flex-1 py-3.5 bg-white border border-luna-warm-gray/30 hover:bg-luna-cream text-luna-charcoal font-medium text-sm rounded-xl transition-all">Plus tard</button>
                       <button onClick={handleValidateAgent} className="flex-[2] py-3.5 bg-luna-charcoal hover:bg-[#1a1a1a] text-luna-cream font-medium text-sm tracking-wider uppercase rounded-xl transition-all flex justify-center items-center gap-2 shadow-lg">
                         Valider <CheckCircle2 size={16} />
