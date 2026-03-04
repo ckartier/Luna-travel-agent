@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Search, RefreshCw, AlertCircle, CalendarClock, Sparkles, Plane, Hotel, Users, CalendarRange, ArrowRight, CheckCircle2, Loader2, X, PlusCircle, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createLead } from '@/src/lib/firebase/crm';
+import { createLead, createActivity, createContact, findContactByEmail } from '@/src/lib/firebase/crm';
 
 export default function MailsPage() {
     const [emails, setEmails] = useState<any[]>([]);
@@ -24,7 +24,7 @@ export default function MailsPage() {
         setLoading(true);
         setError('');
         try {
-            const res = await fetch('/api/gmail/list?q=subject:"demande" OR subject:"renseignement"');
+            const res = await fetch('/api/gmail/list');
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             setEmails(data.emails || []);
@@ -97,10 +97,32 @@ export default function MailsPage() {
                 autoStart: 'true',
             });
 
-            // Also add to pipeline
+            // Find or create contact
+            const senderEmail = selectedEmail?.sender?.match(/<(.+)>/)?.[1] || selectedEmail?.sender || '';
+            const clientName = ext.clientName || selectedEmail?.sender?.replace(/<.*>/, '').trim() || 'Client';
+            let contactId = '';
             try {
-                await createLead({
-                    clientName: ext.clientName || selectedEmail?.sender?.replace(/<.*>/, '').trim() || 'Client',
+                const existing = await findContactByEmail(senderEmail);
+                if (existing?.id) {
+                    contactId = existing.id;
+                } else if (senderEmail) {
+                    const names = clientName.split(' ');
+                    contactId = await createContact({
+                        firstName: names[0] || clientName,
+                        lastName: names.slice(1).join(' ') || '',
+                        email: senderEmail.toLowerCase().trim(),
+                        vipLevel: 'Standard',
+                        preferences: destinations,
+                    });
+                }
+            } catch (e) { console.error('Contact save failed:', e); }
+
+            // Add to pipeline with contact link
+            let leadId = '';
+            try {
+                leadId = await createLead({
+                    clientName,
+                    clientId: contactId,
                     destination: destinations.join(', '),
                     dates: `${ext.departureDate || ''} → ${ext.returnDate || ''}`.trim() || 'À définir',
                     budget: ext.budget || 'À définir',
@@ -109,12 +131,24 @@ export default function MailsPage() {
                     mustHaves: ext.mustHaves || '',
                     status: 'ANALYSING',
                 });
-            } catch (e) {
-                console.error('Pipeline save failed:', e);
-            }
+            } catch (e) { console.error('Pipeline save failed:', e); }
+
+            // Auto-create follow-up activity
+            try {
+                await createActivity({
+                    title: `Suivi email — ${clientName} (${destinations.join(', ')})`,
+                    time: 'Aujourd\'hui',
+                    type: 'email',
+                    status: 'PENDING',
+                    color: 'blue',
+                    iconName: 'Mail',
+                    contactId,
+                    contactName: clientName,
+                    leadId,
+                });
+            } catch (e) { console.error('Activity save failed:', e); }
 
             setDispatched(true);
-            // Redirect to orchestrator after 1s
             setTimeout(() => {
                 router.push(`/?${params.toString()}`);
             }, 1000);
@@ -130,9 +164,33 @@ export default function MailsPage() {
         setAddingToPipeline(true);
         try {
             const ext = analysis.extracted || {};
-            await createLead({
-                clientName: ext.clientName || selectedEmail?.sender?.replace(/<.*>/, '').trim() || 'Client',
-                destination: (ext.destinations || ['Non définie']).join(', '),
+            const senderEmail = selectedEmail?.sender?.match(/<(.+)>/)?.[1] || selectedEmail?.sender || '';
+            const clientName = ext.clientName || selectedEmail?.sender?.replace(/<.*>/, '').trim() || 'Client';
+            const destinations = ext.destinations || ['Non définie'];
+
+            // Find or create contact
+            let contactId = '';
+            try {
+                const existing = await findContactByEmail(senderEmail);
+                if (existing?.id) {
+                    contactId = existing.id;
+                } else if (senderEmail) {
+                    const names = clientName.split(' ');
+                    contactId = await createContact({
+                        firstName: names[0] || clientName,
+                        lastName: names.slice(1).join(' ') || '',
+                        email: senderEmail.toLowerCase().trim(),
+                        vipLevel: 'Standard',
+                        preferences: destinations,
+                    });
+                }
+            } catch (e) { console.error('Contact save failed:', e); }
+
+            // Create lead linked to contact
+            const leadId = await createLead({
+                clientName,
+                clientId: contactId,
+                destination: destinations.join(', '),
                 dates: `${ext.departureDate || ''} → ${ext.returnDate || ''}`.trim() || 'À définir',
                 budget: ext.budget || 'À définir',
                 pax: ext.pax || '1',
@@ -140,6 +198,22 @@ export default function MailsPage() {
                 mustHaves: ext.mustHaves || '',
                 status: 'NEW',
             });
+
+            // Auto-create follow-up activity
+            try {
+                await createActivity({
+                    title: `Nouvelle demande — ${clientName} (${destinations.join(', ')})`,
+                    time: 'Aujourd\'hui',
+                    type: 'email',
+                    status: 'PENDING',
+                    color: 'amber',
+                    iconName: 'Mail',
+                    contactId,
+                    contactName: clientName,
+                    leadId,
+                });
+            } catch (e) { console.error('Activity save failed:', e); }
+
             setAddedToPipeline(true);
         } catch (err) {
             console.error('Failed to add to pipeline', err);

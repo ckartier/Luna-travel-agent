@@ -1,154 +1,378 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
-function getModel() {
-  return genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+const MODEL = 'gemini-3.1-pro-preview';
+
+async function generateJSON(prompt: string): Promise<any> {
+  const response = await ai.models.generateContent({
+    model: MODEL,
+    contents: prompt,
+  });
+  const text = response.text || '';
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  return jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: text };
 }
 
-// ─── TRANSPORT AGENT ────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+// ── SMART URL BUILDERS — Aggregator deep-links that ALWAYS work
+// ══════════════════════════════════════════════════════════════════════
+// Strategy: use major travel aggregators (Google, Skyscanner, Booking.com,
+// GetYourGuide, TripAdvisor, Google Maps) which always resolve correctly
+// and show real, bookable results with prices.
+
+// ── IATA codes for deep-linking ────────────────────────────────────
+const CITY_IATA: Record<string, string> = {
+  'paris': 'CDG', 'lyon': 'LYS', 'marseille': 'MRS', 'nice': 'NCE', 'toulouse': 'TLS',
+  'bordeaux': 'BOD', 'nantes': 'NTE', 'strasbourg': 'SXB', 'lille': 'LIL',
+  'london': 'LHR', 'londres': 'LHR', 'new york': 'JFK', 'los angeles': 'LAX',
+  'tokyo': 'NRT', 'dubai': 'DXB', 'singapour': 'SIN', 'singapore': 'SIN',
+  'bangkok': 'BKK', 'bali': 'DPS', 'rome': 'FCO', 'barcelone': 'BCN', 'barcelona': 'BCN',
+  'madrid': 'MAD', 'lisbonne': 'LIS', 'lisbon': 'LIS', 'berlin': 'BER',
+  'amsterdam': 'AMS', 'istanbul': 'IST', 'athènes': 'ATH', 'athens': 'ATH',
+  'marrakech': 'RAK', 'casablanca': 'CMN', 'tunis': 'TUN', 'le caire': 'CAI', 'cairo': 'CAI',
+  'sydney': 'SYD', 'melbourne': 'MEL', 'auckland': 'AKL', 'hong kong': 'HKG',
+  'séoul': 'ICN', 'seoul': 'ICN', 'mumbai': 'BOM', 'delhi': 'DEL', 'taipei': 'TPE',
+  'kuala lumpur': 'KUL', 'san francisco': 'SFO', 'miami': 'MIA', 'chicago': 'ORD',
+  'toronto': 'YYZ', 'montreal': 'YUL', 'mexico': 'MEX', 'lima': 'LIM',
+  'buenos aires': 'EZE', 'são paulo': 'GRU', 'bogota': 'BOG', 'santiago': 'SCL',
+  'nairobi': 'NBO', 'cape town': 'CPT', 'johannesburg': 'JNB', 'addis ababa': 'ADD',
+  'doha': 'DOH', 'abu dhabi': 'AUH', 'maldives': 'MLE', 'ile maurice': 'MRU',
+  'mauritius': 'MRU', 'seychelles': 'SEZ', 'phuket': 'HKT', 'cancun': 'CUN',
+  'zanzibar': 'ZNZ', 'dakar': 'DSS', 'reykjavik': 'KEF', 'oslo': 'OSL',
+  'copenhague': 'CPH', 'stockholm': 'ARN', 'helsinki': 'HEL', 'vienne': 'VIE',
+  'vienna': 'VIE', 'prague': 'PRG', 'varsovie': 'WAW', 'warsaw': 'WAW',
+  'budapest': 'BUD', 'dubrovnik': 'DBV', 'malte': 'MLA', 'malta': 'MLA',
+  'santorin': 'JTR', 'santorini': 'JTR', 'mykonos': 'JMK', 'milan': 'MXP',
+  'florence': 'FLR', 'venise': 'VCE', 'venice': 'VCE', 'naples': 'NAP',
+  'porto': 'OPO', 'faro': 'FAO', 'ténérife': 'TFS', 'tenerife': 'TFS',
+  'majorque': 'PMI', 'mallorca': 'PMI', 'ibiza': 'IBZ',
+};
+
+function getIata(city: string): string {
+  const lower = city.toLowerCase().trim();
+  if (CITY_IATA[lower]) return CITY_IATA[lower];
+  for (const [name, code] of Object.entries(CITY_IATA)) {
+    if (lower.includes(name) || name.includes(lower)) return code;
+  }
+  return '';
+}
+
+// ── FLIGHT URL → Google Flights (text search — ALWAYS works) ────────
+export function buildFlightSearchUrl(airline: string, from: string, to: string, date?: string): { url: string; domain: string } {
+  // Google Flights text search — always resolves to the right results page
+  const query = `vols ${from} vers ${to} ${airline}`.trim();
+  const dateParam = date ? `&tfs=CBwQAhoaEgoyMDI2LTAzLTE1agcIARIDQ0RHcgcIARIDTlJU` : '';
+  return {
+    url: `https://www.google.com/travel/flights?q=${encodeURIComponent(query)}&curr=EUR`,
+    domain: 'google.com/flights',
+  };
+}
+
+// ── HOTEL URL → Google Hotels (always works, real prices) ────────────
+export function buildHotelSearchUrl(hotelName: string, destination: string): { url: string; domain: string } {
+  return {
+    url: `https://www.google.com/travel/hotels?q=${encodeURIComponent(hotelName + ' ' + destination)}&utm_source=luna`,
+    domain: 'google.com/hotels',
+  };
+}
+
+// ── TRAIN URL → SNCF Connect / Omio (real search pages) ─────────────
+export function buildTrainSearchUrl(from: string, to: string): { url: string; domain: string } {
+  // Omio (formerly GoEuro) — works for all European trains
+  return {
+    url: `https://www.omio.fr/search?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&mode=train`,
+    domain: 'omio.fr',
+  };
+}
+
+// ── CAR ROUTE URL → Google Maps directions ──────────────────────────
+export function buildCarSearchUrl(from: string, to: string): { url: string; domain: string } {
+  return {
+    url: `https://www.google.com/maps/dir/${encodeURIComponent(from)}/${encodeURIComponent(to)}`,
+    domain: 'google.com/maps',
+  };
+}
+
+// ── CAR RENTAL URL → Rentalcars.com ─────────────────────────────────
+export function buildCarRentalUrl(destination: string): { url: string; domain: string } {
+  return {
+    url: `https://www.rentalcars.com/fr/search-results?location=${encodeURIComponent(destination)}`,
+    domain: 'rentalcars.com',
+  };
+}
+
+// ── ACTIVITY URL → Routed to best platform per type ─────────────────
+export function buildActivityUrl(activity: string, destination: string): string {
+  const lower = (activity + ' ' + destination).toLowerCase();
+
+  // Restaurant / Gastronomy → Google Maps (always shows real places with reviews)
+  if (/restaurant|dîner|déjeuner|gastronomie|michelin|étoilé|chef|culinaire|table|bistrot|brasserie|bar|cocktail/.test(lower))
+    return `https://www.google.com/maps/search/restaurants+${encodeURIComponent(destination)}`;
+
+  // Spa / Wellness → Google Maps
+  if (/spa|bien-être|yoga|massage|hammam|onsen|sauna|thalasso|soin/.test(lower))
+    return `https://www.google.com/maps/search/spa+wellness+${encodeURIComponent(destination)}`;
+
+  // Guided tours / Visits / Excursions → GetYourGuide
+  if (/visite|tour|excursion|guide|monument|temple|musée|palais|château|randonnée|trek|culturel|historique/.test(lower))
+    return `https://www.getyourguide.fr/s/?q=${encodeURIComponent(destination + ' ' + activity.split(' ').slice(0, 4).join(' '))}&searchSource=1`;
+
+  // Boat / Cruise → GetYourGuide
+  if (/croisière|bateau|catamaran|voile|yacht|ferry|pirogue|gondole|kayak/.test(lower))
+    return `https://www.getyourguide.fr/s/?q=${encodeURIComponent(destination + ' bateau croisière')}&searchSource=1`;
+
+  // Cooking class → GetYourGuide
+  if (/cuisine|cooking|cuisson|recette|marché|cours de/.test(lower))
+    return `https://www.getyourguide.fr/s/?q=${encodeURIComponent(destination + ' cours cuisine')}&searchSource=1`;
+
+  // Diving / Snorkeling → GetYourGuide 
+  if (/plongée|snorkeling|diving|récif|corail|sous-marin/.test(lower))
+    return `https://www.getyourguide.fr/s/?q=${encodeURIComponent(destination + ' plongée snorkeling')}&searchSource=1`;
+
+  // Shopping → Google Maps
+  if (/shopping|boutique|marché|souk|bazaar|personal shopper/.test(lower))
+    return `https://www.google.com/maps/search/shopping+${encodeURIComponent(destination)}`;
+
+  // Nightlife / Shows → Google Maps
+  if (/spectacle|show|concert|opéra|cabaret|soirée|nightlife|club/.test(lower))
+    return `https://www.google.com/maps/search/${encodeURIComponent(activity.split(' ').slice(0, 3).join(' '))}+${encodeURIComponent(destination)}`;
+
+  // Transfer / Transport → Google Maps (taxi/transfert)
+  if (/transfert|limousine|chauffeur|navette|transport|aéroport/.test(lower))
+    return `https://www.google.com/maps/search/transfert+aéroport+${encodeURIComponent(destination)}`;
+
+  // Helicopter / Adventure → GetYourGuide
+  if (/hélicoptère|helicopter|montgolfière|parachute|aventure|safari/.test(lower))
+    return `https://www.getyourguide.fr/s/?q=${encodeURIComponent(destination + ' ' + activity.split(' ').slice(0, 3).join(' '))}&searchSource=1`;
+
+  // Default → TripAdvisor (always works, always relevant)
+  return `https://www.tripadvisor.fr/Search?q=${encodeURIComponent(destination + ' ' + activity.split(' ').slice(0, 5).join(' '))}`;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ── TRANSPORT AGENT (Multi-modal: vols, trains, voitures) ───────────
+// ══════════════════════════════════════════════════════════════════════
 export async function searchTransport(params: {
   destinations: { city: string }[];
   departureDate: string;
   returnDate: string;
   pax: string;
 }) {
-  const model = getModel();
   const destList = params.destinations.map(d => d.city).join(' → ');
+  const from = 'Paris';
 
-  const prompt = `Tu es un agent spécialiste du transport aérien pour une agence de voyage de luxe.
+  const prompt = `Tu es un agent EXPERT TRANSPORT MULTIMODAL pour une agence de voyage ULTRA-LUXE.
 
-Recherche les meilleures options de vol pour:
-- Itinéraire: ${destList}
-- Date départ: ${params.departureDate}
-- Date retour: ${params.returnDate}
-- Passagers: ${params.pax}
+MISSION: Trouver TOUTES les options de transport (avion, train, voiture) pour:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Départ: ${from}
+• Itinéraire: ${from} → ${destList}
+• Date aller: ${params.departureDate || 'flexible'}
+• Date retour: ${params.returnDate || 'flexible'}
+• Passagers: ${params.pax || '2'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-IMPORTANT: Pour chaque vol, inclus une URL réelle vers le site de la compagnie aérienne (ex: https://www.airfrance.fr, https://www.emirates.com/fr/, etc.) et le nom de domaine.
+RÈGLES OBLIGATOIRES:
+1. ✈️ VOLS: 6 options avec compagnies RÉELLES, codes IATA corrects, prix réalistes
+2. 🚄 TRAINS: 3-4 options si pertinent (TGV, Eurostar, ICE, Thalys, AVE, Frecciarossa, Nightjet...)
+   - Inclure gare de départ et d'arrivée (ex: Paris Gare de Lyon → Lyon Part-Dieu)
+   - Prix réalistes (1ère: 80-200€, 2nde: 30-100€ selon distance)
+   - Si la destination est trop loin pour le train (>8h), mettre seulement 1 option train avec mention "longue durée"
+3. 🚗 VOITURE: 2 options (location + trajet estimé)
+   - Distance et durée réelles
+   - Coût carburant estimé et prix location/jour
+4. Chaque option a un "type": "flight", "train" ou "car"
 
-Réponds UNIQUEMENT en JSON valide, sans texte avant ou après:
+Réponds UNIQUEMENT en JSON valide, AUCUN texte avant ou après:
 {
   "flights": [
     {
-      "airline": "nom compagnie",
-      "route": "CDG → HKG",
-      "class": "Business/Economy/First",
-      "price": "prix estimé en €",
-      "duration": "durée",
-      "stops": "nombre d'escales",
-      "url": "https://www.compagnie.com",
-      "domain": "compagnie.com",
-      "recommendation": "pourquoi cette option"
+      "type": "flight",
+      "airline": "Nom compagnie exact",
+      "route": "CDG → NRT",
+      "class": "Business",
+      "price": "À partir de X XXX €/pers",
+      "duration": "Environ XXh",
+      "stops": "0 ou 1",
+      "stopCity": "ville ou null"
     }
   ],
-  "summary": "résumé court"
+  "trains": [
+    {
+      "type": "train",
+      "operator": "TGV INOUI / Eurostar / ICE / etc.",
+      "route": "Paris Gare de Lyon → Lyon Part-Dieu",
+      "class": "1ère classe",
+      "price": "À partir de XX €/pers",
+      "duration": "Xh XXmin",
+      "frequency": "Toutes les Xh environ"
+    }
+  ],
+  "cars": [
+    {
+      "type": "car",
+      "mode": "Location voiture / Trajet personnel",
+      "route": "${from} → destination",
+      "distance": "XXX km",
+      "duration": "Xh XX",
+      "price": "Environ XX €/jour location + XX € carburant",
+      "details": "Via autoroute A6, péages inclus estimés à XX €"
+    }
+  ],
+  "summary": "X options multimodales de ${from} vers ${destList}: Y vols, Z trains, W options voiture."
 }`;
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
   try {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    return jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: text, flights: [] };
+    const parsed = await generateJSON(prompt);
+
+    // Post-process: add smart booking URLs per transport type
+    if (parsed.flights) {
+      parsed.flights = parsed.flights.map((f: any) => {
+        const link = buildFlightSearchUrl(f.airline, from, destList, params.departureDate);
+        return { ...f, type: 'flight', url: link.url, domain: link.domain };
+      });
+    }
+    if (parsed.trains) {
+      parsed.trains = parsed.trains.map((t: any) => {
+        const link = buildTrainSearchUrl(from, params.destinations[0]?.city || destList);
+        return { ...t, type: 'train', url: link.url, domain: link.domain };
+      });
+    }
+    if (parsed.cars) {
+      parsed.cars = parsed.cars.map((c: any) => {
+        const isRental = /location/i.test(c.mode || '');
+        const link = isRental
+          ? buildCarRentalUrl(params.destinations[0]?.city || destList)
+          : buildCarSearchUrl(from, params.destinations[0]?.city || destList);
+        return { ...c, type: 'car', url: link.url, domain: link.domain };
+      });
+    }
+    return parsed;
   } catch {
-    return { summary: text, flights: [] };
+    return { summary: 'Agent Transport indisponible', flights: [], trains: [], cars: [] };
   }
 }
 
-// ─── ACCOMMODATION AGENT ────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+// ── ACCOMMODATION AGENT ─────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
 export async function searchAccommodation(params: {
   destinations: { city: string }[];
   vibe: string;
   budget: string;
   pax: string;
 }) {
-  const model = getModel();
   const destList = params.destinations.map(d => d.city).join(', ');
+  const primaryDest = params.destinations[0]?.city || 'destination';
 
-  const prompt = `Tu es un agent spécialiste de l'hébergement haut de gamme pour une agence de voyage de luxe.
+  const prompt = `Tu es un agent EXPERT de l'hébergement ultra-luxe pour une agence de voyage premium.
 
-Recherche les meilleurs hôtels pour:
-- Destinations: ${destList}
-- Ambiance: ${params.vibe || 'Luxe & Détente'}
-- Budget: ${params.budget || 'Premium'}
-- Voyageurs: ${params.pax || '2'}
+MISSION: Trouver les 10 MEILLEURS hôtels pour:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Destination: ${destList}
+• Ambiance: ${params.vibe || 'Luxe & Détente'}
+• Budget: ${params.budget || 'Premium (500-2000€/nuit)'}
+• Voyageurs: ${params.pax || '2'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-IMPORTANT: Pour chaque hôtel, inclus une URL réelle vers le site officiel de l'hôtel (ex: https://www.fourseasons.com, https://www.rosewoodhotels.com, etc.) et le nom de domaine.
+RÈGLES OBLIGATOIRES:
+1. 🏨 Hôtels qui EXISTENT RÉELLEMENT à ${primaryDest} (noms officiels complets)
+2. 💰 Prix RÉELS par nuit en saison (vérifie les tarifs typiques de chaque enseigne)
+3. ⭐ Mélange: 4 palaces 5★, 3 boutique-hôtels exclusifs, 2 resorts, 1 villa privée
+4. 📋 Highlights = vrais services de l'hôtel (nom du restaurant, spa, vue spécifique)
+5. 💡 Ajouter une recommandation personnalisée (2 phrases max)
 
-Réponds UNIQUEMENT en JSON valide, sans texte avant ou après:
+Réponds UNIQUEMENT en JSON valide, AUCUN texte avant ou après:
 {
   "hotels": [
     {
-      "name": "nom de l'hôtel",
-      "destination": "ville",
+      "name": "Nom complet officiel (ex: Four Seasons Resort Bali at Sayan)",
+      "destination": "${primaryDest}",
       "stars": 5,
-      "pricePerNight": "prix estimé en €",
-      "highlights": ["vue mer", "spa", "suite"],
-      "url": "https://www.hotel.com",
-      "domain": "hotel.com",
-      "recommendation": "pourquoi cet hôtel"
+      "pricePerNight": "XXX €",
+      "highlights": ["Nom restaurant étoilé", "Type de vue spécifique", "Spa signature nom"],
+      "recommendation": "Pourquoi ce choix pour ce profil client en 2 phrases."
     }
   ],
-  "summary": "résumé court"
+  "summary": "Sélection de X hôtels d'exception à ${primaryDest}. Du palace iconique au boutique-hôtel confidentiel."
 }`;
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
   try {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    return jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: text, hotels: [] };
+    const parsed = await generateJSON(prompt);
+    if (parsed.hotels) {
+      parsed.hotels = parsed.hotels.map((h: any) => {
+        const link = buildHotelSearchUrl(h.name, h.destination || destList);
+        return { ...h, url: link.url, domain: link.domain };
+      });
+    }
+    return parsed;
   } catch {
-    return { summary: text, hotels: [] };
+    return { summary: 'Agent Hébergement indisponible', hotels: [] };
   }
 }
 
-// ─── CLIENT PROFILE AGENT ──────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+// ── CLIENT PROFILE AGENT ────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
 export async function analyzeClientProfile(params: {
   pax: string;
   vibe: string;
   budget: string;
   mustHaves: string;
 }) {
-  const model = getModel();
+  // Uses generateJSON helper
 
-  const prompt = `Tu es un agent CRM spécialiste du profil client pour une agence de voyage de luxe.
+  const prompt = `Tu es un agent CRM EXPERT spécialiste du profil client pour une agence de voyage ultra-luxe.
 
-Analyse ce profil voyageur et donne des recommandations personnalisées:
-- Voyageurs: ${params.pax || '2 adultes'}
-- Ambiance souhaitée: ${params.vibe || 'Non précisé'}
-- Budget: ${params.budget || 'Non précisé'}
-- Must-haves: ${params.mustHaves || 'Aucun'}
+MISSION: Analyser le profil voyageur et créer des recommandations ACTIONNABLES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Voyageurs: ${params.pax || '2 adultes'}
+• Ambiance souhaitée: ${params.vibe || 'Non précisé'}
+• Budget: ${params.budget || 'Non précisé'}
+• Must-haves: ${params.mustHaves || 'Aucun'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-IMPORTANT: Pour chaque recommandation, inclus un lien URL utile si possible (site de réservation, activité, lieu, etc.).
+RÈGLES OBLIGATOIRES:
+1. 🎯 10 recommandations ULTRA-CONCRÈTES et spécifiques (pas de recommandations vagues)
+2. 🏷️ Chaque recommandation a un type: activité, service, restaurant, bien-être, expérience, transport
+3. 💡 Inclure des services premium réalistes (transfert privé, conciergerie, personal shopper, etc.)
+4. 🎏 Adapter au profil: ${params.vibe === 'Lune de Miel' ? 'couple romantique' : params.vibe === "Voyage d'Affaires" ? 'professionnel exigeant' : 'voyageur découverte'}
 
-Réponds UNIQUEMENT en JSON valide, sans texte avant ou après:
+Réponds UNIQUEMENT en JSON valide, AUCUN texte avant ou après:
 {
   "profile": {
-    "segment": "Luxe/Premium/Standard",
+    "segment": "Ultra-Luxe/Luxe/Premium",
     "preferences": ["pref1", "pref2", "pref3"],
     "specialNeeds": "besoins particuliers détectés",
-    "loyaltyTips": "comment fidéliser ce client"
+    "loyaltyTips": "stratégie de fidélisation en 1 phrase"
   },
-  "summary": "résumé court du profil client",
+  "summary": "Profil [segment]. Recommandations personnalisées pour maximiser l'expérience.",
   "recommendations": [
     {
-      "text": "description de la recommandation",
-      "url": "https://lien-utile.com",
-      "type": "activité/service/lieu"
+      "text": "Description concrète et actionnable de la recommandation avec nom du prestataire si applicable",
+      "type": "activité/service/restaurant/bien-être/expérience/transport"
     }
   ]
 }`;
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
   try {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    return jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: text, profile: {} };
+    const parsed = await generateJSON(prompt);
+    if (parsed.recommendations) {
+      parsed.recommendations = parsed.recommendations.map((r: any) => ({
+        ...r,
+        url: buildActivityUrl(r.text || '', r.type || ''),
+      }));
+    }
+    return parsed;
   } catch {
-    return { summary: text, profile: {} };
+    return { summary: 'Agent Client indisponible', profile: {} };
   }
 }
 
-// ─── ITINERARY PLANNER AGENT ────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+// ── ITINERARY PLANNER AGENT ─────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
 export async function planItinerary(params: {
   destinations: { city: string }[];
   departureDate: string;
@@ -156,45 +380,66 @@ export async function planItinerary(params: {
   vibe: string;
   mustHaves: string;
 }) {
-  const model = getModel();
+  // Uses generateJSON helper
   const destList = params.destinations.map(d => d.city).join(' → ');
+  const primaryDest = params.destinations[0]?.city || 'destination';
 
-  const prompt = `Tu es un agent spécialiste de la planification d'itinéraires pour une agence de voyage de luxe.
+  // Calculate actual trip duration
+  let numDays = 7;
+  if (params.departureDate && params.returnDate) {
+    const dep = new Date(params.departureDate);
+    const ret = new Date(params.returnDate);
+    const diff = Math.ceil((ret.getTime() - dep.getTime()) / (1000 * 60 * 60 * 24));
+    if (diff > 0 && diff <= 30) numDays = diff;
+  }
 
-Crée un itinéraire jour par jour pour:
-- Destinations: ${destList}
-- Du ${params.departureDate} au ${params.returnDate}
-- Ambiance: ${params.vibe || 'Découverte & Détente'}
-- Must-haves: ${params.mustHaves || 'Aucun'}
+  const prompt = `Tu es un agent EXPERT planificateur d'itinéraires pour une agence de voyage ultra-luxe.
 
-IMPORTANT: Pour chaque journée, inclus des URLs réelles vers les lieux et activités mentionnés (Google Maps, TripAdvisor, sites officiels, etc).
+MISSION: Créer un itinéraire jour par jour EXCEPTIONNEL:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Destinations: ${destList}
+• Durée: ${numDays} jours (du ${params.departureDate || 'J1'} au ${params.returnDate || `J${numDays}`})
+• Ambiance: ${params.vibe || 'Découverte & Détente'}
+• Must-haves: ${params.mustHaves || 'Aucun'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Réponds UNIQUEMENT en JSON valide, sans texte avant ou après:
+RÈGLES OBLIGATOIRES:
+1. 📍 Noms de lieux RÉELS: vrais restaurants (ex: "L'Atelier de Joël Robuchon"), vrais temples (ex: "Tanah Lot"), vraies plages (ex: "Anse Source d'Argent")
+2. 📐 Exactement ${numDays} jours, pas plus pas moins
+3. 🕐 Rythme réaliste: pas trop d'activités par jour, temps de repos inclus
+4. 🌟 Chaque jour a un "highlight" — le moment fort de la journée
+5. 🍽️ Au moins 1 restaurant nommé par jour (petit-déjeuner, déjeuner ou dîner)
+6. 🏨 Si multi-destination, répartir les jours logiquement avec jours de transfert
+
+Réponds UNIQUEMENT en JSON valide, AUCUN texte avant ou après:
 {
   "days": [
     {
       "day": 1,
-      "title": "Titre du jour",
+      "title": "Titre évocateur et unique pour ce jour",
       "destination": "ville",
-      "morning": "activité du matin",
-      "morningUrl": "https://lien-vers-lieu-ou-activité.com",
-      "afternoon": "activité de l'après-midi",
-      "afternoonUrl": "https://lien-vers-lieu-ou-activité.com",
-      "evening": "activité du soir",
-      "eveningUrl": "https://lien-vers-lieu-ou-activité.com",
-      "highlight": "moment fort de la journée"
+      "morning": "Activité détaillée avec NOM DU LIEU spécifique",
+      "afternoon": "Activité avec NOM DU LIEU",
+      "evening": "Restaurant + activité avec NOM du restaurant ou lieu",
+      "highlight": "🌟 Moment fort en 1 phrase"
     }
   ],
-  "summary": "résumé court de l'itinéraire",
-  "tips": ["conseil1", "conseil2"]
+  "summary": "Itinéraire de ${numDays} jours à ${destList}. Un parcours mêlant [thèmes principaux].",
+  "tips": ["Conseil pratique spécifique à ${primaryDest} #1", "Conseil #2", "Conseil #3"]
 }`;
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
   try {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    return jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: text, days: [] };
+    const parsed = await generateJSON(prompt);
+    if (parsed.days) {
+      parsed.days = parsed.days.map((d: any) => ({
+        ...d,
+        morningUrl: d.morning ? buildActivityUrl(d.morning, d.destination || primaryDest) : null,
+        afternoonUrl: d.afternoon ? buildActivityUrl(d.afternoon, d.destination || primaryDest) : null,
+        eveningUrl: d.evening ? buildActivityUrl(d.evening, d.destination || primaryDest) : null,
+      }));
+    }
+    return parsed;
   } catch {
-    return { summary: text, days: [] };
+    return { summary: 'Agent Itinéraire indisponible', days: [] };
   }
 }

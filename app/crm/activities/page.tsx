@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Calendar, Clock, CheckCircle2, PhoneCall, Mail, AlertTriangle, MessageSquare, RefreshCcw, X, Plus } from 'lucide-react';
-import { getActivities, createActivity, updateActivityStatus, CRMActivity } from '@/src/lib/firebase/crm';
+import { useState, useEffect, useCallback } from 'react';
+import { Calendar, Clock, CheckCircle2, PhoneCall, Mail, AlertTriangle, MessageSquare, RefreshCcw, X, Plus, User, Target, Plane } from 'lucide-react';
+import { getActivities, createActivity, updateActivityStatus, getContacts, CRMActivity, CRMContact } from '@/src/lib/firebase/crm';
 
 const iconMap: Record<string, any> = {
     'AlertTriangle': AlertTriangle,
@@ -15,6 +15,7 @@ const iconMap: Record<string, any> = {
 
 export default function CRMActivities() {
     const [activities, setActivities] = useState<any[]>([]);
+    const [contacts, setContacts] = useState<CRMContact[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newTask, setNewTask] = useState({
@@ -22,10 +23,12 @@ export default function CRMActivities() {
         time: '',
         type: 'normal' as CRMActivity['type'],
         color: 'gray' as CRMActivity['color'],
-        iconName: 'Calendar'
+        iconName: 'Calendar',
+        contactId: '',
+        contactName: '',
     });
 
-    const loadActivities = async () => {
+    const loadActivities = useCallback(async () => {
         setLoading(true);
         try {
             const data = await getActivities();
@@ -39,11 +42,13 @@ export default function CRMActivities() {
         } finally {
             setLoading(false);
         }
-    };
-
-    useEffect(() => {
-        loadActivities();
     }, []);
+
+    const loadContacts = useCallback(async () => {
+        try { setContacts(await getContacts()); } catch (e) { console.error(e); }
+    }, []);
+
+    useEffect(() => { loadActivities(); loadContacts(); }, [loadActivities, loadContacts]);
 
     const handleAddTask = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -54,10 +59,12 @@ export default function CRMActivities() {
                 type: newTask.type,
                 color: newTask.color,
                 status: 'PENDING',
-                iconName: newTask.iconName
+                iconName: newTask.iconName,
+                contactId: newTask.contactId || undefined,
+                contactName: newTask.contactName || undefined,
             });
             setIsModalOpen(false);
-            setNewTask({ title: '', time: '', type: 'normal', color: 'gray', iconName: 'Calendar' });
+            setNewTask({ title: '', time: '', type: 'normal', color: 'gray', iconName: 'Calendar', contactId: '', contactName: '' });
             loadActivities();
         } catch (error) {
             console.error("Failed to add task", error);
@@ -65,12 +72,17 @@ export default function CRMActivities() {
     };
 
     const handleMarkDone = async (id: string) => {
-        try {
-            await updateActivityStatus(id, 'DONE');
-            loadActivities();
-        } catch (error) {
-            console.error("Failed to update task", error);
-        }
+        try { await updateActivityStatus(id, 'DONE'); loadActivities(); }
+        catch (error) { console.error("Failed to update task", error); }
+    };
+
+    const handleContactSelect = (contactId: string) => {
+        const contact = contacts.find(c => c.id === contactId);
+        setNewTask({
+            ...newTask,
+            contactId,
+            contactName: contact ? `${contact.firstName} ${contact.lastName}` : '',
+        });
     };
 
     return (
@@ -91,7 +103,6 @@ export default function CRMActivities() {
             </div>
 
             <div className="relative">
-                {/* Timeline Line */}
                 <div className="absolute left-8 top-4 bottom-4 w-px bg-luna-warm-gray/30" />
 
                 <div className="space-y-6 relative z-10">
@@ -121,6 +132,28 @@ export default function CRMActivities() {
                                             <Clock size={14} /> {activity.time}
                                         </span>
                                     </div>
+
+                                    {/* Linked entity badges */}
+                                    {(activity.contactName || activity.leadId || activity.tripId) && (
+                                        <div className="flex gap-2 mb-3 flex-wrap">
+                                            {activity.contactName && (
+                                                <span className="text-[10px] bg-sky-50 text-sky-600 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                                                    <User size={10} /> {activity.contactName}
+                                                </span>
+                                            )}
+                                            {activity.leadId && (
+                                                <span className="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                                                    <Target size={10} /> Lead
+                                                </span>
+                                            )}
+                                            {activity.tripId && (
+                                                <span className="text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                                                    <Plane size={10} /> Trip
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+
                                     {!isDone && (
                                         <div className="flex gap-3 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button onClick={() => handleMarkDone(activity.id)} className="text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-lg transition-colors">Marquer Fait</button>
@@ -147,6 +180,19 @@ export default function CRMActivities() {
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Titre de l'action</label>
                                 <input type="text" placeholder="Ex: Appeler Sophie Robert..." required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900" value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} />
                             </div>
+
+                            {/* Contact selector */}
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Contact lié (optionnel)</label>
+                                <select className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900 appearance-none bg-white"
+                                    value={newTask.contactId} onChange={e => handleContactSelect(e.target.value)}>
+                                    <option value="">— Aucun —</option>
+                                    {contacts.map(c => (
+                                        <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
                                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Date / Heure prévue</label>

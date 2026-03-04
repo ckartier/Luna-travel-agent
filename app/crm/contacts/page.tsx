@@ -1,158 +1,228 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Users, Search, Star, MessageSquare, Phone, Mail, MoreHorizontal, RefreshCcw, X } from 'lucide-react';
-import { getContacts, createContact, CRMContact } from '@/src/lib/firebase/crm';
+import { useState, useEffect, useCallback } from 'react';
+import { Users, Search, Star, Phone, Mail, RefreshCcw, X, Plus, ChevronRight, Plane, Calendar, Target, Clock } from 'lucide-react';
+import { getContacts, createContact, getLeadsForContact, getTripsForContact, getActivitiesForContact, CRMContact, CRMLead, CRMTrip, CRMActivity } from '@/src/lib/firebase/crm';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const VIP_COLORS: Record<string, string> = {
+    Standard: 'bg-gray-100 text-gray-600',
+    Premium: 'bg-blue-50 text-blue-600',
+    VIP: 'bg-amber-50 text-amber-700',
+    Elite: 'bg-purple-50 text-purple-700',
+};
 
 export default function CRMContacts() {
-    const [contacts, setContacts] = useState<any[]>([]);
+    const [contacts, setContacts] = useState<CRMContact[]>([]);
     const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedContact, setSelectedContact] = useState<CRMContact | null>(null);
+    const [contactLeads, setContactLeads] = useState<CRMLead[]>([]);
+    const [contactTrips, setContactTrips] = useState<CRMTrip[]>([]);
+    const [contactActivities, setContactActivities] = useState<CRMActivity[]>([]);
+    const [loadingDetails, setLoadingDetails] = useState(false);
     const [newContact, setNewContact] = useState({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        vipLevel: 'Standard' as CRMContact['vipLevel'],
-        preferences: ''
+        firstName: '', lastName: '', email: '', phone: '',
+        vipLevel: 'Standard' as CRMContact['vipLevel'], preferences: ''
     });
+
+    const loadContacts = useCallback(async () => {
+        setLoading(true);
+        try { setContacts(await getContacts()); }
+        catch (e) { console.error(e); }
+        finally { setLoading(false); }
+    }, []);
+
+    useEffect(() => { loadContacts(); }, [loadContacts]);
 
     const handleAddContact = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
             await createContact({
-                firstName: newContact.firstName,
-                lastName: newContact.lastName,
-                email: newContact.email,
-                phone: newContact.phone,
+                firstName: newContact.firstName, lastName: newContact.lastName,
+                email: newContact.email, phone: newContact.phone,
                 vipLevel: newContact.vipLevel,
-                preferences: newContact.preferences ? newContact.preferences.split(',').map(p => p.trim()) : []
+                preferences: newContact.preferences.split(',').map(p => p.trim()).filter(Boolean),
             });
             setIsModalOpen(false);
             setNewContact({ firstName: '', lastName: '', email: '', phone: '', vipLevel: 'Standard', preferences: '' });
             loadContacts();
-        } catch (error) {
-            console.error("Failed to add contact:", error);
-        }
+        } catch (e) { console.error(e); }
     };
 
-    const loadContacts = async () => {
-        setLoading(true);
+    const openContactDetail = async (contact: CRMContact) => {
+        setSelectedContact(contact);
+        setLoadingDetails(true);
         try {
-            const data = await getContacts();
-            const formatted = data.map(c => ({
-                id: c.id,
-                name: `${c.firstName} ${c.lastName}`,
-                company: 'Client Particulier', // Par défaut
-                email: c.email,
-                vip: c.vipLevel || 'Standard',
-                lastTrip: c.preferences ? c.preferences.join(', ') : 'Aucun'
-            }));
-            setContacts(formatted);
-        } catch (error) {
-            console.error("Failed to load contacts:", error);
-        } finally {
-            setLoading(false);
-        }
+            const [leads, trips, activities] = await Promise.all([
+                getLeadsForContact(contact.id!),
+                getTripsForContact(contact.id!),
+                getActivitiesForContact(contact.id!),
+            ]);
+            setContactLeads(leads);
+            setContactTrips(trips);
+            setContactActivities(activities);
+        } catch (e) { console.error(e); }
+        finally { setLoadingDetails(false); }
     };
 
-    useEffect(() => {
-        loadContacts();
-    }, []);
+    const filtered = contacts.filter(c => {
+        const q = search.toLowerCase();
+        return `${c.firstName} ${c.lastName}`.toLowerCase().includes(q) || c.email.toLowerCase().includes(q);
+    });
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center mb-8">
-                <div>
-                    <h1 className="font-serif text-3xl font-semibold text-luna-charcoal tracking-tight">Base Clients & Contacts</h1>
-                    <p className="text-luna-text-muted font-normal mt-1">Gérez vos voyageurs VIP et leurs préférences personnalisées.</p>
-                </div>
-                <div className="flex gap-3">
-                    <button onClick={loadContacts} className="bg-white border border-luna-warm-gray/30 hover:bg-luna-cream text-luna-charcoal font-medium px-4 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-2">
-                        <RefreshCcw size={18} className={loading ? "animate-spin text-luna-accent" : "text-luna-text-muted"} />
-                    </button>
-                    <button onClick={() => setIsModalOpen(true)} className="bg-luna-charcoal hover:bg-[#1a1a1a] text-luna-cream font-medium px-6 py-2.5 rounded-xl shadow-lg transition-all flex items-center gap-2 text-sm">
-                        + Ajouter Contact
-                    </button>
-                </div>
-            </div>
-
-            <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-luna-warm-gray/20 overflow-hidden">
-                <div className="p-4 border-b border-luna-warm-gray/15 flex items-center gap-4 bg-luna-cream/50">
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Rechercher un client ou une entreprise..."
-                            className="w-full pl-10 pr-4 py-2 rounded-lg border border-luna-warm-gray/30 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-normal text-luna-charcoal"
-                        />
+        <div className="flex h-full gap-0">
+            {/* Main list */}
+            <div className={`flex-1 flex flex-col ${selectedContact ? 'hidden md:flex' : ''}`}>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 md:mb-6 gap-3">
+                    <div>
+                        <h1 className="font-serif text-xl md:text-3xl font-semibold text-luna-charcoal tracking-tight">Contacts</h1>
+                        <p className="text-luna-text-muted font-normal text-sm mt-1 hidden sm:block">{contacts.length} contact{contacts.length > 1 ? 's' : ''} enregistré{contacts.length > 1 ? 's' : ''}</p>
                     </div>
-                    <button className="text-luna-charcoal font-medium px-4 py-2 bg-white border border-luna-warm-gray/30 rounded-lg hover:bg-luna-cream">Filtres</button>
+                    <div className="flex gap-2">
+                        <div className="relative">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-luna-text-muted" />
+                            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher..."
+                                className="pl-8 pr-4 py-2 bg-white/80 border border-luna-warm-gray/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-100 w-40 md:w-56" />
+                        </div>
+                        <button onClick={loadContacts} className="bg-white border border-luna-warm-gray/30 hover:bg-luna-cream text-luna-charcoal font-medium px-3 py-2 rounded-xl shadow-sm transition-all">
+                            <RefreshCcw size={16} className={loading ? "animate-spin text-luna-accent" : "text-luna-text-muted"} />
+                        </button>
+                        <button onClick={() => setIsModalOpen(true)} className="bg-luna-charcoal hover:bg-[#1a1a1a] text-luna-cream font-medium px-4 py-2 rounded-xl shadow-lg transition-all flex items-center gap-2 text-sm">
+                            <Plus size={16} /> <span className="hidden sm:inline">Ajouter</span>
+                        </button>
+                    </div>
                 </div>
 
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="bg-luna-cream/50 border-b border-luna-warm-gray/15 text-luna-text-muted text-xs font-semibold uppercase tracking-widest">
-                            <th className="p-4 pl-6">Client</th>
-                            <th className="p-4">Statut VIP</th>
-                            <th className="p-4">Contact</th>
-                            <th className="p-4">Dernier Voyage</th>
-                            <th className="p-4 text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                        {contacts.length === 0 && !loading && (
-                            <tr>
-                                <td colSpan={5} className="p-8 text-center text-gray-400 font-medium border-dashed">
-                                    Aucun contact enregistré.
-                                </td>
-                            </tr>
-                        )}
-                        {contacts.map((contact) => (
-                            <tr key={contact.id} className="hover:bg-luna-accent/5 transition-colors group cursor-pointer">
-                                <td className="p-4 pl-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-luna-charcoal text-luna-accent flex items-center justify-center font-semibold shadow-sm">
-                                            {contact.name.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-gray-900">{contact.name}</p>
-                                            <p className="text-xs text-gray-500 font-semibold">{contact.company}</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="p-4">
-                                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${contact.vip === 'Elite' ? 'bg-purple-100 text-purple-700' :
-                                        contact.vip === 'VIP' ? 'bg-amber-100 text-amber-700' :
-                                            contact.vip === 'Premium' ? 'bg-luna-accent/15 text-luna-accent-dark' :
-                                                'bg-luna-cream text-luna-text-muted'
-                                        }`}>
-                                        {contact.vip === 'Elite' || contact.vip === 'VIP' ? <Star size={10} className="fill-current" /> : null}
-                                        {contact.vip}
-                                    </span>
-                                </td>
-                                <td className="p-4">
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2"><Mail size={12} className="text-gray-400" /> {contact.email}</span>
-                                    </div>
-                                </td>
-                                <td className="p-4 text-sm font-semibold text-gray-600">
-                                    {contact.lastTrip}
-                                </td>
-                                <td className="p-4">
-                                    <div className="flex justify-center items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button className="p-2 text-luna-text-muted hover:text-luna-accent-dark hover:bg-luna-accent/10 rounded-lg"><Phone size={16} /></button>
-                                        <button className="p-2 text-luna-text-muted hover:text-luna-accent-dark hover:bg-luna-accent/10 rounded-lg"><MessageSquare size={16} /></button>
-                                        <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><MoreHorizontal size={16} /></button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                    {filtered.map(contact => (
+                        <motion.div key={contact.id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+                            onClick={() => openContactDetail(contact)}
+                            className={`flex items-center gap-4 p-4 rounded-2xl border bg-white/80 backdrop-blur-xl shadow-sm cursor-pointer transition-all hover:shadow-md
+                                ${selectedContact?.id === contact.id ? 'ring-2 ring-sky-400/40 border-sky-200' : 'border-luna-warm-gray/10 hover:border-luna-accent/30'}`}>
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-violet-500 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                                {contact.firstName[0]}{contact.lastName[0]}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-sm text-luna-charcoal truncate">{contact.firstName} {contact.lastName}</h4>
+                                <p className="text-xs text-luna-text-muted truncate">{contact.email}</p>
+                            </div>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${VIP_COLORS[contact.vipLevel]}`}>{contact.vipLevel}</span>
+                            <ChevronRight size={16} className="text-luna-text-muted shrink-0" />
+                        </motion.div>
+                    ))}
+                    {filtered.length === 0 && !loading && (
+                        <div className="text-center py-12 text-luna-text-muted">Aucun contact trouvé</div>
+                    )}
+                </div>
             </div>
 
-            {/* Modal Ajout Contact */}
+            {/* 360° Detail Panel */}
+            <AnimatePresence>
+                {selectedContact && (
+                    <motion.div initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 50, opacity: 0 }}
+                        className="w-full md:w-[400px] md:ml-4 bg-white/90 backdrop-blur-2xl rounded-2xl border border-luna-warm-gray/10 shadow-lg flex flex-col overflow-hidden">
+                        {/* Header */}
+                        <div className="p-5 border-b border-luna-warm-gray/10 bg-gradient-to-b from-sky-50/30 to-white">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-400 to-violet-500 flex items-center justify-center text-white text-lg font-bold">
+                                        {selectedContact.firstName[0]}{selectedContact.lastName[0]}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-serif text-lg font-semibold text-luna-charcoal">{selectedContact.firstName} {selectedContact.lastName}</h3>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${VIP_COLORS[selectedContact.vipLevel]}`}>{selectedContact.vipLevel}</span>
+                                    </div>
+                                </div>
+                                <button onClick={() => setSelectedContact(null)} className="p-1.5 rounded-lg hover:bg-luna-cream transition-all">
+                                    <X size={18} />
+                                </button>
+                            </div>
+                            <div className="flex gap-4 text-xs text-luna-text-muted">
+                                <span className="flex items-center gap-1"><Mail size={12} />{selectedContact.email}</span>
+                                {selectedContact.phone && <span className="flex items-center gap-1"><Phone size={12} />{selectedContact.phone}</span>}
+                            </div>
+                            {selectedContact.preferences.length > 0 && (
+                                <div className="flex gap-1.5 mt-2 flex-wrap">
+                                    {selectedContact.preferences.map((p, i) => (
+                                        <span key={i} className="text-[10px] bg-luna-cream px-2 py-0.5 rounded-full text-luna-text-muted font-medium">{p}</span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Linked data */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+                            {loadingDetails ? (
+                                <div className="flex justify-center py-8">
+                                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                                        className="w-5 h-5 border-2 border-luna-warm-gray/20 border-t-luna-charcoal rounded-full" />
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Leads */}
+                                    <div>
+                                        <h4 className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted mb-2 flex items-center gap-1.5">
+                                            <Target size={12} /> Pipeline ({contactLeads.length})
+                                        </h4>
+                                        {contactLeads.length === 0 ? (
+                                            <p className="text-xs text-luna-text-muted/60 italic">Aucun lead</p>
+                                        ) : contactLeads.map(lead => (
+                                            <div key={lead.id} className="flex items-center gap-3 p-3 rounded-xl bg-luna-cream/30 border border-luna-warm-gray/10 mb-1.5">
+                                                <Target size={14} className="text-luna-accent shrink-0" />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-luna-charcoal truncate">{lead.destination}</p>
+                                                    <p className="text-[10px] text-luna-text-muted">{lead.budget} • {lead.status}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Trips */}
+                                    <div>
+                                        <h4 className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted mb-2 flex items-center gap-1.5">
+                                            <Plane size={12} /> Voyages ({contactTrips.length})
+                                        </h4>
+                                        {contactTrips.length === 0 ? (
+                                            <p className="text-xs text-luna-text-muted/60 italic">Aucun voyage</p>
+                                        ) : contactTrips.map(trip => (
+                                            <div key={trip.id} className="flex items-center gap-3 p-3 rounded-xl bg-luna-cream/30 border border-luna-warm-gray/10 mb-1.5">
+                                                <div className="w-1.5 h-8 rounded-full shrink-0" style={{ backgroundColor: trip.color }} />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-luna-charcoal truncate">{trip.title}</p>
+                                                    <p className="text-[10px] text-luna-text-muted">{trip.startDate} → {trip.endDate} • {trip.amount}€</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Activities */}
+                                    <div>
+                                        <h4 className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted mb-2 flex items-center gap-1.5">
+                                            <Calendar size={12} /> Activités ({contactActivities.length})
+                                        </h4>
+                                        {contactActivities.length === 0 ? (
+                                            <p className="text-xs text-luna-text-muted/60 italic">Aucune activité</p>
+                                        ) : contactActivities.map(act => (
+                                            <div key={act.id} className="flex items-center gap-3 p-3 rounded-xl bg-luna-cream/30 border border-luna-warm-gray/10 mb-1.5">
+                                                <Clock size={14} className={act.status === 'DONE' ? 'text-emerald-500' : 'text-amber-500'} />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={`text-sm font-medium truncate ${act.status === 'DONE' ? 'text-gray-400 line-through' : 'text-luna-charcoal'}`}>{act.title}</p>
+                                                    <p className="text-[10px] text-luna-text-muted">{act.time} • {act.status}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Add Contact Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-luna-charcoal/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-3xl w-full max-w-lg shadow-luxury overflow-hidden">
@@ -164,39 +234,45 @@ export default function CRMContacts() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
                                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Prénom</label>
-                                    <input type="text" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900" value={newContact.firstName} onChange={e => setNewContact({ ...newContact, firstName: e.target.value })} />
+                                    <input type="text" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900"
+                                        value={newContact.firstName} onChange={e => setNewContact({ ...newContact, firstName: e.target.value })} />
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Nom</label>
-                                    <input type="text" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900" value={newContact.lastName} onChange={e => setNewContact({ ...newContact, lastName: e.target.value })} />
+                                    <input type="text" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900"
+                                        value={newContact.lastName} onChange={e => setNewContact({ ...newContact, lastName: e.target.value })} />
                                 </div>
                             </div>
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Email</label>
-                                <input type="email" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900" value={newContact.email} onChange={e => setNewContact({ ...newContact, email: e.target.value })} />
+                                <input type="email" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900"
+                                    value={newContact.email} onChange={e => setNewContact({ ...newContact, email: e.target.value })} />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
                                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Téléphone</label>
-                                    <input type="tel" className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900" value={newContact.phone} onChange={e => setNewContact({ ...newContact, phone: e.target.value })} />
+                                    <input type="text" className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900"
+                                        value={newContact.phone} onChange={e => setNewContact({ ...newContact, phone: e.target.value })} />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Statut VIP</label>
-                                    <select className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900 appearance-none bg-white" value={newContact.vipLevel} onChange={e => setNewContact({ ...newContact, vipLevel: e.target.value as CRMContact['vipLevel'] })}>
-                                        <option>Standard</option>
-                                        <option>Premium</option>
-                                        <option>VIP</option>
-                                        <option>Elite</option>
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Niveau VIP</label>
+                                    <select className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900 bg-white"
+                                        value={newContact.vipLevel} onChange={e => setNewContact({ ...newContact, vipLevel: e.target.value as CRMContact['vipLevel'] })}>
+                                        <option value="Standard">Standard</option>
+                                        <option value="Premium">Premium</option>
+                                        <option value="VIP">VIP</option>
+                                        <option value="Elite">Elite</option>
                                     </select>
                                 </div>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Préférences (Séparées par virgule)</label>
-                                <input type="text" placeholder="Ex: Île Maurice, Spa, Vol Direct" className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900" value={newContact.preferences} onChange={e => setNewContact({ ...newContact, preferences: e.target.value })} />
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Préférences (séparées par des virgules)</label>
+                                <input type="text" placeholder="Ex: Plage, Luxe, Asie..." className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900"
+                                    value={newContact.preferences} onChange={e => setNewContact({ ...newContact, preferences: e.target.value })} />
                             </div>
                             <div className="pt-4 flex justify-end gap-3">
                                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 rounded-xl text-luna-charcoal font-medium hover:bg-luna-cream transition-colors">Annuler</button>
-                                <button type="submit" className="bg-luna-charcoal hover:bg-[#1a1a1a] text-luna-cream font-medium px-6 py-2.5 rounded-xl shadow-lg transition-all">Enregistrer le Contact</button>
+                                <button type="submit" className="bg-luna-charcoal hover:bg-[#1a1a1a] text-luna-cream font-medium px-6 py-2.5 rounded-xl shadow-lg transition-all">Créer</button>
                             </div>
                         </form>
                     </div>

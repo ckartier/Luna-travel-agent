@@ -12,8 +12,8 @@
   --color-luna-warm-gray: #c4beb6;
   --color-luna-cream: #faf8f5;
 
-  --font-sans: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-serif: "Playfair Display", "Georgia", serif;
+  --font-sans: "Helvetica Neue", "HelveticaNeue", Helvetica, Arial, sans-serif;
+  --font-serif: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, sans-serif;
 
   --shadow-glass: 0 16px 48px -12px rgba(0, 0, 0, 0.08);
   --shadow-luxury: 0 24px 64px -16px rgba(44, 44, 44, 0.12);
@@ -22,7 +22,7 @@
 
 @layer base {
   body {
-    @apply bg-luna-bg text-luna-text font-sans font-light antialiased overflow-hidden m-0 p-0;
+    @apply bg-luna-bg text-luna-text font-sans font-normal antialiased m-0 p-0;
   }
 }
 
@@ -54,5 +54,102 @@
 
   .input-label {
     @apply text-[11px] uppercase tracking-[0.15em] font-medium text-luna-text-muted mb-1 block;
+  }
+}
+
+/* ── MAP & FLIGHT ANIMATIONS ─────────────────────────── */
+
+@keyframes arcFlow {
+  0% {
+    stroke-dashoffset: 24;
+  }
+
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes arcFlowReverse {
+  0% {
+    stroke-dashoffset: 0;
+  }
+
+  100% {
+    stroke-dashoffset: 24;
+  }
+}
+
+@keyframes planeGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 8px 2px rgba(14, 165, 233, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 18px 6px rgba(14, 165, 233, 0.6);
+  }
+}
+
+@keyframes airportPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes cometTrail {
+  0% {
+    stroke-dashoffset: 200;
+  }
+
+  100% {
+    stroke-dashoffset: -200;
+  }
+}
+
+@keyframes scanLine {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes orbitFloat {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes sparkle {
+
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
   }
 }

@@ -1,6 +1,8 @@
 'use client';
 
 import { MapBackground } from '@/app/components/map/MapBackground';
+import type { LeafletMapHandle } from '@/app/components/map/LeafletMap';
+import { MAP_STYLES } from '@/app/components/map/LeafletMap';
 import { WeatherWidget } from '@/src/components/widgets/WeatherWidget';
 import {
   Plane,
@@ -13,7 +15,8 @@ import {
   MapPin,
   Plus,
   X,
-  Loader2
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -21,14 +24,15 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createLead, createContact } from '@/src/lib/firebase/crm';
 import { LunaLogo } from '@/app/components/LunaLogo';
+import { PdfExport } from '@/app/components/PdfExport';
 
 type WorkflowState = 'IDLE' | 'ANALYSING' | 'DISTRIBUTING' | 'AGENTS_WORKING' | 'VALIDATION' | 'GENERATING_PROPOSALS' | 'PROPOSALS_READY';
 
 const agentMeta = {
-  transport: { title: 'Transport', subtitle: 'Vols & Routings', icon: Plane, angle: -90, color: '#0ea5e9', gradient: 'from-sky-500 to-cyan-400' },
-  accommodation: { title: 'Hébergement', subtitle: 'Hôtels & Resorts', icon: Hotel, angle: 180, color: '#f59e0b', gradient: 'from-amber-500 to-orange-400' },
-  client: { title: 'Profil Client', subtitle: 'CRM Analyse', icon: Users, angle: 0, color: '#8b5cf6', gradient: 'from-violet-500 to-purple-400' },
-  itinerary: { title: 'Itinéraire', subtitle: 'Planning Jour/Jour', icon: CalendarRange, angle: 90, color: '#10b981', gradient: 'from-emerald-500 to-teal-400' },
+  transport: { title: 'Transport', subtitle: 'Vols & Routings', icon: Plane, angle: -90, color: '#0ea5e9', gradient: 'from-sky-500 to-cyan-400', pastelBg: 'bg-sky-50', pastelText: 'text-sky-600', pastelBorder: 'border-sky-100', pastelRing: 'ring-sky-200' },
+  accommodation: { title: 'Hébergement', subtitle: 'Hôtels & Resorts', icon: Hotel, angle: 180, color: '#f59e0b', gradient: 'from-amber-500 to-orange-400', pastelBg: 'bg-amber-50', pastelText: 'text-amber-600', pastelBorder: 'border-amber-100', pastelRing: 'ring-amber-200' },
+  client: { title: 'Profil Client', subtitle: 'CRM Analyse', icon: Users, angle: 0, color: '#8b5cf6', gradient: 'from-violet-500 to-purple-400', pastelBg: 'bg-violet-50', pastelText: 'text-violet-600', pastelBorder: 'border-violet-100', pastelRing: 'ring-violet-200' },
+  itinerary: { title: 'Itinéraire', subtitle: 'Planning Jour/Jour', icon: CalendarRange, angle: 90, color: '#10b981', gradient: 'from-emerald-500 to-teal-400', pastelBg: 'bg-emerald-50', pastelText: 'text-emerald-600', pastelBorder: 'border-emerald-100', pastelRing: 'ring-emerald-200' },
 };
 
 type AgentKey = keyof typeof agentMeta;
@@ -64,8 +68,37 @@ function DashboardPage() {
   const [selectedAgent, setSelectedAgent] = useState<AgentKey | null>(null);
   const [activeAgents, setActiveAgents] = useState<AgentKey[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<LeafletMapHandle>(null);
+  const [activeMapStyle, setActiveMapStyle] = useState('light-v11');
   const router = useRouter();
   const [isExporting, setIsExporting] = useState(false);
+
+  // Autocomplete
+  const [suggestions, setSuggestions] = useState<{ id: string; name: string; country: string }[]>([]);
+  const [activeInputId, setActiveInputId] = useState<string | null>(null);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  const fetchSuggestions = (query: string, inputId: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (query.length < 2) { setSuggestions([]); return; }
+    setActiveInputId(inputId);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+        if (!token) return;
+        const res = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?types=place&limit=5&language=fr&access_token=${token}`
+        );
+        const data = await res.json();
+        const results = (data.features || []).map((f: any) => ({
+          id: f.id,
+          name: f.text,
+          country: f.context?.find((c: any) => c.id.startsWith('country'))?.text || f.place_name?.split(',').pop()?.trim() || '',
+        }));
+        setSuggestions(results);
+      } catch { setSuggestions([]); }
+    }, 250);
+  };
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -152,6 +185,22 @@ function DashboardPage() {
       const data = await res.json();
       setAgentResults(data);
       setWorkflowState('VALIDATION');
+
+      // ── Persist search event to localStorage for analytics ──
+      try {
+        const history = JSON.parse(localStorage.getItem('luna_search_history') || '[]');
+        history.push({
+          id: Date.now(),
+          timestamp: new Date().toISOString(),
+          destination: destinations[0]?.city || '',
+          destinations: destinations.filter(d => d.city.trim()).map(d => d.city),
+          budget, pax, vibe,
+          flightsCount: data?.transport?.flights?.length || 0,
+          hotelsCount: data?.accommodation?.hotels?.length || 0,
+          daysCount: data?.itinerary?.days?.length || 0,
+        });
+        localStorage.setItem('luna_search_history', JSON.stringify(history.slice(-100)));
+      } catch { /* silent */ }
     } catch (err) {
       console.error('Agent API error:', err);
       setWorkflowState('VALIDATION');
@@ -256,7 +305,39 @@ function DashboardPage() {
 
   return (
     <div ref={containerRef} className="relative w-full h-full flex flex-col overflow-hidden">
-      <MapBackground />
+      <MapBackground ref={mapRef} />
+
+      {/* ═══ MAP CONTROLS — z-50 above form overlay ═══ */}
+      <div className="absolute bottom-5 right-5 z-50 pointer-events-auto flex flex-col items-end gap-3">
+        {/* Zoom buttons */}
+        <div className="bg-white/90 backdrop-blur-xl rounded-xl shadow-lg border border-luna-warm-gray/15 flex flex-col overflow-hidden">
+          <button
+            onClick={() => mapRef.current?.zoomIn()}
+            className="w-9 h-9 flex items-center justify-center text-luna-charcoal hover:bg-luna-cream transition-colors text-base cursor-pointer select-none"
+          >+</button>
+          <div className="h-px bg-luna-warm-gray/20 mx-1" />
+          <button
+            onClick={() => mapRef.current?.zoomOut()}
+            className="w-9 h-9 flex items-center justify-center text-luna-charcoal hover:bg-luna-cream transition-colors text-base cursor-pointer select-none"
+          >−</button>
+        </div>
+
+        {/* Style selector */}
+        <div className="bg-white/90 backdrop-blur-xl rounded-xl p-1.5 border border-luna-warm-gray/15 shadow-lg flex flex-col gap-1">
+          {MAP_STYLES.map(s => (
+            <button
+              key={s.id}
+              onClick={() => {
+                setActiveMapStyle(s.id);
+                mapRef.current?.setMapStyle(s.id);
+              }}
+              title={s.label}
+              className={`w-6 h-6 rounded-lg cursor-pointer transition-all duration-200 ${activeMapStyle === s.id ? 'ring-2 ring-luna-accent ring-offset-1 scale-110' : 'opacity-50 hover:opacity-100 hover:scale-110'}`}
+              style={{ backgroundColor: s.color }}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Weather Widgets (real API) */}
       <div className="absolute top-16 right-3 md:top-20 md:right-5 z-40 w-[220px] md:w-[260px] hidden md:block">
@@ -268,87 +349,68 @@ function DashboardPage() {
         </motion.div>
       </div>
 
-      {/* ═══ ORBITAL RINGS + FLOWING CURRENT WIRES ═══ */}
+      {/* ═══ N8N-STYLE WORKFLOW WIRES ═══ */}
       {isProcessing && (
         <>
-          {/* CSS for flowing current animation */}
           <style>{`
-            @keyframes wirePulse {
-              0% { stroke-dashoffset: 1000; }
-              100% { stroke-dashoffset: 0; }
-            }
+            @keyframes wirePulse { 0% { stroke-dashoffset: 100; } 100% { stroke-dashoffset: 0; } }
+            @keyframes wirePulse2 { 0% { stroke-dashoffset: 120; } 100% { stroke-dashoffset: 0; } }
+            @keyframes floatAgent { 0%,100% { transform: translate(-50%,-50%) translateY(0); } 50% { transform: translate(-50%,-50%) translateY(-4px); } }
           `}</style>
 
-          {/* Orbital rings */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-15">
-            {[180, 230, 280].map((size, i) => (
-              <motion.div
-                key={i}
-                className="absolute rounded-full border border-sky-300/10"
-                style={{ width: size, height: size }}
-                animate={{ rotate: i % 2 === 0 ? 360 : -360 }}
-                transition={{ duration: 15 + i * 5, repeat: Infinity, ease: 'linear' }}
-              >
-                <div className="absolute w-1 h-1 rounded-full bg-sky-400 shadow-[0_0_8px_rgba(135,206,235,0.8)]" style={{ top: -2, left: '50%', marginLeft: -2 }} />
-              </motion.div>
-            ))}
-          </div>
-
-          {/* SVG wires with smooth flowing current */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none z-14" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-            <defs>
-              <filter id="wireGlowSmooth" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="4" result="blur" />
-                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-              </filter>
-              <linearGradient id="wireGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#87CEEB" stopOpacity="0.1" />
-                <stop offset="50%" stopColor="#87CEEB" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#87CEEB" stopOpacity="0.1" />
-              </linearGradient>
-            </defs>
-
+          {/* SVG wires — use viewport coords matching card positions */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none z-14" viewBox="0 0 100 100" preserveAspectRatio="none">
             {(['transport', 'accommodation', 'client', 'itinerary'] as AgentKey[]).map((agent, i) => {
               const isActive = activeAgents.includes(agent);
               const isValidated = validatedAgents.includes(agent);
               if (!isActive) return null;
 
-              const curvePaths = [
-                'M 500 460 C 470 320, 530 220, 540 180',
-                'M 460 500 C 320 470, 220 530, 180 490',
-                'M 540 500 C 680 470, 780 530, 820 490',
-                'M 500 540 C 470 680, 530 780, 540 820',
-              ];
+              const meta = agentMeta[agent];
+              const agentColor = isValidated ? '#10b981' : meta.color;
 
+              // Paths matching card positions at 18/14/86/82%
+              const curvePaths = [
+                'M 50 50 C 50 44, 48 34, 50 18',   // top — Transport
+                'M 50 50 C 44 48, 30 52, 14 50',   // left — Hébergement  
+                'M 50 50 C 56 48, 70 52, 86 50',   // right — Profil Client
+                'M 50 50 C 50 56, 52 66, 50 82',   // bottom — Itinéraire
+              ];
               const pathD = curvePaths[i];
-              const glowColor = isValidated ? '#10b981' : '#0ea5e9'; // emerald vs light blue
 
               return (
                 <g key={agent}>
-                  {/* Subtle static background wire */}
+                  {/* Background wire */}
                   <motion.path
-                    d={pathD}
-                    fill="none"
-                    stroke={glowColor}
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.15 }}
+                    d={pathD} fill="none" stroke={agentColor}
+                    strokeWidth="0.15" strokeLinecap="round"
+                    initial={{ opacity: 0 }} animate={{ opacity: 0.2 }}
                     transition={{ duration: 1, delay: i * 0.1 }}
                   />
-                  {/* Smooth animated comet flow */}
+                  {/* Animated flow */}
                   <motion.path
-                    d={pathD}
-                    fill="none"
-                    stroke={glowColor}
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    filter="url(#wireGlowSmooth)"
-                    strokeDasharray="150 850"
-                    style={{ animation: `wirePulse ${3 + (i * 0.2)}s linear infinite` }}
+                    d={pathD} fill="none" stroke={agentColor}
+                    strokeWidth="0.3" strokeLinecap="round"
+                    strokeDasharray="8 92"
+                    style={{ animation: `wirePulse ${2.5 + i * 0.2}s linear infinite` }}
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: isValidated ? 0.9 : 0.6 }}
+                    animate={{ opacity: isValidated ? 0.9 : 0.5 }}
                     transition={{ duration: 1, delay: i * 0.1 }}
+                  />
+                  {/* Secondary flow */}
+                  <motion.path
+                    d={pathD} fill="none" stroke={agentColor}
+                    strokeWidth="0.15" strokeLinecap="round"
+                    strokeDasharray="5 95"
+                    style={{ animation: `wirePulse2 ${3.5 + i * 0.3}s linear infinite` }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: isValidated ? 0.5 : 0.2 }}
+                    transition={{ duration: 1, delay: i * 0.15 + 0.5 }}
+                  />
+                  {/* Connection dot at center end */}
+                  <motion.circle
+                    cx="50" cy="50" r="0.8" fill={agentColor}
+                    initial={{ opacity: 0 }} animate={{ opacity: 0.6 }}
+                    transition={{ delay: i * 0.1 }}
                   />
                 </g>
               );
@@ -394,9 +456,36 @@ function DashboardPage() {
                         placeholder="Ville de départ (ex: Paris)"
                         className="input-underline pr-8"
                         value={departureCity}
-                        onChange={e => setDepartureCity(e.target.value)}
+                        onChange={e => { setDepartureCity(e.target.value); fetchSuggestions(e.target.value, 'departure'); }}
+                        onFocus={() => { if (departureCity.length >= 2) fetchSuggestions(departureCity, 'departure'); }}
+                        onBlur={() => setTimeout(() => { if (activeInputId === 'departure') { setSuggestions([]); setActiveInputId(null); } }, 200)}
+                        autoComplete="off"
                       />
                       <Plane className="absolute right-0 top-3 w-4 h-4 text-luna-text-muted/40" strokeWidth={1.5} />
+                      <AnimatePresence>
+                        {activeInputId === 'departure' && suggestions.length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -4 }}
+                            className="absolute left-0 right-0 top-full mt-1 bg-white/98 backdrop-blur-xl rounded-xl border border-luna-warm-gray/15 shadow-luxury z-50 overflow-hidden"
+                          >
+                            {suggestions.map(s => (
+                              <button
+                                key={s.id}
+                                type="button"
+                                className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 hover:bg-luna-cream/80 transition-colors"
+                                onMouseDown={e => e.preventDefault()}
+                                onClick={() => { setDepartureCity(s.name); setSuggestions([]); setActiveInputId(null); }}
+                              >
+                                <MapPin size={13} className="text-luna-accent flex-shrink-0" strokeWidth={1.5} />
+                                <span className="text-sm text-luna-charcoal font-normal">{s.name}</span>
+                                <span className="text-[10px] text-luna-text-muted ml-auto">{s.country}</span>
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
 
@@ -420,14 +509,44 @@ function DashboardPage() {
                           {destinations.length > 1 && (
                             <span className="text-[10px] font-bold text-luna-accent w-5 text-center">{idx + 1}</span>
                           )}
-                          <input
-                            type="text"
-                            placeholder={idx === 0 ? 'Où souhaitez-vous voyager ?' : `Destination ${idx + 1}`}
-                            className="input-underline flex-1 pr-8"
-                            value={dest.city}
-                            onChange={e => updateDestination(dest.id, e.target.value)}
-                            required={idx === 0}
-                          />
+                          <div className="relative flex-1">
+                            <input
+                              type="text"
+                              placeholder={idx === 0 ? 'Où souhaitez-vous voyager ?' : `Destination ${idx + 1}`}
+                              className="input-underline w-full pr-8"
+                              value={dest.city}
+                              onChange={e => { updateDestination(dest.id, e.target.value); fetchSuggestions(e.target.value, dest.id); }}
+                              onFocus={() => { if (dest.city.length >= 2) fetchSuggestions(dest.city, dest.id); }}
+                              onBlur={() => setTimeout(() => { if (activeInputId === dest.id) { setSuggestions([]); setActiveInputId(null); } }, 200)}
+                              required={idx === 0}
+                              autoComplete="off"
+                            />
+                            {/* Autocomplete dropdown */}
+                            <AnimatePresence>
+                              {activeInputId === dest.id && suggestions.length > 0 && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: -4 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: -4 }}
+                                  className="absolute left-0 right-0 top-full mt-1 bg-white/98 backdrop-blur-xl rounded-xl border border-luna-warm-gray/15 shadow-luxury z-50 overflow-hidden"
+                                >
+                                  {suggestions.map(s => (
+                                    <button
+                                      key={s.id}
+                                      type="button"
+                                      className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 hover:bg-luna-cream/80 transition-colors"
+                                      onMouseDown={e => e.preventDefault()}
+                                      onClick={() => { updateDestination(dest.id, s.name); setSuggestions([]); setActiveInputId(null); }}
+                                    >
+                                      <MapPin size={13} className="text-luna-accent flex-shrink-0" strokeWidth={1.5} />
+                                      <span className="text-sm text-luna-charcoal font-normal">{s.name}</span>
+                                      <span className="text-[10px] text-luna-text-muted ml-auto">{s.country}</span>
+                                    </button>
+                                  ))}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
                           {destinations.length > 1 && (
                             <button type="button" onClick={() => removeDestination(dest.id)} className="absolute right-0 top-3 text-luna-text-muted/40 hover:text-red-400 transition-colors">
                               <X size={14} />
@@ -524,27 +643,59 @@ function DashboardPage() {
               </motion.div>
             )}
 
-            {/* ═══ PROCESSING: MINIMAL STATUS ═══ */}
+            {/* ═══ PROCESSING: SUPER AGENT ORB ═══ */}
             {isProcessing && (
               <motion.div
                 key="processing"
-                initial={{ opacity: 0, scale: 0.8 }}
+                initial={{ opacity: 0, scale: 0.6 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-                className="glass-pill px-5 py-3 flex items-center gap-3 shadow-glass z-30"
+                exit={{ opacity: 0, scale: 0.6 }}
+                transition={{ type: 'spring', stiffness: 180, damping: 22 }}
+                className="relative z-30"
               >
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${workflowState === 'VALIDATION' ? 'bg-amber-400' : 'bg-sky-400'}`}></span>
-                  <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${workflowState === 'VALIDATION' ? 'bg-amber-500' : 'bg-sky-500'}`}></span>
-                </span>
-                <span className="text-xs text-luna-charcoal font-medium tracking-wide">
-                  {workflowState === 'ANALYSING' && 'Analyse en cours…'}
-                  {workflowState === 'DISTRIBUTING' && 'Distribution aux agents…'}
-                  {workflowState === 'AGENTS_WORKING' && 'Recherche active…'}
-                  {workflowState === 'VALIDATION' && `Validation ${validatedAgents.length}/4`}
-                  {workflowState === 'GENERATING_PROPOSALS' && 'Finalisation…'}
-                </span>
+                {/* Outer animated gradient ring */}
+                <motion.div
+                  className="absolute -inset-3 rounded-full opacity-40"
+                  style={{
+                    background: 'conic-gradient(from 0deg, #0ea5e9, #8b5cf6, #f59e0b, #10b981, #0ea5e9)',
+                    filter: 'blur(12px)',
+                  }}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+                />
+                {/* Spinning border ring — GOLD */}
+                <motion.div
+                  className="absolute -inset-1 rounded-full"
+                  style={{
+                    background: 'conic-gradient(from 0deg, #f59e0b, #eab308, #d97706, #fbbf24, #f59e0b)',
+                  }}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                />
+                {/* Inner orb */}
+                <div className="relative w-44 h-44 rounded-full bg-white/95 backdrop-blur-2xl flex flex-col items-center justify-center shadow-[0_8px_40px_rgba(245,158,11,0.15)] border border-amber-100/50">
+                  {/* Inner glow — warm gold */}
+                  <div className="absolute inset-4 rounded-full bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 opacity-60" />
+                  <div className="relative z-10 flex flex-col items-center">
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-400 flex items-center justify-center shadow-lg shadow-amber-200/50 mb-2">
+                      <Sparkles size={20} className="text-white" />
+                    </div>
+                    <h3 className="font-serif text-sm font-bold text-luna-charcoal tracking-wide">Super Agent</h3>
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 bg-amber-400"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                      </span>
+                      <span className="text-[10px] text-luna-text-muted font-semibold tracking-wide">
+                        {workflowState === 'ANALYSING' && 'Analyse…'}
+                        {workflowState === 'DISTRIBUTING' && 'Distribution…'}
+                        {workflowState === 'AGENTS_WORKING' && 'Recherche…'}
+                        {workflowState === 'VALIDATION' && `${validatedAgents.length}/4 validés`}
+                        {workflowState === 'GENERATING_PROPOSALS' && 'Finalisation…'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             )}
 
@@ -617,10 +768,10 @@ function DashboardPage() {
             const canValidate = workflowState === 'VALIDATION' && !isValidated && agentResults;
 
             const positionMap = [
-              { top: '10%', left: '50%' },
-              { top: '50%', left: '10%' },
-              { top: '50%', left: '90%' },
-              { top: '88%', left: '50%' },
+              { top: '18%', left: '50%' },
+              { top: '50%', left: '14%' },
+              { top: '50%', left: '86%' },
+              { top: '82%', left: '50%' },
             ];
             const pos = positionMap[i];
 
@@ -632,7 +783,7 @@ function DashboardPage() {
                 exit={{ opacity: 0, scale: 0.3 }}
                 transition={{ type: 'spring', stiffness: 200, damping: 20, delay: isActive ? i * 0.1 : 0 }}
                 className="absolute z-20 pointer-events-auto"
-                style={{ top: pos.top, left: pos.left, transform: 'translate(-50%, -50%)' }}
+                style={{ top: pos.top, left: pos.left, animation: isActive && !isValidated ? 'floatAgent 3s ease-in-out infinite' : undefined, transform: 'translate(-50%, -50%)' }}
                 onClick={() => canValidate && setSelectedAgent(agentKey)}
               >
                 <motion.div
@@ -640,22 +791,33 @@ function DashboardPage() {
                   className={`rounded-2xl overflow-hidden transition-all relative ${canValidate ? 'cursor-pointer' : ''}`}
                   style={{ width: 220 }}
                 >
-                  {/* Glassmorphism background */}
-                  <div className={`absolute inset-0 backdrop-blur-2xl ${isValidated ? 'bg-white/95' : 'bg-[#0f172a]/90'}`} />
+                  {/* Clean glass background */}
+                  <div className={`absolute inset-0 backdrop-blur-2xl ${isValidated ? 'bg-white/96' : 'bg-white/90'} rounded-2xl`} />
 
-                  {/* Colored top accent line */}
-                  <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${meta.gradient}`} />
+                  {/* Left color accent (subtle) */}
+                  <div className="absolute top-3 bottom-3 left-0 w-[3px] rounded-full" style={{ backgroundColor: isValidated ? '#10b981' : meta.color, opacity: 0.7 }} />
 
-                  {/* Glow effect */}
-                  {(canValidate || isValidated) && (
-                    <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[30px] opacity-30" style={{ backgroundColor: meta.color }} />
-                  )}
+                  {/* n8n-style connection dot — positioned on the edge facing center */}
+                  {(() => {
+                    const dotPositions = [
+                      { bottom: -4, left: '50%', transform: 'translateX(-50%)' }, // top card → dot on bottom
+                      { top: '50%', right: -4, transform: 'translateY(-50%)' },   // left card → dot on right
+                      { top: '50%', left: -4, transform: 'translateY(-50%)' },    // right card → dot on left
+                      { top: -4, left: '50%', transform: 'translateX(-50%)' },    // bottom card → dot on top
+                    ];
+                    const dotStyle = dotPositions[i];
+                    return (
+                      <div className="absolute z-30" style={dotStyle as any}>
+                        <div className="w-2 h-2 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: isValidated ? '#10b981' : meta.color }} />
+                      </div>
+                    );
+                  })()}
 
-                  <div className="relative z-10 p-4 flex items-center gap-3">
-                    {/* Icon with colored ring */}
+                  <div className="relative z-10 p-3.5 flex items-center gap-2.5">
+                    {/* Minimal icon */}
                     <div className={`relative flex-shrink-0`}>
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isValidated ? 'bg-emerald-500' : `bg-gradient-to-br ${meta.gradient}`}`} style={{ boxShadow: `0 4px 15px ${meta.color}40` }}>
-                        {isValidated ? <CheckCircle2 size={18} className="text-white" /> : <Icon size={18} className="text-white" />}
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: isValidated ? '#10b981' : meta.color }}>
+                        {isValidated ? <CheckCircle2 size={16} className="text-white" /> : <Icon size={16} className="text-white" />}
                       </div>
                       {/* Signal ring */}
                       {!isValidated && isActive && (
@@ -669,14 +831,14 @@ function DashboardPage() {
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <h3 className={`font-semibold text-xs tracking-wide ${isValidated ? 'text-luna-charcoal' : 'text-white'}`}>{meta.title}</h3>
-                      <p className={`text-[10px] mt-0.5 ${isValidated ? 'text-emerald-600' : canValidate ? 'text-sky-300' : 'text-white/50'}`}>
+                      <h3 className={`font-semibold text-xs tracking-wide ${isValidated ? 'text-luna-charcoal' : 'text-luna-charcoal'}`}>{meta.title}</h3>
+                      <p className={`text-[10px] mt-0.5 ${isValidated ? 'text-emerald-600' : canValidate ? 'text-sky-600' : 'text-luna-text-muted'}`}>
                         {isValidated ? '✓ Validé' : canValidate ? '● Résultats prêts' : meta.subtitle}
                       </p>
 
                       {/* Progress bar */}
                       {!isValidated && isActive && (
-                        <div className="mt-2 h-[3px] rounded-full bg-white/10 overflow-hidden">
+                        <div className="mt-2 h-[3px] rounded-full bg-gray-300/40 overflow-hidden">
                           <motion.div
                             className={`h-full rounded-full bg-gradient-to-r ${meta.gradient}`}
                             initial={{ width: '0%' }}
@@ -697,7 +859,7 @@ function DashboardPage() {
                       </div>
                     )}
                     {!isValidated && !canValidate && isActive && (
-                      <Loader2 size={14} className="flex-shrink-0 text-white/40 animate-spin" />
+                      <Loader2 size={14} className="flex-shrink-0 text-luna-text-muted/60 animate-spin" />
                     )}
                   </div>
                 </motion.div>
@@ -728,31 +890,33 @@ function DashboardPage() {
 
                 return (
                   <>
-                    {/* Premium gradient header */}
-                    <div className="bg-gradient-to-r from-sky-50 via-white to-sky-50/50 px-8 py-5 border-b border-luna-warm-gray/10 flex-shrink-0">
+                    {/* Clean premium header */}
+                    <div className="px-8 py-5 border-b border-luna-warm-gray/10 flex-shrink-0">
                       <div className="flex items-center gap-4">
-                        <div className="p-3 bg-gradient-to-br from-sky-100 to-sky-50 text-sky-600 rounded-2xl border border-sky-100 shadow-sm"><Icon size={22} /></div>
-                        <div className="flex-1">
-                          <h2 className="font-serif text-xl font-semibold text-luna-charcoal">{meta.title}</h2>
-                          <p className="text-luna-text-muted text-[10px] uppercase tracking-[0.15em] font-semibold mt-0.5">Résultats de recherche</p>
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg" style={{ backgroundColor: meta.color }}>
+                          <Icon size={22} className="text-white" />
                         </div>
-                        <button onClick={() => setSelectedAgent(null)} className="p-2 text-luna-text-muted hover:text-luna-charcoal hover:bg-luna-cream rounded-xl transition-colors">
-                          <X size={18} />
+                        <div className="flex-1">
+                          <h2 className="font-serif text-lg font-semibold text-luna-charcoal">{meta.title}</h2>
+                          <p className="text-luna-text-muted text-[10px] uppercase tracking-[0.15em] font-medium mt-0.5">Résultats de recherche</p>
+                        </div>
+                        <button onClick={() => setSelectedAgent(null)} className="p-2 text-luna-text-muted/50 hover:text-luna-charcoal rounded-lg transition-colors">
+                          <X size={16} strokeWidth={1.5} />
                         </button>
                       </div>
                     </div>
 
                     {/* Scrollable content */}
                     <div className="overflow-y-auto p-8 flex-1">
-                      <div className="bg-sky-50/40 p-5 rounded-2xl border border-sky-100/30 mb-6">
-                        <p className="text-luna-charcoal font-normal leading-relaxed text-sm">{summary}</p>
+                      <div className="bg-luna-cream/60 p-5 rounded-2xl border border-luna-warm-gray/10 mb-6">
+                        <p className="text-luna-charcoal/80 leading-relaxed text-sm">{summary}</p>
                       </div>
 
-                      {/* Transport: Flights (show all, with clickable search links) */}
+                      {/* Transport: Flights */}
                       {selectedAgent === 'transport' && data?.flights?.length > 0 && (
                         <div className="space-y-2.5 mb-6">
                           <div className="flex justify-between items-center">
-                            <h4 className="input-label">Options de vol ({data.flights.length})</h4>
+                            <h4 className="text-xs font-bold text-luna-charcoal uppercase tracking-wider">✈️ Vols ({data.flights.length})</h4>
                           </div>
                           {data.flights.map((f: any, i: number) => (
                             <a key={i} href={f.url || '#'} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-luna-warm-gray/15 hover:border-sky-300 hover:shadow-md transition-all group cursor-pointer">
@@ -761,10 +925,51 @@ function DashboardPage() {
                                   <span className="w-6 h-6 rounded-md bg-sky-50 flex items-center justify-center text-[10px] font-bold text-sky-600">{i + 1}</span>
                                   <span className="font-semibold text-sm text-luna-charcoal group-hover:text-sky-600 transition-colors">{f.airline} — {f.class}</span>
                                 </div>
-                                <span className="font-serif font-bold text-luna-accent-dark">{f.price}</span>
+                                <span className="font-serif font-bold text-luna-accent-dark text-sm">{f.price}</span>
                               </div>
                               <p className="text-xs text-luna-text-muted mt-1.5 ml-8">{f.route} • {f.duration} • {f.stops} escale(s)</p>
-                              <p className="text-[10px] text-sky-500 mt-1.5 ml-8 font-medium group-hover:underline">Réserver sur {f.domain || f.airline} →</p>
+                              <p className="text-[10px] text-sky-500 mt-1.5 ml-8 font-medium group-hover:underline">Réserver sur {f.domain || 'Skyscanner'} →</p>
+                            </a>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Transport: Trains */}
+                      {selectedAgent === 'transport' && data?.trains?.length > 0 && (
+                        <div className="space-y-2.5 mb-6">
+                          <h4 className="text-xs font-bold text-luna-charcoal uppercase tracking-wider">🚄 Trains ({data.trains.length})</h4>
+                          {data.trains.map((t: any, i: number) => (
+                            <a key={i} href={t.url || '#'} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-luna-warm-gray/15 hover:border-emerald-300 hover:shadow-md transition-all group cursor-pointer">
+                              <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center text-[10px] font-bold text-emerald-600">🚄</span>
+                                  <span className="font-semibold text-sm text-luna-charcoal group-hover:text-emerald-600 transition-colors">{t.operator} — {t.class}</span>
+                                </div>
+                                <span className="font-serif font-bold text-luna-accent-dark text-sm">{t.price}</span>
+                              </div>
+                              <p className="text-xs text-luna-text-muted mt-1.5 ml-8">{t.route} • {t.duration}{t.frequency ? ` • ${t.frequency}` : ''}</p>
+                              <p className="text-[10px] text-emerald-500 mt-1.5 ml-8 font-medium group-hover:underline">Réserver sur {t.domain || 'Trainline'} →</p>
+                            </a>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Transport: Cars */}
+                      {selectedAgent === 'transport' && data?.cars?.length > 0 && (
+                        <div className="space-y-2.5 mb-6">
+                          <h4 className="text-xs font-bold text-luna-charcoal uppercase tracking-wider">🚗 Voiture ({data.cars.length})</h4>
+                          {data.cars.map((c: any, i: number) => (
+                            <a key={i} href={c.url || '#'} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-luna-warm-gray/15 hover:border-amber-300 hover:shadow-md transition-all group cursor-pointer">
+                              <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-6 h-6 rounded-md bg-amber-50 flex items-center justify-center text-[10px] font-bold text-amber-600">🚗</span>
+                                  <span className="font-semibold text-sm text-luna-charcoal group-hover:text-amber-600 transition-colors">{c.mode}</span>
+                                </div>
+                                <span className="font-serif font-bold text-luna-accent-dark text-sm">{c.price}</span>
+                              </div>
+                              <p className="text-xs text-luna-text-muted mt-1.5 ml-8">{c.route} • {c.distance} • {c.duration}</p>
+                              {c.details && <p className="text-[10px] text-luna-text-muted/80 mt-1 ml-8 italic">{c.details}</p>}
+                              <p className="text-[10px] text-amber-500 mt-1.5 ml-8 font-medium group-hover:underline">Voir sur {c.domain || 'Google Maps'} →</p>
                             </a>
                           ))}
                         </div>
@@ -784,6 +989,7 @@ function DashboardPage() {
                                 <span className="font-serif font-bold text-luna-accent-dark">{h.pricePerNight}/nuit</span>
                               </div>
                               <p className="text-xs text-luna-text-muted mt-1.5 ml-8">{'★'.repeat(h.stars || 5)} • {h.highlights?.join(', ')}</p>
+                              {h.recommendation && <p className="text-[10px] text-luna-charcoal/70 mt-1 ml-8 italic leading-snug">{h.recommendation}</p>}
                               <p className="text-[10px] text-sky-500 mt-1.5 ml-8 font-medium group-hover:underline">Réserver sur {h.domain || h.name} →</p>
                             </a>
                           ))}
@@ -820,6 +1026,7 @@ function DashboardPage() {
                                   </span>
                                 </p>
                               </div>
+                              {d.highlight && <p className="text-[10px] text-emerald-600 font-semibold mt-1.5 ml-8 bg-emerald-50 inline-block px-2 py-0.5 rounded-full">{d.highlight}</p>}
                             </div>
                           ))}
                         </div>
@@ -852,11 +1059,23 @@ function DashboardPage() {
                         </div>
                       )}
 
-                      <div className="flex gap-3 sticky bottom-0 bg-white/90 backdrop-blur-md pt-5 border-t border-luna-warm-gray/10 -mx-8 px-8 pb-1 flex-shrink-0">
-                        <button onClick={() => setSelectedAgent(null)} className="flex-1 py-3 bg-white border border-luna-warm-gray/20 hover:bg-luna-cream text-luna-charcoal font-medium text-sm rounded-xl transition-all">Plus tard</button>
-                        <button onClick={handleValidateAgent} className="flex-[2] py-3 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-semibold text-sm tracking-wider uppercase rounded-xl transition-all flex justify-center items-center gap-2 shadow-lg shadow-sky-500/20">
-                          Valider <CheckCircle2 size={16} />
-                        </button>
+                      <div className="flex flex-col gap-3 sticky bottom-0 bg-white/90 backdrop-blur-md pt-5 border-t border-luna-warm-gray/10 -mx-8 px-8 pb-1 flex-shrink-0">
+                        <div className="flex gap-3">
+                          <button onClick={() => setSelectedAgent(null)} className="flex-1 py-3 bg-white border border-luna-warm-gray/20 hover:bg-luna-cream text-luna-charcoal font-medium text-sm rounded-xl transition-all">Plus tard</button>
+                          <button onClick={handleValidateAgent} className="flex-[2] py-3.5 text-white font-semibold text-sm tracking-wider uppercase rounded-xl transition-all flex justify-center items-center gap-2 shadow-lg" style={{ background: `linear-gradient(135deg, ${meta.color}, ${meta.color}dd)`, boxShadow: `0 8px 24px ${meta.color}30` }}>
+                            Valider <CheckCircle2 size={16} />
+                          </button>
+                        </div>
+                        {agentResults && (
+                          <div className="flex justify-center">
+                            <PdfExport
+                              results={agentResults}
+                              destination={destinations[0]?.city || ''}
+                              departureDate={departureDate}
+                              returnDate={returnDate}
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                   </>

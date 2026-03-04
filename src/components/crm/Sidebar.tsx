@@ -8,23 +8,39 @@ import {
     Users,
     Trello,
     CalendarDays,
+    Calendar,
     MessageSquare,
+    BarChart3,
     Settings,
     ArrowLeft,
     Menu,
     X
 } from 'lucide-react';
 import { LunaLogo } from '@/app/components/LunaLogo';
+import { useAuth } from '@/src/contexts/AuthContext';
+
+function getInitials(name: string | null | undefined): string {
+    if (!name) return 'U';
+    return name.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+}
 
 export function CRMSidebar() {
     const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
+    const { user, userProfile } = useAuth();
+
+    const photoURL = user?.photoURL || userProfile?.photoURL;
+    const displayName = userProfile?.displayName || user?.displayName || 'Utilisateur';
+    const email = userProfile?.email || user?.email || '';
+
     const links = [
         { name: 'Dashboard', href: '/crm', icon: LayoutDashboard },
         { name: 'Boîte de Réception', href: '/crm/mails', icon: MessageSquare },
         { name: 'Pipeline', href: '/crm/pipeline', icon: Trello },
+        { name: 'Planning', href: '/crm/planning', icon: Calendar },
         { name: 'Contacts', href: '/crm/contacts', icon: Users },
         { name: 'Activités', href: '/crm/activities', icon: CalendarDays },
+        { name: 'Analytics', href: '/crm/analytics', icon: BarChart3 },
     ];
 
     const sidebarContent = (
@@ -68,9 +84,31 @@ export function CRMSidebar() {
             </div>
 
             <div className="px-3 flex flex-col gap-0.5">
+                {/* User block */}
+                <Link
+                    href="/crm/settings"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl mb-2 bg-luna-cream/50 hover:bg-luna-cream border border-luna-warm-gray/10 transition-all group"
+                >
+                    {photoURL ? (
+                        <img src={photoURL} alt={displayName} className="w-8 h-8 rounded-full object-cover border border-white/80 shadow-sm" referrerPolicy="no-referrer" />
+                    ) : (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-violet-500 flex items-center justify-center text-white text-[10px] font-bold border border-white/80 shadow-sm">
+                            {getInitials(displayName)}
+                        </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                        <p className="text-[12px] font-semibold text-luna-charcoal truncate leading-tight">{displayName}</p>
+                        <p className="text-[10px] text-luna-text-muted truncate leading-tight">{email}</p>
+                    </div>
+                </Link>
+
                 <Link href="/crm/settings"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-luna-text-muted hover:bg-luna-cream hover:text-luna-charcoal transition-all text-[13px] font-light">
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all text-[13px] ${pathname === '/crm/settings'
+                        ? 'bg-luna-charcoal text-white font-medium shadow-sm'
+                        : 'text-luna-text-muted hover:bg-luna-cream hover:text-luna-charcoal font-light'
+                        }`}>
                     <Settings size={15} strokeWidth={1.5} />
                     Paramètres
                 </Link>
