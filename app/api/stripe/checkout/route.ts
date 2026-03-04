@@ -11,6 +11,14 @@ const PLANS: Record<string, { priceId: string; name: string }> = {
     enterprise: { priceId: process.env.STRIPE_PRICE_ENTERPRISE || 'price_enterprise', name: 'Enterprise' },
 };
 
+function getBaseUrl(request: Request): string {
+    const origin = request.headers.get('origin');
+    if (origin) return origin;
+    const host = request.headers.get('host') || 'localhost:3000';
+    const proto = request.headers.get('x-forwarded-proto') || 'https';
+    return `${proto}://${host}`;
+}
+
 export async function POST(request: Request) {
     try {
         const body = await request.json();
@@ -21,6 +29,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Plan invalide' }, { status: 400 });
         }
 
+        const baseUrl = getBaseUrl(request);
+
         const session = await getStripe().checkout.sessions.create({
             payment_method_types: ['card'],
             mode: 'subscription',
@@ -29,8 +39,8 @@ export async function POST(request: Request) {
                 price: plan.priceId,
                 quantity: 1,
             }],
-            success_url: successUrl || `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/login?success=true&plan=${planId}`,
-            cancel_url: cancelUrl || `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/pricing?cancelled=true`,
+            success_url: successUrl || `${baseUrl}/login?success=true&plan=${planId}`,
+            cancel_url: cancelUrl || `${baseUrl}/pricing?cancelled=true`,
             metadata: { planId, planName: plan.name },
         });
 
@@ -40,3 +50,4 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: error.message || 'Erreur Stripe' }, { status: 500 });
     }
 }
+

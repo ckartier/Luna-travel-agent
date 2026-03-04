@@ -3,6 +3,14 @@ import Stripe from 'stripe';
 
 const getStripe = () => new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-01-27.acacia' as any });
 
+function getBaseUrl(request: Request): string {
+    const origin = request.headers.get('origin');
+    if (origin) return origin;
+    const host = request.headers.get('host') || 'localhost:3000';
+    const proto = request.headers.get('x-forwarded-proto') || 'https';
+    return `${proto}://${host}`;
+}
+
 export async function POST(request: Request) {
     try {
         const { customerId, returnUrl } = await request.json();
@@ -11,9 +19,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Customer ID requis' }, { status: 400 });
         }
 
+        const baseUrl = getBaseUrl(request);
+
         const session = await getStripe().billingPortal.sessions.create({
             customer: customerId,
-            return_url: returnUrl || `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/crm/settings`,
+            return_url: returnUrl || `${baseUrl}/crm/settings`,
         });
 
         return NextResponse.json({ url: session.url });
