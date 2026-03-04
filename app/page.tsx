@@ -367,21 +367,20 @@ function DashboardPage() {
               const meta = agentMeta[agent];
               const wireColor = isValidated ? '#10b981' : meta.color;
 
-              // Paths connect center (50,50) to each agent card position
+              // Paths — agents closer to center
               const curvePaths = [
-                'M 50 50 C 50 44, 49 32, 50 18',   // top — Transport
-                'M 50 50 C 44 49, 32 50, 14 50',   // left — Hébergement
-                'M 50 50 C 56 49, 68 50, 86 50',   // right — Profil Client
-                'M 50 50 C 50 56, 51 68, 50 82',   // bottom — Itinéraire
+                'M 50 50 C 50 46, 50 38, 50 28',   // top — Transport
+                'M 50 50 C 46 50, 38 50, 24 50',   // left — Hébergement
+                'M 50 50 C 54 50, 62 50, 76 50',   // right — Profil Client
+                'M 50 50 C 50 54, 50 62, 50 72',   // bottom — Itinéraire
               ];
               const pathD = curvePaths[i];
 
-              // Endpoint positions for each agent
               const endpoints = [
-                { x: 50, y: 18 },  // top
-                { x: 14, y: 50 },  // left
-                { x: 86, y: 50 },  // right
-                { x: 50, y: 82 },  // bottom
+                { x: 50, y: 28 },
+                { x: 24, y: 50 },
+                { x: 76, y: 50 },
+                { x: 50, y: 72 },
               ];
               const ep = endpoints[i];
 
@@ -390,31 +389,31 @@ function DashboardPage() {
                   {/* Thin wire line */}
                   <motion.path
                     d={pathD} fill="none" stroke={wireColor}
-                    strokeWidth="0.15" strokeLinecap="round"
+                    strokeWidth="0.18" strokeLinecap="round"
                     initial={{ opacity: 0, pathLength: 0 }}
-                    animate={{ opacity: isValidated ? 0.5 : 0.3, pathLength: 1 }}
+                    animate={{ opacity: isValidated ? 0.6 : 0.35, pathLength: 1 }}
                     transition={{ duration: 1, delay: i * 0.12, ease: 'easeOut' }}
                   />
-                  {/* Small solid circle traveling along wire (3px = ~0.4 in viewBox) */}
+                  {/* 6px solid circle traveling along wire */}
                   <circle
-                    r={0.4}
+                    r={0.7}
                     fill={wireColor}
                     style={{
                       offsetPath: `path('${pathD}')`,
-                      animation: `travelDot ${2.2 + i * 0.2}s ${i * 0.15}s ease-in-out infinite alternate`,
+                      animation: `travelDot ${1.8 + i * 0.15}s ${i * 0.1}s ease-in-out infinite alternate`,
                       offsetRotate: '0deg',
                     } as any}
                   />
-                  {/* Endpoint dot on agent side */}
+                  {/* 6px endpoint dot on agent side */}
                   <motion.circle
-                    cx={ep.x} cy={ep.y} r="0.5" fill={wireColor}
-                    initial={{ opacity: 0 }} animate={{ opacity: 0.6 }}
+                    cx={ep.x} cy={ep.y} r="0.8" fill={wireColor}
+                    initial={{ opacity: 0 }} animate={{ opacity: 0.7 }}
                     transition={{ delay: i * 0.12 + 0.8 }}
                   />
-                  {/* Center connection dot */}
+                  {/* 6px center connection dot */}
                   <motion.circle
-                    cx="50" cy="50" r="0.5" fill={wireColor}
-                    initial={{ opacity: 0 }} animate={{ opacity: 0.4 }}
+                    cx="50" cy="50" r="0.8" fill={wireColor}
+                    initial={{ opacity: 0 }} animate={{ opacity: 0.5 }}
                     transition={{ delay: i * 0.1 }}
                   />
                 </g>
@@ -780,10 +779,10 @@ function DashboardPage() {
             const canValidate = workflowState === 'VALIDATION' && !isValidated && agentResults;
 
             const positionMap = [
-              { top: '18%', left: '50%' },
-              { top: '50%', left: '14%' },
-              { top: '50%', left: '86%' },
-              { top: '82%', left: '50%' },
+              { top: '25%', left: '50%' },
+              { top: '50%', left: '22%' },
+              { top: '50%', left: '78%' },
+              { top: '75%', left: '50%' },
             ];
             const pos = positionMap[i];
 
@@ -800,11 +799,11 @@ function DashboardPage() {
               >
                 <motion.div
                   whileHover={canValidate ? { scale: 1.04, y: -2 } : {}}
-                  className={`rounded-2xl overflow-hidden transition-all relative ${canValidate ? 'cursor-pointer' : ''}`}
+                  className={`rounded-2xl overflow-hidden transition-all relative shadow-lg border ${canValidate ? 'cursor-pointer' : ''} ${isValidated ? 'border-emerald-200/50' : 'border-white/30'}`}
                   style={{ width: 280 }}
                 >
-                  {/* Clean glass background */}
-                  <div className={`absolute inset-0 backdrop-blur-2xl ${isValidated ? 'bg-white/96' : 'bg-white/92'} rounded-2xl`} />
+                  {/* Premium glass background */}
+                  <div className={`absolute inset-0 backdrop-blur-2xl ${isValidated ? 'bg-white/98' : 'bg-white/95'} rounded-2xl`} />
 
                   {/* Left color accent */}
                   <div className="absolute top-3 bottom-3 left-0 w-[3px] rounded-full" style={{ backgroundColor: isValidated ? '#10b981' : meta.color, opacity: 0.8 }} />
@@ -821,9 +820,9 @@ function DashboardPage() {
                     return (
                       <div className="absolute z-30" style={dotStyle as any}>
                         <div className="relative">
-                          <div className="w-3 h-3 rounded-full border-2 border-white shadow-md" style={{ backgroundColor: isValidated ? '#10b981' : meta.color }} />
+                          <div className="w-[6px] h-[6px] rounded-full border border-white shadow-md" style={{ backgroundColor: isValidated ? '#10b981' : meta.color }} />
                           {!isValidated && isActive && (
-                            <div className="absolute inset-0 w-3 h-3 rounded-full animate-ping opacity-40" style={{ backgroundColor: meta.color }} />
+                            <div className="absolute inset-0 w-[6px] h-[6px] rounded-full animate-ping opacity-40" style={{ backgroundColor: meta.color }} />
                           )}
                         </div>
                       </div>
@@ -834,8 +833,8 @@ function DashboardPage() {
                     <div className="flex items-center gap-3">
                       {/* Icon */}
                       <div className="relative flex-shrink-0">
-                        <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: isValidated ? '#10b981' : meta.color }}>
-                          {isValidated ? <CheckCircle2 size={18} className="text-white" /> : <Icon size={18} className="text-white" />}
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md" style={{ backgroundColor: isValidated ? '#10b981' : meta.color }}>
+                          {isValidated ? <CheckCircle2 size={20} className="text-white" /> : <Icon size={20} className="text-white" />}
                         </div>
                         {!isValidated && isActive && (
                           <motion.div
@@ -848,8 +847,8 @@ function DashboardPage() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm tracking-wide text-luna-charcoal">{meta.title}</h3>
-                        <p className={`text-[11px] mt-0.5 font-medium ${isValidated ? 'text-emerald-600' : canValidate ? 'text-sky-600' : 'text-luna-text-muted'}`}>
+                        <h3 className="font-bold text-[15px] tracking-tight text-black">{meta.title}</h3>
+                        <p className={`text-xs mt-0.5 font-semibold ${isValidated ? 'text-emerald-600' : canValidate ? 'text-sky-600' : 'text-gray-500'}`}>
                           {isValidated ? '✓ Validé' : canValidate ? '● Résultats prêts' : meta.subtitle}
                         </p>
                       </div>
@@ -869,7 +868,7 @@ function DashboardPage() {
                     </div>
 
                     {/* Description text */}
-                    <p className="text-[10px] text-luna-text-muted leading-relaxed mt-2.5 pl-14">{meta.desc}</p>
+                    <p className="text-[11px] text-gray-600 leading-relaxed mt-2 pl-[60px] font-medium">{meta.desc}</p>
 
                     {/* Progress bar */}
                     {!isValidated && isActive && (
