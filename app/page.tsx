@@ -304,7 +304,7 @@ function DashboardPage() {
   const isProcessing = workflowState !== 'IDLE' && workflowState !== 'PROPOSALS_READY';
 
   return (
-    <div ref={containerRef} className="relative w-full h-full flex flex-col overflow-hidden">
+    <div ref={containerRef} className="relative w-full min-h-screen flex flex-col overflow-hidden">
       <MapBackground ref={mapRef} />
 
       {/* ═══ MAP CONTROLS — z-50 above form overlay ═══ */}
