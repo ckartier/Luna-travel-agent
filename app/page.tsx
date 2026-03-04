@@ -350,28 +350,33 @@ function DashboardPage() {
         </motion.div>
       </div>
 
-      {/* ═══ LUMINOUS DOT PARTICLE WIRES ═══ */}
+      {/* ═══ THIN WIRE LINES + TRAVELING LIGHT ═══ */}
       {isProcessing && (
         <>
           <style>{`
             @keyframes floatAgent { 0%,100% { transform: translate(-50%,-50%) translateY(0); } 50% { transform: translate(-50%,-50%) translateY(-4px); } }
-            @keyframes dotFlow0 { 0% { offset-distance: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { offset-distance: 100%; opacity: 0; } }
-            @keyframes dotGlow { 0%,100% { filter: blur(0px) brightness(1); } 50% { filter: blur(1px) brightness(1.8); } }
+            @keyframes travelOrb0 { 0% { offset-distance: 0%; } 100% { offset-distance: 100%; } }
+            @keyframes travelOrb1 { 0% { offset-distance: 100%; } 100% { offset-distance: 0%; } }
+            @keyframes orbPulse { 0%,100% { r: 0.6; opacity: 0.9; } 50% { r: 1; opacity: 1; } }
           `}</style>
 
-          {/* SVG luminous dot particles */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none z-14" viewBox="0 0 100 100" preserveAspectRatio="none">
             <defs>
-              {(['transport', 'accommodation', 'client', 'itinerary'] as AgentKey[]).map((agent, i) => {
+              {(['transport', 'accommodation', 'client', 'itinerary'] as AgentKey[]).map((agent) => {
                 const meta = agentMeta[agent];
                 const isValidated = validatedAgents.includes(agent);
                 const glowColor = isValidated ? '#10b981' : meta.color;
                 return (
-                  <radialGradient key={`glow-${agent}`} id={`glow-${agent}`}>
-                    <stop offset="0%" stopColor={glowColor} stopOpacity="1" />
-                    <stop offset="60%" stopColor={glowColor} stopOpacity="0.4" />
-                    <stop offset="100%" stopColor={glowColor} stopOpacity="0" />
-                  </radialGradient>
+                  <g key={`defs-${agent}`}>
+                    <radialGradient id={`orb-${agent}`}>
+                      <stop offset="0%" stopColor={glowColor} stopOpacity="1" />
+                      <stop offset="40%" stopColor={glowColor} stopOpacity="0.6" />
+                      <stop offset="100%" stopColor={glowColor} stopOpacity="0" />
+                    </radialGradient>
+                    <filter id={`glow-filter-${agent}`} x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="0.4" />
+                    </filter>
+                  </g>
                 );
               })}
             </defs>
@@ -381,7 +386,7 @@ function DashboardPage() {
               if (!isActive) return null;
 
               const meta = agentMeta[agent];
-              const dotColor = isValidated ? '#10b981' : meta.color;
+              const wireColor = isValidated ? '#10b981' : meta.color;
 
               const curvePaths = [
                 'M 50 50 C 50 44, 48 34, 50 15',
@@ -390,44 +395,50 @@ function DashboardPage() {
                 'M 50 50 C 50 56, 52 66, 50 85',
               ];
               const pathD = curvePaths[i];
-              const dotCount = 6;
 
               return (
                 <g key={agent}>
-                  {/* Static luminous dots along path */}
-                  {Array.from({ length: 12 }).map((_, j) => {
-                    const t = j / 11;
-                    const endpoints = [
-                      { sx: 50, sy: 50, cx1: 50, cy1: 44, cx2: 48, cy2: 34, ex: 50, ey: 15 },
-                      { sx: 50, sy: 50, cx1: 44, cy1: 48, cx2: 30, cy2: 52, ex: 12, ey: 50 },
-                      { sx: 50, sy: 50, cx1: 56, cy1: 48, cx2: 70, cy2: 52, ex: 88, ey: 50 },
-                      { sx: 50, sy: 50, cx1: 50, cy1: 56, cx2: 52, cy2: 66, ex: 50, ey: 85 },
-                    ][i];
-                    const { sx, sy, cx1, cy1, cx2, cy2, ex, ey } = endpoints;
-                    const u = 1 - t;
-                    const px = u * u * u * sx + 3 * u * u * t * cx1 + 3 * u * t * t * cx2 + t * t * t * ex;
-                    const py = u * u * u * sy + 3 * u * u * t * cy1 + 3 * u * t * t * cy2 + t * t * t * ey;
-                    return (
-                      <circle key={j} cx={px} cy={py} r={0.3} fill={dotColor} opacity={0.15 + t * 0.15} />
-                    );
-                  })}
-                  {/* Animated glowing particles flowing along path */}
-                  {Array.from({ length: dotCount }).map((_, j) => (
-                    <circle
-                      key={`dot-${j}`}
-                      r={isValidated ? 0.6 : 0.5}
-                      fill={`url(#glow-${agent})`}
-                      style={{
-                        offsetPath: `path('${pathD}')`,
-                        animation: `dotFlow0 ${2 + j * 0.4}s ${j * 0.35}s linear infinite`,
-                        offsetRotate: '0deg',
-                      } as any}
-                    />
-                  ))}
-                  {/* Bright core dot at each end */}
+                  {/* Thin static wire line */}
+                  <motion.path
+                    d={pathD} fill="none" stroke={wireColor}
+                    strokeWidth="0.12" strokeLinecap="round"
+                    initial={{ opacity: 0, pathLength: 0 }}
+                    animate={{ opacity: isValidated ? 0.5 : 0.25, pathLength: 1 }}
+                    transition={{ duration: 1.2, delay: i * 0.15, ease: 'easeOut' }}
+                  />
+                  {/* Second subtle parallel line for depth */}
+                  <motion.path
+                    d={pathD} fill="none" stroke={wireColor}
+                    strokeWidth="0.06" strokeLinecap="round"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: isValidated ? 0.3 : 0.12 }}
+                    transition={{ duration: 1, delay: i * 0.15 + 0.3 }}
+                  />
+                  {/* Traveling glowing orb — outbound */}
+                  <circle
+                    r={1.2}
+                    fill={`url(#orb-${agent})`}
+                    filter={`url(#glow-filter-${agent})`}
+                    style={{
+                      offsetPath: `path('${pathD}')`,
+                      animation: `travelOrb0 ${2.5 + i * 0.3}s ${i * 0.2}s ease-in-out infinite alternate`,
+                      offsetRotate: '0deg',
+                    } as any}
+                  />
+                  {/* Traveling glowing orb — return (staggered) */}
+                  <circle
+                    r={0.7}
+                    fill={`url(#orb-${agent})`}
+                    style={{
+                      offsetPath: `path('${pathD}')`,
+                      animation: `travelOrb1 ${3 + i * 0.2}s ${i * 0.3 + 1}s ease-in-out infinite alternate`,
+                      offsetRotate: '0deg',
+                    } as any}
+                  />
+                  {/* Center connection glow */}
                   <motion.circle
-                    cx="50" cy="50" r="1" fill={dotColor}
-                    initial={{ opacity: 0 }} animate={{ opacity: [0.3, 0.8, 0.3] }}
+                    cx="50" cy="50" r="0.8" fill={wireColor}
+                    initial={{ opacity: 0 }} animate={{ opacity: [0.2, 0.5, 0.2] }}
                     transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                   />
                 </g>
