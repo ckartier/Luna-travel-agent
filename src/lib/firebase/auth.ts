@@ -3,6 +3,8 @@
 import {
     signInWithEmailAndPassword,
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
     GoogleAuthProvider,
     signOut,
     onAuthStateChanged,
@@ -30,6 +32,10 @@ function getAuthErrorMessage(error: AuthError): string {
             return 'Trop de tentatives. Réessayez dans quelques minutes.';
         case 'auth/network-request-failed':
             return 'Erreur réseau. Vérifiez votre connexion.';
+        case 'auth/popup-blocked':
+            return 'Le popup a été bloqué. Redirection en cours...';
+        case 'auth/popup-closed-by-user':
+            return 'Connexion annulée.';
         default:
             return 'Erreur de connexion. Veuillez réessayer.';
     }
@@ -46,11 +52,38 @@ export async function loginWithEmail(email: string, password: string) {
     }
 }
 
-/** Sign in with Google */
+/** Sign in with Google — try popup first, fall back to redirect */
 export async function loginWithGoogle() {
     try {
         const result = await signInWithPopup(auth, googleProvider);
         return { user: result.user, error: null };
+    } catch (err) {
+        const error = err as AuthError;
+        // If popup blocked or failed, fall back to redirect
+        if (error.code === 'auth/popup-blocked' ||
+            error.code === 'auth/popup-closed-by-user' ||
+            error.code === 'auth/cancelled-popup-request' ||
+            error.code === 'auth/unauthorized-domain') {
+            try {
+                await signInWithRedirect(auth, googleProvider);
+                return { user: null, error: null }; // redirect will handle the rest
+            } catch (redirectErr) {
+                const rError = redirectErr as AuthError;
+                return { user: null, error: getAuthErrorMessage(rError) };
+            }
+        }
+        return { user: null, error: getAuthErrorMessage(error) };
+    }
+}
+
+/** Handle redirect result on page load */
+export async function handleRedirectResult() {
+    try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+            return { user: result.user, error: null };
+        }
+        return { user: null, error: null };
     } catch (err) {
         const error = err as AuthError;
         return { user: null, error: getAuthErrorMessage(error) };
