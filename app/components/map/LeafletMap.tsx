@@ -133,8 +133,7 @@ const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMap({ map
 
             planesRef.current = ROUTES.map((route, i) => {
                 const el = document.createElement('div');
-                el.style.cssText = 'width:38px;height:38px;pointer-events:none;';
-                el.innerHTML = `<svg viewBox="0 0 20 20" width="38" height="38" style="display:block;filter:drop-shadow(0 0 6px ${route.color}) drop-shadow(0 0 12px ${route.color}80);"><path d="M10 2 L12.5 8 L18 9.5 L12.5 11 L12.5 16 L10 14.5 L7.5 16 L7.5 11 L2 9.5 L7.5 8 Z" fill="${route.color}" stroke="rgba(255,255,255,0.9)" stroke-width="0.6"/></svg>`;
+                el.style.cssText = `width:5px;height:5px;border-radius:50%;background:${route.color};box-shadow:0 0 6px ${route.color}80;pointer-events:none;`;
                 const marker = new mapboxgl.Marker({ element: el, anchor: 'center', rotationAlignment: 'map' }).setLngLat(ARCS[i][0]).addTo(map);
                 return { marker, arc: ARCS[i], speed: 0.0008 + Math.random() * 0.0005, offset: i * 0.15 };
             });

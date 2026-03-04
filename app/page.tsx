@@ -350,36 +350,15 @@ function DashboardPage() {
         </motion.div>
       </div>
 
-      {/* ═══ THIN WIRE LINES + TRAVELING LIGHT ═══ */}
+      {/* ═══ THIN WIRE LINES + SMALL TRAVELING CIRCLE ═══ */}
       {isProcessing && (
         <>
           <style>{`
             @keyframes floatAgent { 0%,100% { transform: translate(-50%,-50%) translateY(0); } 50% { transform: translate(-50%,-50%) translateY(-4px); } }
-            @keyframes travelOrb0 { 0% { offset-distance: 0%; } 100% { offset-distance: 100%; } }
-            @keyframes travelOrb1 { 0% { offset-distance: 100%; } 100% { offset-distance: 0%; } }
-            @keyframes orbPulse { 0%,100% { r: 0.6; opacity: 0.9; } 50% { r: 1; opacity: 1; } }
+            @keyframes travelDot { 0% { offset-distance: 0%; } 100% { offset-distance: 100%; } }
           `}</style>
 
           <svg className="absolute inset-0 w-full h-full pointer-events-none z-14" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <defs>
-              {(['transport', 'accommodation', 'client', 'itinerary'] as AgentKey[]).map((agent) => {
-                const meta = agentMeta[agent];
-                const isValidated = validatedAgents.includes(agent);
-                const glowColor = isValidated ? '#10b981' : meta.color;
-                return (
-                  <g key={`defs-${agent}`}>
-                    <radialGradient id={`orb-${agent}`}>
-                      <stop offset="0%" stopColor={glowColor} stopOpacity="1" />
-                      <stop offset="40%" stopColor={glowColor} stopOpacity="0.6" />
-                      <stop offset="100%" stopColor={glowColor} stopOpacity="0" />
-                    </radialGradient>
-                    <filter id={`glow-filter-${agent}`} x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="0.4" />
-                    </filter>
-                  </g>
-                );
-              })}
-            </defs>
             {(['transport', 'accommodation', 'client', 'itinerary'] as AgentKey[]).map((agent, i) => {
               const isActive = activeAgents.includes(agent);
               const isValidated = validatedAgents.includes(agent);
@@ -388,58 +367,55 @@ function DashboardPage() {
               const meta = agentMeta[agent];
               const wireColor = isValidated ? '#10b981' : meta.color;
 
+              // Paths connect center (50,50) to each agent card position
               const curvePaths = [
-                'M 50 50 C 50 44, 48 34, 50 15',
-                'M 50 50 C 44 48, 30 52, 12 50',
-                'M 50 50 C 56 48, 70 52, 88 50',
-                'M 50 50 C 50 56, 52 66, 50 85',
+                'M 50 50 C 50 44, 49 32, 50 18',   // top — Transport
+                'M 50 50 C 44 49, 32 50, 14 50',   // left — Hébergement
+                'M 50 50 C 56 49, 68 50, 86 50',   // right — Profil Client
+                'M 50 50 C 50 56, 51 68, 50 82',   // bottom — Itinéraire
               ];
               const pathD = curvePaths[i];
 
+              // Endpoint positions for each agent
+              const endpoints = [
+                { x: 50, y: 18 },  // top
+                { x: 14, y: 50 },  // left
+                { x: 86, y: 50 },  // right
+                { x: 50, y: 82 },  // bottom
+              ];
+              const ep = endpoints[i];
+
               return (
                 <g key={agent}>
-                  {/* Thin static wire line */}
+                  {/* Thin wire line */}
                   <motion.path
                     d={pathD} fill="none" stroke={wireColor}
-                    strokeWidth="0.12" strokeLinecap="round"
+                    strokeWidth="0.15" strokeLinecap="round"
                     initial={{ opacity: 0, pathLength: 0 }}
-                    animate={{ opacity: isValidated ? 0.5 : 0.25, pathLength: 1 }}
-                    transition={{ duration: 1.2, delay: i * 0.15, ease: 'easeOut' }}
+                    animate={{ opacity: isValidated ? 0.5 : 0.3, pathLength: 1 }}
+                    transition={{ duration: 1, delay: i * 0.12, ease: 'easeOut' }}
                   />
-                  {/* Second subtle parallel line for depth */}
-                  <motion.path
-                    d={pathD} fill="none" stroke={wireColor}
-                    strokeWidth="0.06" strokeLinecap="round"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: isValidated ? 0.3 : 0.12 }}
-                    transition={{ duration: 1, delay: i * 0.15 + 0.3 }}
-                  />
-                  {/* Traveling glowing orb — outbound */}
+                  {/* Small solid circle traveling along wire (3px = ~0.4 in viewBox) */}
                   <circle
-                    r={1.2}
-                    fill={`url(#orb-${agent})`}
-                    filter={`url(#glow-filter-${agent})`}
+                    r={0.4}
+                    fill={wireColor}
                     style={{
                       offsetPath: `path('${pathD}')`,
-                      animation: `travelOrb0 ${2.5 + i * 0.3}s ${i * 0.2}s ease-in-out infinite alternate`,
+                      animation: `travelDot ${2.2 + i * 0.2}s ${i * 0.15}s ease-in-out infinite alternate`,
                       offsetRotate: '0deg',
                     } as any}
                   />
-                  {/* Traveling glowing orb — return (staggered) */}
-                  <circle
-                    r={0.7}
-                    fill={`url(#orb-${agent})`}
-                    style={{
-                      offsetPath: `path('${pathD}')`,
-                      animation: `travelOrb1 ${3 + i * 0.2}s ${i * 0.3 + 1}s ease-in-out infinite alternate`,
-                      offsetRotate: '0deg',
-                    } as any}
-                  />
-                  {/* Center connection glow */}
+                  {/* Endpoint dot on agent side */}
                   <motion.circle
-                    cx="50" cy="50" r="0.8" fill={wireColor}
-                    initial={{ opacity: 0 }} animate={{ opacity: [0.2, 0.5, 0.2] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    cx={ep.x} cy={ep.y} r="0.5" fill={wireColor}
+                    initial={{ opacity: 0 }} animate={{ opacity: 0.6 }}
+                    transition={{ delay: i * 0.12 + 0.8 }}
+                  />
+                  {/* Center connection dot */}
+                  <motion.circle
+                    cx="50" cy="50" r="0.5" fill={wireColor}
+                    initial={{ opacity: 0 }} animate={{ opacity: 0.4 }}
+                    transition={{ delay: i * 0.1 }}
                   />
                 </g>
               );
