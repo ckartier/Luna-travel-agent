@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { LunaLogo } from './LunaLogo';
 import { useAuth } from '@/src/contexts/AuthContext';
-import { LogOut, User, Settings } from 'lucide-react';
+import { LogOut, User, Settings, Shield } from 'lucide-react';
 
 /** Routes where the header/nav should be hidden */
 const HEADERLESS_ROUTES = ['/login', '/landing', '/pricing', '/cgv', '/admin'];
@@ -113,6 +113,16 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
                                         <Settings size={14} strokeWidth={1.5} className="text-luna-text-muted" />
                                         Paramètres
                                     </Link>
+                                    {userProfile?.role === 'Admin' && (
+                                        <Link
+                                            href="/admin"
+                                            onClick={() => setDropdownOpen(false)}
+                                            className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-violet-600 hover:bg-violet-50 transition-colors"
+                                        >
+                                            <Shield size={14} strokeWidth={1.5} />
+                                            Administration
+                                        </Link>
+                                    )}
                                 </div>
 
                                 {/* Logout */}

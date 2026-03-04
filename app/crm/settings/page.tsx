@@ -1,13 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { updateUserProfile } from '@/src/lib/firebase/crm';
 import { useSubscription } from '@/src/hooks/useSubscription';
+import { storage } from '@/src/lib/firebase/client';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/src/lib/firebase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Save, CheckCircle2, Mail, Phone, Building2, FileText,
-    Shield, LogOut, Globe, Briefcase, Clock, MapPin, Sparkles, CreditCard
+    Shield, LogOut, Globe, Briefcase, Clock, MapPin, Sparkles, CreditCard, Camera
 } from 'lucide-react';
 
 // ═══ ANIMATED FLIGHT ROUTES ═══
@@ -52,8 +56,27 @@ export default function SettingsPage() {
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const [uploadingPhoto, setUploadingPhoto] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => { setMounted(true); }, []);
+
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
+        setUploadingPhoto(true);
+        try {
+            const storageRef = ref(storage, `avatars/${user.uid}`);
+            await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(storageRef);
+            await updateDoc(doc(db, 'users', user.uid), { photoURL: downloadURL, updatedAt: new Date() });
+            await refreshProfile();
+        } catch (err) {
+            console.error('Photo upload error:', err);
+        } finally {
+            setUploadingPhoto(false);
+        }
+    };
 
     useEffect(() => {
         if (userProfile) {
@@ -158,13 +181,25 @@ export default function SettingsPage() {
                                 <div className="absolute bottom-2 left-8 w-12 h-12 bg-amber-400/10 rounded-full blur-[20px]" />
 
                                 <div className="relative z-10">
-                                    {photoURL ? (
-                                        <img src={photoURL} alt={displayName} className="w-24 h-24 rounded-full object-cover border-[3px] border-white/20 shadow-2xl mx-auto" referrerPolicy="no-referrer" />
-                                    ) : (
-                                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-sky-400 via-blue-500 to-violet-500 flex items-center justify-center text-white text-2xl font-bold border-[3px] border-white/20 shadow-2xl mx-auto">
-                                            {getInitials(displayName)}
-                                        </div>
-                                    )}
+                                    <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                                    <button onClick={() => fileInputRef.current?.click()} className="relative group mx-auto block" disabled={uploadingPhoto}>
+                                        {photoURL ? (
+                                            <img src={photoURL} alt={displayName} className="w-24 h-24 rounded-full object-cover border-[3px] border-white/20 shadow-2xl" referrerPolicy="no-referrer" />
+                                        ) : (
+                                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-sky-400 via-blue-500 to-violet-500 flex items-center justify-center text-white text-2xl font-bold border-[3px] border-white/20 shadow-2xl">
+                                                {getInitials(displayName)}
+                                            </div>
+                                        )}
+                                        {uploadingPhoto ? (
+                                            <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
+                                                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            </div>
+                                        ) : (
+                                            <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
+                                                <Camera size={20} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </div>
+                                        )}
+                                    </button>
                                     <h2 className="text-white text-lg font-semibold mt-4 tracking-tight">{displayName}</h2>
                                     <p className="text-white/40 text-xs mt-0.5">{email}</p>
                                 </div>
