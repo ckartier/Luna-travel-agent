@@ -24,12 +24,12 @@ const MAP_STYLES = [
 export { MAP_STYLES };
 
 const ROUTES = [
-    { from: [2.35, 48.86] as [number, number], to: [139.69, 35.68] as [number, number], color: '#60a5fa' },
-    { from: [2.35, 48.86] as [number, number], to: [-73.94, 40.71] as [number, number], color: '#c084fc' },
-    { from: [2.35, 48.86] as [number, number], to: [55.27, 25.20] as [number, number], color: '#fbbf24' },
-    { from: [2.35, 48.86] as [number, number], to: [-43.17, -22.91] as [number, number], color: '#34d399' },
-    { from: [2.35, 48.86] as [number, number], to: [100.50, 13.76] as [number, number], color: '#f472b6' },
-    { from: [2.35, 48.86] as [number, number], to: [28.98, 41.01] as [number, number], color: '#fb923c' },
+    { from: [2.35, 48.86] as [number, number], to: [139.69, 35.68] as [number, number], color: '#ef4444' },
+    { from: [2.35, 48.86] as [number, number], to: [-73.94, 40.71] as [number, number], color: '#ef4444' },
+    { from: [2.35, 48.86] as [number, number], to: [55.27, 25.20] as [number, number], color: '#ef4444' },
+    { from: [2.35, 48.86] as [number, number], to: [-43.17, -22.91] as [number, number], color: '#ef4444' },
+    { from: [2.35, 48.86] as [number, number], to: [100.50, 13.76] as [number, number], color: '#ef4444' },
+    { from: [2.35, 48.86] as [number, number], to: [28.98, 41.01] as [number, number], color: '#ef4444' },
 ];
 
 function greatCircle(a: [number, number], b: [number, number], n = 64): [number, number][] {
