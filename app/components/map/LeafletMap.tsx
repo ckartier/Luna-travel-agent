@@ -24,12 +24,36 @@ const MAP_STYLES = [
 export { MAP_STYLES };
 
 const ROUTES = [
-    { from: [2.35, 48.86] as [number, number], to: [139.69, 35.68] as [number, number], color: '#ef4444' },
-    { from: [2.35, 48.86] as [number, number], to: [-73.94, 40.71] as [number, number], color: '#ef4444' },
-    { from: [2.35, 48.86] as [number, number], to: [55.27, 25.20] as [number, number], color: '#ef4444' },
-    { from: [2.35, 48.86] as [number, number], to: [-43.17, -22.91] as [number, number], color: '#ef4444' },
-    { from: [2.35, 48.86] as [number, number], to: [100.50, 13.76] as [number, number], color: '#ef4444' },
-    { from: [2.35, 48.86] as [number, number], to: [28.98, 41.01] as [number, number], color: '#ef4444' },
+    // ═══ RED ROUTES (10 total) ═══
+    { from: [2.35, 48.86] as [number, number], to: [139.69, 35.68] as [number, number], color: '#ef4444' },  // Paris → Tokyo
+    { from: [2.35, 48.86] as [number, number], to: [-73.94, 40.71] as [number, number], color: '#ef4444' },  // Paris → New York
+    { from: [2.35, 48.86] as [number, number], to: [55.27, 25.20] as [number, number], color: '#ef4444' },  // Paris → Dubai
+    { from: [2.35, 48.86] as [number, number], to: [-43.17, -22.91] as [number, number], color: '#ef4444' }, // Paris → Rio
+    { from: [2.35, 48.86] as [number, number], to: [100.50, 13.76] as [number, number], color: '#ef4444' }, // Paris → Bangkok
+    { from: [2.35, 48.86] as [number, number], to: [28.98, 41.01] as [number, number], color: '#ef4444' },  // Paris → Istanbul
+    { from: [2.35, 48.86] as [number, number], to: [37.62, 55.75] as [number, number], color: '#ef4444' },  // Paris → Moscow
+    { from: [2.35, 48.86] as [number, number], to: [-3.70, 40.42] as [number, number], color: '#ef4444' },  // Paris → Madrid
+    { from: [2.35, 48.86] as [number, number], to: [121.47, 31.23] as [number, number], color: '#ef4444' }, // Paris → Shanghai
+    { from: [2.35, 48.86] as [number, number], to: [-118.24, 34.05] as [number, number], color: '#ef4444' },// Paris → Los Angeles
+    // ═══ BLUE ROUTES (9) ═══
+    { from: [-73.94, 40.71] as [number, number], to: [-0.12, 51.51] as [number, number], color: '#3b82f6' },  // New York → London
+    { from: [-73.94, 40.71] as [number, number], to: [139.69, 35.68] as [number, number], color: '#3b82f6' }, // New York → Tokyo
+    { from: [-0.12, 51.51] as [number, number], to: [55.27, 25.20] as [number, number], color: '#3b82f6' },   // London → Dubai
+    { from: [-0.12, 51.51] as [number, number], to: [77.21, 28.61] as [number, number], color: '#3b82f6' },   // London → Delhi
+    { from: [55.27, 25.20] as [number, number], to: [103.82, 1.35] as [number, number], color: '#3b82f6' },   // Dubai → Singapore
+    { from: [139.69, 35.68] as [number, number], to: [151.21, -33.87] as [number, number], color: '#3b82f6' },// Tokyo → Sydney
+    { from: [-73.94, 40.71] as [number, number], to: [-43.17, -22.91] as [number, number], color: '#3b82f6' },// New York → Rio
+    { from: [103.82, 1.35] as [number, number], to: [151.21, -33.87] as [number, number], color: '#3b82f6' }, // Singapore → Sydney
+    { from: [-0.12, 51.51] as [number, number], to: [-73.94, 40.71] as [number, number], color: '#3b82f6' },  // London → New York (return)
+    // ═══ ORANGE ROUTES (8) ═══
+    { from: [55.27, 25.20] as [number, number], to: [139.69, 35.68] as [number, number], color: '#f97316' },  // Dubai → Tokyo
+    { from: [12.50, 41.90] as [number, number], to: [23.73, 37.97] as [number, number], color: '#f97316' },   // Rome → Athens
+    { from: [-99.13, 19.43] as [number, number], to: [-73.94, 40.71] as [number, number], color: '#f97316' }, // Mexico → New York
+    { from: [28.98, 41.01] as [number, number], to: [77.21, 28.61] as [number, number], color: '#f97316' },   // Istanbul → Delhi
+    { from: [37.62, 55.75] as [number, number], to: [104.07, 30.57] as [number, number], color: '#f97316' },  // Moscow → Chengdu
+    { from: [18.07, 59.33] as [number, number], to: [24.94, 60.17] as [number, number], color: '#f97316' },   // Stockholm → Helsinki
+    { from: [-43.17, -22.91] as [number, number], to: [-58.38, -34.60] as [number, number], color: '#f97316' },// Rio → Buenos Aires
+    { from: [36.82, -1.29] as [number, number], to: [18.42, -33.92] as [number, number], color: '#f97316' },  // Nairobi → Cape Town
 ];
 
 function greatCircle(a: [number, number], b: [number, number], n = 64): [number, number][] {
