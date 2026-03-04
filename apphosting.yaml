@@ -23,9 +23,6 @@ env:
   # Mapbox (must be value, not secret — NEXT_PUBLIC_ vars are inlined at build time)
   - variable: NEXT_PUBLIC_MAPBOX_TOKEN
     value: pk.eyJ1IjoiY2thcnRpZXIiLCJhIjoiY21tOWs3dG54MDNlYjJwczcydjFrdTdqaSJ9.K4o4XD3vuGhjXzWrTMKI4g
-    availability:
-      - BUILD
-      - RUNTIME
 
   # Server-side secrets (managed via Cloud Secret Manager)
   - variable: FIREBASE_PROJECT_ID
@@ -50,9 +47,6 @@ env:
     secret: STRIPE_WEBHOOK_SECRET
   - variable: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
     value: pk_test_51T3cdZPtMrCfknK02annrbwgfnKFrldldF4NfMpmArrb3A4NZW8pZ7rILTw8yc4vTSqSrR3tC7m7Bvm7QZfDjJTE00qbYGp4QQ
-    availability:
-      - BUILD
-      - RUNTIME
   - variable: STRIPE_PRICE_STARTER
     secret: STRIPE_PRICE_STARTER
   - variable: STRIPE_PRICE_PRO
