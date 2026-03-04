@@ -367,12 +367,12 @@ function DashboardPage() {
               const meta = agentMeta[agent];
               const wireColor = isValidated ? '#10b981' : meta.color;
 
-              // Paths — agents closer to center
+              // S-shaped curves connecting center to each agent
               const curvePaths = [
-                'M 50 50 C 50 46, 50 38, 50 28',   // top — Transport
-                'M 50 50 C 46 50, 38 50, 24 50',   // left — Hébergement
-                'M 50 50 C 54 50, 62 50, 76 50',   // right — Profil Client
-                'M 50 50 C 50 54, 50 62, 50 72',   // bottom — Itinéraire
+                'M 50 50 C 44 46, 56 36, 50 28',   // top — S-curve Transport
+                'M 50 50 C 46 56, 34 44, 24 50',   // left — S-curve Hébergement
+                'M 50 50 C 54 44, 66 56, 76 50',   // right — S-curve Profil Client
+                'M 50 50 C 56 54, 44 64, 50 72',   // bottom — S-curve Itinéraire
               ];
               const pathD = curvePaths[i];
 
@@ -386,7 +386,7 @@ function DashboardPage() {
 
               return (
                 <g key={agent}>
-                  {/* Thin wire line */}
+                  {/* Thin S-curve wire */}
                   <motion.path
                     d={pathD} fill="none" stroke={wireColor}
                     strokeWidth="0.18" strokeLinecap="round"
@@ -394,9 +394,9 @@ function DashboardPage() {
                     animate={{ opacity: isValidated ? 0.6 : 0.35, pathLength: 1 }}
                     transition={{ duration: 1, delay: i * 0.12, ease: 'easeOut' }}
                   />
-                  {/* 6px solid circle traveling along wire */}
+                  {/* 5px solid circle traveling along S-curve */}
                   <circle
-                    r={0.7}
+                    r={0.6}
                     fill={wireColor}
                     style={{
                       offsetPath: `path('${pathD}')`,
@@ -404,15 +404,15 @@ function DashboardPage() {
                       offsetRotate: '0deg',
                     } as any}
                   />
-                  {/* 6px endpoint dot on agent side */}
+                  {/* 5px endpoint dot on agent side */}
                   <motion.circle
-                    cx={ep.x} cy={ep.y} r="0.8" fill={wireColor}
+                    cx={ep.x} cy={ep.y} r="0.6" fill={wireColor}
                     initial={{ opacity: 0 }} animate={{ opacity: 0.7 }}
                     transition={{ delay: i * 0.12 + 0.8 }}
                   />
-                  {/* 6px center connection dot */}
+                  {/* 5px center connection dot */}
                   <motion.circle
-                    cx="50" cy="50" r="0.8" fill={wireColor}
+                    cx="50" cy="50" r="0.6" fill={wireColor}
                     initial={{ opacity: 0 }} animate={{ opacity: 0.5 }}
                     transition={{ delay: i * 0.1 }}
                   />
