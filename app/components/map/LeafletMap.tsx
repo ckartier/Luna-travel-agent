@@ -54,6 +54,19 @@ const ROUTES = [
     { from: [18.07, 59.33] as [number, number], to: [24.94, 60.17] as [number, number], color: '#f97316' },   // Stockholm → Helsinki
     { from: [-43.17, -22.91] as [number, number], to: [-58.38, -34.60] as [number, number], color: '#f97316' },// Rio → Buenos Aires
     { from: [36.82, -1.29] as [number, number], to: [18.42, -33.92] as [number, number], color: '#f97316' },  // Nairobi → Cape Town
+    // ═══ GREEN ROUTES (12) ═══
+    { from: [2.35, 48.86] as [number, number], to: [31.24, 30.04] as [number, number], color: '#22c55e' },   // Paris → Cairo
+    { from: [103.82, 1.35] as [number, number], to: [114.17, 22.28] as [number, number], color: '#22c55e' }, // Singapore → Hong Kong
+    { from: [126.98, 37.57] as [number, number], to: [139.69, 35.68] as [number, number], color: '#22c55e' },// Seoul → Tokyo
+    { from: [-79.38, 43.65] as [number, number], to: [-123.12, 49.28] as [number, number], color: '#22c55e' },// Toronto → Vancouver
+    { from: [77.21, 28.61] as [number, number], to: [100.50, 13.76] as [number, number], color: '#22c55e' }, // Delhi → Bangkok
+    { from: [31.24, 30.04] as [number, number], to: [36.82, -1.29] as [number, number], color: '#22c55e' },  // Cairo → Nairobi
+    { from: [-77.04, -12.05] as [number, number], to: [-70.65, -33.45] as [number, number], color: '#22c55e' },// Lima → Santiago
+    { from: [174.76, -36.85] as [number, number], to: [151.21, -33.87] as [number, number], color: '#22c55e' },// Auckland → Sydney
+    { from: [-87.63, 41.88] as [number, number], to: [-80.19, 25.76] as [number, number], color: '#22c55e' }, // Chicago → Miami
+    { from: [13.40, 52.52] as [number, number], to: [14.42, 50.08] as [number, number], color: '#22c55e' },  // Berlin → Prague
+    { from: [116.40, 39.90] as [number, number], to: [126.98, 37.57] as [number, number], color: '#22c55e' },// Beijing → Seoul
+    { from: [-46.63, -23.55] as [number, number], to: [2.35, 48.86] as [number, number], color: '#22c55e' }, // São Paulo → Paris
 ];
 
 function greatCircle(a: [number, number], b: [number, number], n = 64): [number, number][] {
