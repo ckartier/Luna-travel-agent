@@ -30,10 +30,10 @@ import { PdfExport } from '@/app/components/PdfExport';
 type WorkflowState = 'IDLE' | 'ANALYSING' | 'DISTRIBUTING' | 'AGENTS_WORKING' | 'VALIDATION' | 'GENERATING_PROPOSALS' | 'PROPOSALS_READY';
 
 const agentMeta = {
-  transport: { title: 'Transport', subtitle: 'Vols & Routings', desc: 'Recherche des meilleurs vols directs et avec escales, analyse tarifaire multi-compagnies', icon: Radio, angle: -90, color: '#0ea5e9', gradient: 'from-sky-500 to-cyan-400', pastelBg: 'bg-sky-50', pastelText: 'text-sky-600', pastelBorder: 'border-sky-100', pastelRing: 'ring-sky-200' },
-  accommodation: { title: 'Hébergement', subtitle: 'Hôtels & Resorts', desc: 'Sélection premium des établissements, vérification disponibilités et tarifs négociés', icon: Hotel, angle: 180, color: '#f59e0b', gradient: 'from-amber-500 to-orange-400', pastelBg: 'bg-amber-50', pastelText: 'text-amber-600', pastelBorder: 'border-amber-100', pastelRing: 'ring-amber-200' },
-  client: { title: 'Profil Client', subtitle: 'CRM Analyse', desc: 'Analyse du profil voyageur, préférences historiques et recommandations personnalisées', icon: Users, angle: 0, color: '#8b5cf6', gradient: 'from-violet-500 to-purple-400', pastelBg: 'bg-violet-50', pastelText: 'text-violet-600', pastelBorder: 'border-violet-100', pastelRing: 'ring-violet-200' },
-  itinerary: { title: 'Itinéraire', subtitle: 'Planning Jour/Jour', desc: 'Construction de l\'itinéraire optimisé, activités et transferts coordonnés', icon: CalendarRange, angle: 90, color: '#10b981', gradient: 'from-emerald-500 to-teal-400', pastelBg: 'bg-emerald-50', pastelText: 'text-emerald-600', pastelBorder: 'border-emerald-100', pastelRing: 'ring-emerald-200' },
+  transport: { title: 'Transport', subtitle: 'Vols & Routings', desc: 'Recherche des meilleurs vols directs et avec escales, analyse tarifaire multi-compagnies', icon: Radio, angle: -90, color: '#e11d48', gradient: 'from-rose-600 to-red-500', pastelBg: 'bg-rose-50', pastelText: 'text-rose-600', pastelBorder: 'border-rose-100', pastelRing: 'ring-rose-200' },
+  accommodation: { title: 'Hébergement', subtitle: 'Hôtels & Resorts', desc: 'Sélection premium des établissements, vérification disponibilités et tarifs négociés', icon: Hotel, angle: 180, color: '#4f46e5', gradient: 'from-indigo-600 to-blue-500', pastelBg: 'bg-indigo-50', pastelText: 'text-indigo-600', pastelBorder: 'border-indigo-100', pastelRing: 'ring-indigo-200' },
+  client: { title: 'Profil Client', subtitle: 'CRM Analyse', desc: 'Analyse du profil voyageur, préférences historiques et recommandations personnalisées', icon: Users, angle: 0, color: '#0d9488', gradient: 'from-teal-600 to-cyan-500', pastelBg: 'bg-teal-50', pastelText: 'text-teal-600', pastelBorder: 'border-teal-100', pastelRing: 'ring-teal-200' },
+  itinerary: { title: 'Itinéraire', subtitle: 'Planning Jour/Jour', desc: 'Construction de l\'itinéraire optimisé, activités et transferts coordonnés', icon: CalendarRange, angle: 90, color: '#ea580c', gradient: 'from-orange-600 to-amber-500', pastelBg: 'bg-orange-50', pastelText: 'text-orange-600', pastelBorder: 'border-orange-100', pastelRing: 'ring-orange-200' },
 };
 
 type AgentKey = keyof typeof agentMeta;
@@ -386,17 +386,17 @@ function DashboardPage() {
 
               return (
                 <g key={agent}>
-                  {/* Thin S-curve wire */}
+                  {/* 2px S-curve wire */}
                   <motion.path
                     d={pathD} fill="none" stroke={wireColor}
-                    strokeWidth="0.18" strokeLinecap="round"
+                    strokeWidth="0.3" strokeLinecap="round"
                     initial={{ opacity: 0, pathLength: 0 }}
-                    animate={{ opacity: isValidated ? 0.6 : 0.35, pathLength: 1 }}
+                    animate={{ opacity: isValidated ? 0.7 : 0.4, pathLength: 1 }}
                     transition={{ duration: 1, delay: i * 0.12, ease: 'easeOut' }}
                   />
-                  {/* 5px solid circle traveling along S-curve */}
+                  {/* 4px solid circle traveling along S-curve */}
                   <circle
-                    r={0.6}
+                    r={0.35}
                     fill={wireColor}
                     style={{
                       offsetPath: `path('${pathD}')`,
@@ -404,16 +404,16 @@ function DashboardPage() {
                       offsetRotate: '0deg',
                     } as any}
                   />
-                  {/* 5px endpoint dot on agent side */}
+                  {/* 4px endpoint dot on agent side */}
                   <motion.circle
-                    cx={ep.x} cy={ep.y} r="0.6" fill={wireColor}
-                    initial={{ opacity: 0 }} animate={{ opacity: 0.7 }}
+                    cx={ep.x} cy={ep.y} r="0.35" fill={wireColor}
+                    initial={{ opacity: 0 }} animate={{ opacity: 0.8 }}
                     transition={{ delay: i * 0.12 + 0.8 }}
                   />
-                  {/* 5px center connection dot */}
+                  {/* 4px center connection dot */}
                   <motion.circle
-                    cx="50" cy="50" r="0.6" fill={wireColor}
-                    initial={{ opacity: 0 }} animate={{ opacity: 0.5 }}
+                    cx="50" cy="50" r="0.35" fill={wireColor}
+                    initial={{ opacity: 0 }} animate={{ opacity: 0.6 }}
                     transition={{ delay: i * 0.1 }}
                   />
                 </g>
@@ -917,8 +917,8 @@ function DashboardPage() {
                           <Icon size={22} className="text-white" />
                         </div>
                         <div className="flex-1">
-                          <h2 className="font-serif text-lg font-semibold text-luna-charcoal">{meta.title}</h2>
-                          <p className="text-luna-text-muted text-[10px] uppercase tracking-[0.15em] font-medium mt-0.5">Résultats de recherche</p>
+                          <h2 className="font-serif text-xl font-bold text-black">{meta.title}</h2>
+                          <p className="text-gray-500 text-xs uppercase tracking-[0.15em] font-semibold mt-0.5">Résultats de recherche</p>
                         </div>
                         <button onClick={() => setSelectedAgent(null)} className="p-2 text-luna-text-muted/50 hover:text-luna-charcoal rounded-lg transition-colors">
                           <X size={16} strokeWidth={1.5} />
@@ -929,26 +929,26 @@ function DashboardPage() {
                     {/* Scrollable content */}
                     <div className="overflow-y-auto p-8 flex-1">
                       <div className="bg-luna-cream/60 p-5 rounded-2xl border border-luna-warm-gray/10 mb-6">
-                        <p className="text-luna-charcoal/80 leading-relaxed text-sm">{summary}</p>
+                        <p className="text-black leading-relaxed text-base">{summary}</p>
                       </div>
 
                       {/* Transport: Flights */}
                       {selectedAgent === 'transport' && data?.flights?.length > 0 && (
                         <div className="space-y-2.5 mb-6">
                           <div className="flex justify-between items-center">
-                            <h4 className="text-xs font-bold text-luna-charcoal uppercase tracking-wider">✈️ Vols ({data.flights.length})</h4>
+                            <h4 className="text-sm font-bold text-black uppercase tracking-wider">✈️ Vols ({data.flights.length})</h4>
                           </div>
                           {data.flights.map((f: any, i: number) => (
-                            <a key={i} href={f.url || '#'} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-luna-warm-gray/15 hover:border-sky-300 hover:shadow-md transition-all group cursor-pointer">
+                            <a key={i} href={f.url || '#'} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-gray-200 hover:border-sky-300 hover:shadow-md transition-all group cursor-pointer">
                               <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-2">
-                                  <span className="w-6 h-6 rounded-md bg-sky-50 flex items-center justify-center text-[10px] font-bold text-sky-600">{i + 1}</span>
-                                  <span className="font-semibold text-sm text-luna-charcoal group-hover:text-sky-600 transition-colors">{f.airline} — {f.class}</span>
+                                  <span className="w-7 h-7 rounded-md bg-sky-50 flex items-center justify-center text-xs font-bold text-sky-600">{i + 1}</span>
+                                  <span className="font-bold text-base text-black group-hover:text-sky-600 transition-colors">{f.airline} — {f.class}</span>
                                 </div>
-                                <span className="font-serif font-bold text-luna-accent-dark text-sm">{f.price}</span>
+                                <span className="font-serif font-bold text-black text-base">{f.price}</span>
                               </div>
-                              <p className="text-xs text-luna-text-muted mt-1.5 ml-8">{f.route} • {f.duration} • {f.stops} escale(s)</p>
-                              <p className="text-[10px] text-sky-500 mt-1.5 ml-8 font-medium group-hover:underline">Réserver sur {f.domain || 'Skyscanner'} →</p>
+                              <p className="text-sm text-gray-600 mt-1.5 ml-9">{f.route} • {f.duration} • {f.stops} escale(s)</p>
+                              <p className="text-xs text-sky-500 mt-1.5 ml-9 font-semibold group-hover:underline">Réserver sur {f.domain || 'Skyscanner'} →</p>
                             </a>
                           ))}
                         </div>
@@ -957,18 +957,18 @@ function DashboardPage() {
                       {/* Transport: Trains */}
                       {selectedAgent === 'transport' && data?.trains?.length > 0 && (
                         <div className="space-y-2.5 mb-6">
-                          <h4 className="text-xs font-bold text-luna-charcoal uppercase tracking-wider">🚄 Trains ({data.trains.length})</h4>
+                          <h4 className="text-sm font-bold text-black uppercase tracking-wider">🚄 Trains ({data.trains.length})</h4>
                           {data.trains.map((t: any, i: number) => (
-                            <a key={i} href={t.url || '#'} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-luna-warm-gray/15 hover:border-emerald-300 hover:shadow-md transition-all group cursor-pointer">
+                            <a key={i} href={t.url || '#'} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-gray-200 hover:border-emerald-300 hover:shadow-md transition-all group cursor-pointer">
                               <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-2">
-                                  <span className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center text-[10px] font-bold text-emerald-600">🚄</span>
-                                  <span className="font-semibold text-sm text-luna-charcoal group-hover:text-emerald-600 transition-colors">{t.operator} — {t.class}</span>
+                                  <span className="w-7 h-7 rounded-md bg-emerald-50 flex items-center justify-center text-xs font-bold text-emerald-600">🚄</span>
+                                  <span className="font-bold text-base text-black group-hover:text-emerald-600 transition-colors">{t.operator} — {t.class}</span>
                                 </div>
-                                <span className="font-serif font-bold text-luna-accent-dark text-sm">{t.price}</span>
+                                <span className="font-serif font-bold text-black text-base">{t.price}</span>
                               </div>
-                              <p className="text-xs text-luna-text-muted mt-1.5 ml-8">{t.route} • {t.duration}{t.frequency ? ` • ${t.frequency}` : ''}</p>
-                              <p className="text-[10px] text-emerald-500 mt-1.5 ml-8 font-medium group-hover:underline">Réserver sur {t.domain || 'Trainline'} →</p>
+                              <p className="text-sm text-gray-600 mt-1.5 ml-9">{t.route} • {t.duration}{t.frequency ? ` • ${t.frequency}` : ''}</p>
+                              <p className="text-xs text-emerald-500 mt-1.5 ml-9 font-semibold group-hover:underline">Réserver sur {t.domain || 'Trainline'} →</p>
                             </a>
                           ))}
                         </div>
@@ -977,19 +977,19 @@ function DashboardPage() {
                       {/* Transport: Cars */}
                       {selectedAgent === 'transport' && data?.cars?.length > 0 && (
                         <div className="space-y-2.5 mb-6">
-                          <h4 className="text-xs font-bold text-luna-charcoal uppercase tracking-wider">🚗 Voiture ({data.cars.length})</h4>
+                          <h4 className="text-sm font-bold text-black uppercase tracking-wider">🚗 Voiture ({data.cars.length})</h4>
                           {data.cars.map((c: any, i: number) => (
-                            <a key={i} href={c.url || '#'} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-luna-warm-gray/15 hover:border-amber-300 hover:shadow-md transition-all group cursor-pointer">
+                            <a key={i} href={c.url || '#'} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-gray-200 hover:border-amber-300 hover:shadow-md transition-all group cursor-pointer">
                               <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-2">
-                                  <span className="w-6 h-6 rounded-md bg-amber-50 flex items-center justify-center text-[10px] font-bold text-amber-600">🚗</span>
-                                  <span className="font-semibold text-sm text-luna-charcoal group-hover:text-amber-600 transition-colors">{c.mode}</span>
+                                  <span className="w-7 h-7 rounded-md bg-amber-50 flex items-center justify-center text-xs font-bold text-amber-600">🚗</span>
+                                  <span className="font-bold text-base text-black group-hover:text-amber-600 transition-colors">{c.mode}</span>
                                 </div>
-                                <span className="font-serif font-bold text-luna-accent-dark text-sm">{c.price}</span>
+                                <span className="font-serif font-bold text-black text-base">{c.price}</span>
                               </div>
-                              <p className="text-xs text-luna-text-muted mt-1.5 ml-8">{c.route} • {c.distance} • {c.duration}</p>
-                              {c.details && <p className="text-[10px] text-luna-text-muted/80 mt-1 ml-8 italic">{c.details}</p>}
-                              <p className="text-[10px] text-amber-500 mt-1.5 ml-8 font-medium group-hover:underline">Voir sur {c.domain || 'Google Maps'} →</p>
+                              <p className="text-sm text-gray-600 mt-1.5 ml-9">{c.route} • {c.distance} • {c.duration}</p>
+                              {c.details && <p className="text-xs text-gray-500 mt-1 ml-9 italic">{c.details}</p>}
+                              <p className="text-xs text-amber-500 mt-1.5 ml-9 font-semibold group-hover:underline">Voir sur {c.domain || 'Google Maps'} →</p>
                             </a>
                           ))}
                         </div>
@@ -998,19 +998,19 @@ function DashboardPage() {
                       {/* Accommodation: Hotels (show all, with clickable links) */}
                       {selectedAgent === 'accommodation' && data?.hotels?.length > 0 && (
                         <div className="space-y-2.5 mb-6">
-                          <h4 className="input-label">Hôtels sélectionnés ({data.hotels.length})</h4>
+                          <h4 className="text-sm font-bold text-black uppercase tracking-wider">🏨 Hôtels sélectionnés ({data.hotels.length})</h4>
                           {data.hotels.map((h: any, i: number) => (
-                            <a key={i} href={h.url || '#'} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-luna-warm-gray/15 hover:border-sky-300 hover:shadow-md transition-all group cursor-pointer">
+                            <a key={i} href={h.url || '#'} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-gray-200 hover:border-sky-300 hover:shadow-md transition-all group cursor-pointer">
                               <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-2">
-                                  <span className="w-6 h-6 rounded-md bg-amber-50 flex items-center justify-center text-[10px] font-bold text-amber-600">{i + 1}</span>
-                                  <span className="font-semibold text-sm text-luna-charcoal group-hover:text-sky-600 transition-colors">{h.name}</span>
+                                  <span className="w-7 h-7 rounded-md bg-indigo-50 flex items-center justify-center text-xs font-bold text-indigo-600">{i + 1}</span>
+                                  <span className="font-bold text-base text-black group-hover:text-sky-600 transition-colors">{h.name}</span>
                                 </div>
-                                <span className="font-serif font-bold text-luna-accent-dark">{h.pricePerNight}/nuit</span>
+                                <span className="font-serif font-bold text-black text-base">{h.pricePerNight}/nuit</span>
                               </div>
-                              <p className="text-xs text-luna-text-muted mt-1.5 ml-8">{'★'.repeat(h.stars || 5)} • {h.highlights?.join(', ')}</p>
-                              {h.recommendation && <p className="text-[10px] text-luna-charcoal/70 mt-1 ml-8 italic leading-snug">{h.recommendation}</p>}
-                              <p className="text-[10px] text-sky-500 mt-1.5 ml-8 font-medium group-hover:underline">Réserver sur {h.domain || h.name} →</p>
+                              <p className="text-sm text-gray-600 mt-1.5 ml-9">{'★'.repeat(h.stars || 5)} • {h.highlights?.join(', ')}</p>
+                              {h.recommendation && <p className="text-xs text-gray-500 mt-1 ml-9 italic leading-snug">{h.recommendation}</p>}
+                              <p className="text-xs text-sky-500 mt-1.5 ml-9 font-semibold group-hover:underline">Réserver sur {h.domain || h.name} →</p>
                             </a>
                           ))}
                         </div>
@@ -1019,14 +1019,14 @@ function DashboardPage() {
                       {/* Itinerary: Days with clickable links */}
                       {selectedAgent === 'itinerary' && data?.days?.length > 0 && (
                         <div className="space-y-2.5 mb-6">
-                          <h4 className="input-label">Planning jour par jour ({data.days.length} jours)</h4>
+                          <h4 className="text-sm font-bold text-black uppercase tracking-wider">📅 Planning jour par jour ({data.days.length} jours)</h4>
                           {data.days.map((d: any, i: number) => (
-                            <div key={i} className="bg-white p-4 rounded-xl border border-luna-warm-gray/15">
-                              <h5 className="font-semibold text-sm text-luna-charcoal flex items-center gap-2">
-                                <span className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center text-[10px] font-bold text-emerald-600">J{d.day}</span>
+                            <div key={i} className="bg-white p-4 rounded-xl border border-gray-200">
+                              <h5 className="font-bold text-base text-black flex items-center gap-2">
+                                <span className="w-7 h-7 rounded-md bg-orange-50 flex items-center justify-center text-xs font-bold text-orange-600">J{d.day}</span>
                                 {d.title}
                               </h5>
-                              <div className="text-xs text-luna-text-muted mt-2 ml-8 space-y-1.5">
+                              <div className="text-sm text-gray-600 mt-2 ml-9 space-y-1.5">
                                 <p className="flex items-start gap-1">
                                   <span>🌅</span>
                                   <span className="flex-1">{d.morning}
@@ -1055,13 +1055,13 @@ function DashboardPage() {
                       {/* Client: Recommendations with clickable links */}
                       {selectedAgent === 'client' && data?.recommendations?.length > 0 && (
                         <div className="space-y-2 mb-6">
-                          <h4 className="input-label">Recommandations ({data.recommendations.length})</h4>
+                          <h4 className="text-sm font-bold text-black uppercase tracking-wider">💡 Recommandations ({data.recommendations.length})</h4>
                           {data.recommendations.map((r: any, i: number) => {
                             const text = typeof r === 'string' ? r : r?.text || r;
                             const url = typeof r === 'object' ? r?.url : null;
                             const type = typeof r === 'object' ? r?.type : null;
                             return (
-                              <div key={i} className="bg-white p-3.5 rounded-xl border border-luna-warm-gray/15 text-sm text-luna-charcoal">
+                              <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 text-base text-black">
                                 <div className="flex items-start gap-2.5">
                                   <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" />
                                   <div className="flex-1">
