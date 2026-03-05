@@ -1,6 +1,6 @@
 'use client';
 
-import { CapsuleBackground } from '@/app/components/CapsuleBackground';
+import { MapBackground } from '@/app/components/map/MapBackground';
 import { WeatherWidget } from '@/src/components/widgets/WeatherWidget';
 import { useAuth } from '@/src/contexts/AuthContext';
 import {
@@ -307,7 +307,7 @@ function DashboardPage() {
 
   return (
     <div ref={containerRef} className="relative w-full min-h-screen flex flex-col overflow-hidden">
-      <CapsuleBackground />
+      <MapBackground />
 
       {/* Weather Widgets (real API) */}
       <div className="absolute top-16 right-3 md:top-20 md:right-5 z-40 w-[220px] md:w-[260px] hidden md:block">
@@ -334,7 +334,7 @@ function DashboardPage() {
               const isValidated = validatedAgents.includes(agent);
               if (!isActive) return null;
 
-              const wireColor = isValidated ? '#10b981' : '#fb923c'; // Orange active, emerald validated
+              const wireColor = isValidated ? '#10b981' : '#0ea5e9'; // Blue active, emerald validated
 
               const curvePaths = [
                 'M 50 50 C 44 46, 56 36, 50 25', // top
@@ -363,8 +363,8 @@ function DashboardPage() {
             const isValidated = validatedAgents.includes(agent);
             if (!isActive) return null;
 
-            const dotColor = isValidated ? '#10b981' : '#fb923c';
-            const dotGlowColor = isValidated ? 'rgba(16, 185, 129, 0.4)' : 'rgba(251, 146, 60, 0.4)';
+            const dotColor = isValidated ? '#10b981' : '#0ea5e9';
+            const dotGlowColor = isValidated ? 'rgba(16, 185, 129, 0.4)' : 'rgba(14, 165, 233, 0.4)';
 
             // Endpoint positions matching agent card positions
             const endpoints = [
@@ -659,7 +659,7 @@ function DashboardPage() {
               </motion.div>
             )}
 
-            {/* ═══ PROCESSING: SUPER AGENT ORB — HIGHTECH CLEAN ═══ */}
+            {/* ═══ PROCESSING: SUPER AGENT ORB — HIGHTECH CLEAN (CAPSULE) ═══ */}
             {isProcessing && (
               <motion.div
                 key="processing"
@@ -669,19 +669,12 @@ function DashboardPage() {
                 transition={{ type: 'spring', stiffness: 180, damping: 22 }}
                 className="relative z-30"
               >
-                {/* Outer soft blue glow */}
-                <motion.div
-                  className="absolute -inset-10 rounded-full bg-sky-300 opacity-20 blur-3xl z-0"
-                  animate={{ scale: [1, 1.1, 1], opacity: [0.15, 0.25, 0.15] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                />
-
-                {/* Inner orb — Clean white with cyan border */}
-                <div className="relative z-10 w-64 h-64 rounded-full bg-white flex flex-col items-center justify-center shadow-[0_12px_48px_rgba(56,189,248,0.2)] border-4 border-sky-400/80">
-                  <div className="relative z-10 flex flex-col items-center px-6 text-center">
+                {/* Inner orb — Clean white capsule with 3px blue border */}
+                <div className="relative z-10 rounded-[40px] bg-white flex flex-col items-center justify-center shadow-[0_12px_48px_rgba(14,165,233,0.15)] border-[3px] border-[#0ea5e9] px-10 py-6 min-w-[280px]">
+                  <div className="relative z-10 flex flex-col items-center text-center">
                     {/* Blue Icon */}
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center shadow-md shadow-sky-200 mb-3">
-                      <Sparkles size={22} className="text-white" />
+                    <div className="w-10 h-10 rounded-full bg-[#0ea5e9] flex items-center justify-center shadow-md shadow-sky-200/50 mb-3">
+                      <Sparkles size={18} className="text-white" />
                     </div>
 
                     <h3 className="font-serif text-xl font-bold text-gray-900 tracking-tight">Super Agent</h3>
@@ -689,8 +682,8 @@ function DashboardPage() {
 
                     <div className="flex items-center gap-1.5 mb-4">
                       <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 bg-sky-400"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 bg-[#0ea5e9]"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0ea5e9]"></span>
                       </span>
                       <span className="text-[11px] text-gray-800 font-bold tracking-wide">
                         {workflowState === 'ANALYSING' && 'Analyse en cours...'}
@@ -703,9 +696,9 @@ function DashboardPage() {
 
                     {/* Agent count info */}
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-bold text-sky-500 uppercase tracking-widest">4 AGENTS</span>
+                      <span className="text-[10px] font-bold text-[#0ea5e9] uppercase tracking-widest">4 AGENTS</span>
                       <span className="w-px h-3 bg-sky-200" />
-                      <span className="text-[10px] font-bold text-sky-500 uppercase tracking-widest">{activeAgents.length} ACTIFS</span>
+                      <span className="text-[10px] font-bold text-[#0ea5e9] uppercase tracking-widest">{activeAgents.length} ACTIFS</span>
                     </div>
                   </div>
                 </div>
