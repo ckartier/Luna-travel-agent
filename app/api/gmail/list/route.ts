@@ -16,8 +16,9 @@ export async function GET(request: Request) {
             return NextResponse.json(emailContent);
         }
 
-        // Default: list inbox emails only (from lunaconcierge@gmail.com)
-        const inboxQuery = query ? `in:inbox ${query}` : 'in:inbox';
+        // Default: list inbox emails only (exclude sent by ckartier)
+        const baseQuery = 'in:inbox -from:ckartier';
+        const inboxQuery = query ? `${baseQuery} ${query}` : baseQuery;
         const emails = await listEmails(inboxQuery);
         return NextResponse.json({ emails });
     } catch (error: any) {
