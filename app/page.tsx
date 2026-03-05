@@ -381,7 +381,7 @@ function DashboardPage() {
       {isProcessing && (
         <>
           <style>{`
-            @keyframes floatAgent { 0%,100% { transform: translate(-50%,-50%) translateY(0); } 50% { transform: translate(-50%,-50%) translateY(-6px); } }
+            @keyframes floatAgent { 0%,100% { transform: translate(-50%,-50%) translateY(0); } 50% { transform: translate(-50%,-50%) translateY(-8px); } }
             @keyframes pulseDot { 0%,100% { opacity: 0.6; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.3); } }
           `}</style>
 
@@ -854,7 +854,7 @@ function DashboardPage() {
                 exit={{ opacity: 0, scale: 0.3 }}
                 transition={{ type: 'spring', stiffness: 200, damping: 20, delay: isActive ? i * 0.1 : 0 }}
                 className="absolute z-20 pointer-events-auto"
-                style={{ top: pos.top, left: pos.left, animation: isActive && !isValidated ? 'floatAgent 3s ease-in-out infinite' : undefined, transform: 'translate(-50%, -50%)' }}
+                style={{ top: pos.top, left: pos.left, animation: isActive && !isValidated ? 'floatAgent 2.1s ease-in-out infinite' : undefined, transform: 'translate(-50%, -50%)' }}
                 onClick={() => canValidate && setSelectedAgent(agentKey)}
               >
                 <motion.div
