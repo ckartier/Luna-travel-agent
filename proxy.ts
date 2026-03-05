@@ -2,51 +2,30 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
- * Next.js Edge Middleware — lightweight route protection layer.
+ * Next.js Edge Proxy — lightweight security headers & route hygiene.
  *
- * This does NOT verify Firebase tokens (Edge Runtime doesn't support
- * firebase-admin). Instead it checks for the presence of a session
- * cookie / auth indicator and redirects unauthenticated users.
+ * Auth enforcement is handled by:
+ *   - Client-side: AuthGuard component (checks Firebase Auth state)
+ *   - Server-side: apiAuth.ts (verifyIdToken on every API route)
  *
- * Full token verification happens in API route handlers via apiAuth.ts.
+ * This proxy only adds security headers. It does NOT block page navigation
+ * because Firebase Auth uses IndexedDB (not cookies), so we can't check
+ * auth state at the Edge layer.
  */
 
-const PUBLIC_PATHS = ['/login', '/landing', '/pricing', '/cgv', '/api/stripe/webhook', '/api/whatsapp/webhook', '/api/gmail/webhook', '/api/gmail/callback'];
-
 export function proxy(request: NextRequest) {
-    const { pathname } = request.nextUrl;
+    const response = NextResponse.next();
 
-    // Allow public paths, static files, and Next.js internals
-    if (
-        PUBLIC_PATHS.some(p => pathname.startsWith(p)) ||
-        pathname.startsWith('/_next') ||
-        pathname.startsWith('/favicon') ||
-        pathname.match(/\.(ico|svg|png|jpg|webp|woff2?|css|js)$/)
-    ) {
-        return NextResponse.next();
-    }
+    // Security headers
+    response.headers.set('X-Frame-Options', 'DENY');
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-    // API routes: let apiAuth.ts handle full token verification
-    if (pathname.startsWith('/api/')) {
-        return NextResponse.next();
-    }
-
-    // For page routes: check for Firebase auth cookie/token indicator
-    // Firebase client SDK stores auth state in IndexedDB, not cookies,
-    // so we add a lightweight cookie from the client on login
-    const authCookie = request.cookies.get('__session') || request.cookies.get('firebase-auth');
-    if (!authCookie && !pathname.startsWith('/tracker')) {
-        const loginUrl = new URL('/landing', request.url);
-        loginUrl.searchParams.set('redirect', pathname);
-        return NextResponse.redirect(loginUrl);
-    }
-
-    return NextResponse.next();
+    return response;
 }
 
 export const config = {
     matcher: [
-        // Match all paths except static files
         '/((?!_next/static|_next/image|favicon.ico).*)',
     ],
 };
