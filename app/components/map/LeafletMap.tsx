@@ -190,8 +190,8 @@ const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMap({ map
             frameRef.current = requestAnimationFrame(loop);
         });
 
-        let d = 0;
-        const drift = () => { d += 0.002; if (!map.isMoving()) map.setCenter([20 + Math.sin(d) * 1.5, 40 + Math.cos(d * 0.7) * 0.8]); requestAnimationFrame(drift); };
+        let lng = 20;
+        const drift = () => { lng += 0.015; if (!map.isMoving()) map.setCenter([lng % 360, 30 + Math.sin(lng * 0.01) * 5]); requestAnimationFrame(drift); };
         requestAnimationFrame(drift);
 
         mapRef.current = map;
