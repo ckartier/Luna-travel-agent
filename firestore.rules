@@ -26,9 +26,10 @@ service cloud.firestore {
     // A user can only access data in their own tenant
 
     match /tenants/{tenantId} {
-      // Tenant document: only members can read, only Admin SDK can write
-      allow read: if request.auth != null && isTenantMember(tenantId);
-      allow write: if false; // Only Admin SDK
+      // Tenant document: members can read (or owner by UID), owner can create/update
+      allow read: if request.auth != null && (request.auth.uid == tenantId || isTenantMember(tenantId));
+      allow create: if request.auth != null && request.auth.uid == tenantId;
+      allow update: if request.auth != null && request.auth.uid == tenantId;
 
       // All sub-collections: authenticated tenant members only
       match /{collection}/{document=**} {

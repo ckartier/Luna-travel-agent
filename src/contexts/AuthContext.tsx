@@ -32,7 +32,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
             setUserProfile(profile);
         } catch (err) {
-            // User profile load skipped
+            console.error('[AuthContext] Failed to load user profile:', err);
+            // Retry once after a short delay (Firestore may need time for rules)
+            try {
+                await new Promise(r => setTimeout(r, 2000));
+                const profile = await getOrCreateUser({
+                    uid: firebaseUser.uid,
+                    displayName: firebaseUser.displayName,
+                    email: firebaseUser.email,
+                    photoURL: firebaseUser.photoURL,
+                });
+                setUserProfile(profile);
+            } catch (retryErr) {
+                console.error('[AuthContext] Retry also failed:', retryErr);
+            }
         }
     }, []);
 
