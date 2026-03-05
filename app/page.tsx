@@ -350,14 +350,15 @@ function DashboardPage() {
         </motion.div>
       </div>
 
-      {/* ═══ THIN WIRE LINES + SMALL TRAVELING CIRCLE ═══ */}
+      {/* ═══ WIRE LINES + ROUND DOTS ═══ */}
       {isProcessing && (
         <>
           <style>{`
             @keyframes floatAgent { 0%,100% { transform: translate(-50%,-50%) translateY(0); } 50% { transform: translate(-50%,-50%) translateY(-4px); } }
-            @keyframes travelDot { 0% { offset-distance: 0%; } 100% { offset-distance: 100%; } }
+            @keyframes pulseDot { 0%,100% { opacity: 0.6; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.3); } }
           `}</style>
 
+          {/* SVG for wire paths only — no circles to avoid oval distortion */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none z-14" viewBox="0 0 100 100" preserveAspectRatio="none">
             {(['transport', 'accommodation', 'client', 'itinerary'] as AgentKey[]).map((agent, i) => {
               const isActive = activeAgents.includes(agent);
@@ -367,59 +368,82 @@ function DashboardPage() {
               const meta = agentMeta[agent];
               const wireColor = isValidated ? '#10b981' : meta.color;
 
-              // S-shaped curves connecting center to each agent
               const curvePaths = [
-                'M 50 50 C 44 46, 56 36, 50 28',   // top — S-curve Transport
-                'M 50 50 C 46 56, 34 44, 24 50',   // left — S-curve Hébergement
-                'M 50 50 C 54 44, 66 56, 76 50',   // right — S-curve Profil Client
-                'M 50 50 C 56 54, 44 64, 50 72',   // bottom — S-curve Itinéraire
+                'M 50 50 C 44 46, 56 36, 50 28',
+                'M 50 50 C 46 56, 34 44, 24 50',
+                'M 50 50 C 54 44, 66 56, 76 50',
+                'M 50 50 C 56 54, 44 64, 50 72',
               ];
               const pathD = curvePaths[i];
 
-              const endpoints = [
-                { x: 50, y: 28 },
-                { x: 24, y: 50 },
-                { x: 76, y: 50 },
-                { x: 50, y: 72 },
-              ];
-              const ep = endpoints[i];
-
               return (
-                <g key={agent}>
-                  {/* 2px S-curve wire */}
-                  <motion.path
-                    d={pathD} fill="none" stroke={wireColor}
-                    strokeWidth="0.3" strokeLinecap="round"
-                    initial={{ opacity: 0, pathLength: 0 }}
-                    animate={{ opacity: isValidated ? 0.7 : 0.4, pathLength: 1 }}
-                    transition={{ duration: 1, delay: i * 0.12, ease: 'easeOut' }}
-                  />
-                  {/* 4px solid circle traveling along S-curve */}
-                  <circle
-                    r={0.35}
-                    fill={wireColor}
-                    style={{
-                      offsetPath: `path('${pathD}')`,
-                      animation: `travelDot ${1.8 + i * 0.15}s ${i * 0.1}s ease-in-out infinite alternate`,
-                      offsetRotate: '0deg',
-                    } as any}
-                  />
-                  {/* 4px endpoint dot on agent side */}
-                  <motion.circle
-                    cx={ep.x} cy={ep.y} r="0.35" fill={wireColor}
-                    initial={{ opacity: 0 }} animate={{ opacity: 0.8 }}
-                    transition={{ delay: i * 0.12 + 0.8 }}
-                  />
-                  {/* 4px center connection dot */}
-                  <motion.circle
-                    cx="50" cy="50" r="0.35" fill={wireColor}
-                    initial={{ opacity: 0 }} animate={{ opacity: 0.6 }}
-                    transition={{ delay: i * 0.1 }}
-                  />
-                </g>
+                <motion.path
+                  key={agent}
+                  d={pathD} fill="none" stroke={wireColor}
+                  strokeWidth="0.3" strokeLinecap="round"
+                  initial={{ opacity: 0, pathLength: 0 }}
+                  animate={{ opacity: isValidated ? 0.7 : 0.45, pathLength: 1 }}
+                  transition={{ duration: 1, delay: i * 0.12, ease: 'easeOut' }}
+                />
               );
             })}
           </svg>
+
+          {/* HTML dots — perfectly round, no SVG distortion */}
+          {(['transport', 'accommodation', 'client', 'itinerary'] as AgentKey[]).map((agent, i) => {
+            const isActive = activeAgents.includes(agent);
+            const isValidated = validatedAgents.includes(agent);
+            if (!isActive) return null;
+
+            const meta = agentMeta[agent];
+            const dotColor = isValidated ? '#10b981' : meta.color;
+
+            // Endpoint positions matching agent card positions
+            const endpoints = [
+              { top: '28%', left: '50%' },
+              { top: '50%', left: '24%' },
+              { top: '50%', left: '76%' },
+              { top: '72%', left: '50%' },
+            ];
+            const ep = endpoints[i];
+
+            return (
+              <div key={`dots-${agent}`}>
+                {/* Endpoint dot — at agent side */}
+                <motion.div
+                  className="absolute z-15 pointer-events-none"
+                  style={{ top: ep.top, left: ep.left, transform: 'translate(-50%,-50%)' }}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 0.85, scale: 1 }}
+                  transition={{ delay: i * 0.12 + 0.8 }}
+                >
+                  <div className="w-[5px] h-[5px] rounded-full" style={{ backgroundColor: dotColor, boxShadow: `0 0 6px ${dotColor}60` }} />
+                </motion.div>
+                {/* Center dot */}
+                <motion.div
+                  className="absolute z-15 pointer-events-none"
+                  style={{ top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.5 }}
+                  transition={{ delay: i * 0.1 }}
+                >
+                  <div className="w-[5px] h-[5px] rounded-full" style={{ backgroundColor: dotColor }} />
+                </motion.div>
+                {/* Pulsing dot midway on wire */}
+                <div
+                  className="absolute z-15 pointer-events-none"
+                  style={{
+                    top: `${(parseFloat(ep.top) + 50) / 2}%`,
+                    left: `${(parseFloat(ep.left) + 50) / 2}%`,
+                    transform: 'translate(-50%,-50%)',
+                    animation: `pulseDot ${1.5 + i * 0.2}s ease-in-out infinite`,
+                  }}
+                >
+                  <div className="w-[4px] h-[4px] rounded-full" style={{ backgroundColor: dotColor, boxShadow: `0 0 4px ${dotColor}50` }} />
+                </div>
+              </div>
+            );
+          })}
         </>
       )}
 

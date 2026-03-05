@@ -133,7 +133,7 @@ const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMap({ map
 
         const map = new mapboxgl.Map({
             container: containerRef.current,
-            style: 'mapbox://styles/mapbox/light-v11',
+            style: 'mapbox://styles/mapbox/dark-v11',
             center: [20, 40], zoom: 4, projection: 'globe',
             attributionControl: false, antialias: true, dragRotate: true,
         });
