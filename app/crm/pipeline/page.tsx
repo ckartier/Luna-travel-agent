@@ -183,7 +183,7 @@ export default function CRMPipeline() {
                                             <div className="mb-3 pt-3 border-t border-gray-50">
                                                 <p className="text-[10px] text-gray-400 font-bold uppercase mb-2">Résultats Web IA</p>
                                                 {deal.links.map((link: any, idx: number) => (
-                                                    <a key={idx} href={link.url} className="text-xs flex items-center gap-1 text-luna-accent-dark font-semibold hover:underline bg-luna-accent/10 px-2 py-1 flex-wrap rounded-md">
+                                                    <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="text-xs flex items-center gap-1 text-luna-accent-dark font-semibold hover:underline bg-luna-accent/10 px-2 py-1 flex-wrap rounded-md">
                                                         <Globe size={12} /> {link.title}
                                                     </a>
                                                 ))}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Mail, Search, RefreshCw, AlertCircle, CalendarClock, Sparkles, Plane, Hotel, Users, CalendarRange, ArrowRight, CheckCircle2, Loader2, X, PlusCircle, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createLead, createActivity, createContact, findContactByEmail } from '@/src/lib/firebase/crm';
@@ -424,9 +425,9 @@ export default function MailsPage() {
                                                             <div className="w-full py-2.5 bg-emerald-50 text-emerald-600 font-semibold text-xs tracking-wider uppercase rounded-lg border border-emerald-200 flex items-center justify-center gap-2">
                                                                 <CheckCircle2 size={14} /> Ajouté au Pipeline
                                                             </div>
-                                                            <a href="/crm/pipeline" className="w-full py-2 text-sky-500 hover:text-sky-600 font-medium text-xs rounded-lg flex items-center justify-center gap-1.5 transition-colors">
+                                                            <Link href="/crm/pipeline" className="w-full py-2 text-sky-500 hover:text-sky-600 font-medium text-xs rounded-lg flex items-center justify-center gap-1.5 transition-colors">
                                                                 <ExternalLink size={12} /> Voir le Pipeline
-                                                            </a>
+                                                            </Link>
                                                         </div>
                                                     )}
                                                 </div>

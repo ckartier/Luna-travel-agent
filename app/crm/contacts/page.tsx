@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Users, Search, Star, Phone, Mail, RefreshCcw, X, Plus, ChevronRight, Plane, Calendar, Target, Clock } from 'lucide-react';
+import { Users, Search, Star, Phone, Mail, RefreshCcw, X, Plus, ChevronRight, Plane, Calendar, Target, Clock, ExternalLink } from 'lucide-react';
 import { getContacts, createContact, getLeadsForContact, getTripsForContact, getActivitiesForContact, CRMContact, CRMLead, CRMTrip, CRMActivity } from '@/src/lib/firebase/crm';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 
 const VIP_COLORS: Record<string, string> = {
     Standard: 'bg-gray-100 text-gray-600',
@@ -170,13 +171,16 @@ export default function CRMContacts() {
                                         {contactLeads.length === 0 ? (
                                             <p className="text-xs text-luna-text-muted/60 italic">Aucun lead</p>
                                         ) : contactLeads.map(lead => (
-                                            <div key={lead.id} className="flex items-center gap-3 p-3 rounded-xl bg-luna-cream/30 border border-luna-warm-gray/10 mb-1.5">
-                                                <Target size={14} className="text-luna-accent shrink-0" />
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium text-luna-charcoal truncate">{lead.destination}</p>
-                                                    <p className="text-[10px] text-luna-text-muted">{lead.budget} • {lead.status}</p>
+                                            <Link href="/crm/pipeline" key={lead.id} className="flex items-center justify-between p-3 rounded-xl bg-luna-cream/30 border border-luna-warm-gray/10 mb-1.5 hover:bg-sky-50 transition-colors group">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <Target size={14} className="text-luna-accent shrink-0 group-hover:text-sky-500 transition-colors" />
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-medium text-luna-charcoal truncate">{lead.destination}</p>
+                                                        <p className="text-[10px] text-luna-text-muted">{lead.budget} • {lead.status}</p>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                                <ExternalLink size={12} className="text-luna-text-muted/40 group-hover:text-sky-400 opacity-0 group-hover:opacity-100 transition-all shrink-0" />
+                                            </Link>
                                         ))}
                                     </div>
 
@@ -188,13 +192,16 @@ export default function CRMContacts() {
                                         {contactTrips.length === 0 ? (
                                             <p className="text-xs text-luna-text-muted/60 italic">Aucun voyage</p>
                                         ) : contactTrips.map(trip => (
-                                            <div key={trip.id} className="flex items-center gap-3 p-3 rounded-xl bg-luna-cream/30 border border-luna-warm-gray/10 mb-1.5">
-                                                <div className="w-1.5 h-8 rounded-full shrink-0" style={{ backgroundColor: trip.color }} />
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium text-luna-charcoal truncate">{trip.title}</p>
-                                                    <p className="text-[10px] text-luna-text-muted">{trip.startDate} → {trip.endDate} • {trip.amount}€</p>
+                                            <Link href="/crm/planning" key={trip.id} className="flex items-center justify-between p-3 rounded-xl bg-luna-cream/30 border border-luna-warm-gray/10 mb-1.5 hover:bg-sky-50 transition-colors group">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className="w-1.5 h-8 rounded-full shrink-0" style={{ backgroundColor: trip.color }} />
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-medium text-luna-charcoal truncate">{trip.title}</p>
+                                                        <p className="text-[10px] text-luna-text-muted">{trip.startDate} → {trip.endDate} • {trip.amount}€</p>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                                <ExternalLink size={12} className="text-luna-text-muted/40 group-hover:text-sky-400 opacity-0 group-hover:opacity-100 transition-all shrink-0" />
+                                            </Link>
                                         ))}
                                     </div>
 
@@ -206,13 +213,16 @@ export default function CRMContacts() {
                                         {contactActivities.length === 0 ? (
                                             <p className="text-xs text-luna-text-muted/60 italic">Aucune activité</p>
                                         ) : contactActivities.map(act => (
-                                            <div key={act.id} className="flex items-center gap-3 p-3 rounded-xl bg-luna-cream/30 border border-luna-warm-gray/10 mb-1.5">
-                                                <Clock size={14} className={act.status === 'DONE' ? 'text-emerald-500' : 'text-amber-500'} />
-                                                <div className="flex-1 min-w-0">
-                                                    <p className={`text-sm font-medium truncate ${act.status === 'DONE' ? 'text-gray-400 line-through' : 'text-luna-charcoal'}`}>{act.title}</p>
-                                                    <p className="text-[10px] text-luna-text-muted">{act.time} • {act.status}</p>
+                                            <Link href="/crm/activities" key={act.id} className="flex items-center justify-between p-3 rounded-xl bg-luna-cream/30 border border-luna-warm-gray/10 mb-1.5 hover:bg-sky-50 transition-colors group">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <Clock size={14} className={act.status === 'DONE' ? 'text-emerald-500 shrink-0' : 'text-amber-500 shrink-0'} />
+                                                    <div className="min-w-0">
+                                                        <p className={`text-sm font-medium truncate ${act.status === 'DONE' ? 'text-gray-400 line-through' : 'text-luna-charcoal'}`}>{act.title}</p>
+                                                        <p className="text-[10px] text-luna-text-muted">{act.time} • {act.status}</p>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                                <ExternalLink size={12} className="text-luna-text-muted/40 group-hover:text-sky-400 opacity-0 group-hover:opacity-100 transition-all shrink-0" />
+                                            </Link>
                                         ))}
                                     </div>
                                 </>
