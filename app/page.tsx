@@ -859,14 +859,16 @@ function DashboardPage() {
               >
                 <motion.div
                   whileHover={canValidate ? { scale: 1.04, y: -3 } : {}}
-                  className={`relative overflow-hidden ${canValidate ? 'cursor-pointer' : ''} transition-all`}
+                  className={`relative ${canValidate ? 'cursor-pointer' : ''} transition-all`}
                   style={{
                     width: '180px',
                     minHeight: '240px',
                     borderRadius: '90px',
                     background: isValidated ? '#d4f0e0' : '#d5eaf3',
-                    border: isValidated ? '1.5px solid #6bc9a0' : '1.5px solid #8bbdd4',
-                    boxShadow: '0 8px 30px rgba(0,0,0,0.07)',
+                    border: 'none',
+                    boxShadow: isValidated
+                      ? '0 0 25px rgba(16,185,129,0.4), 0 0 60px rgba(16,185,129,0.15), 0 8px 30px rgba(0,0,0,0.07)'
+                      : '0 8px 30px rgba(0,0,0,0.07)',
                     padding: '28px 22px',
                     display: 'flex',
                     flexDirection: 'column' as const,
@@ -874,10 +876,77 @@ function DashboardPage() {
                     justifyContent: 'center',
                   }}
                 >
+                  {/* SVG contour progress — traces the capsule border */}
+                  <svg
+                    className="absolute inset-0 w-full h-full pointer-events-none"
+                    viewBox="0 0 180 240"
+                    fill="none"
+                    style={{ borderRadius: '90px' }}
+                  >
+                    {/* Background border */}
+                    <rect
+                      x="1.5" y="1.5" width="177" height="237" rx="88.5" ry="88.5"
+                      stroke={isValidated ? '#10b981' : '#8bbdd4'}
+                      strokeWidth="1.5"
+                      fill="none"
+                    />
+                    {/* Animated progress stroke */}
+                    {!isValidated && isActive && (
+                      <motion.rect
+                        x="1.5" y="1.5" width="177" height="237" rx="88.5" ry="88.5"
+                        fill="none"
+                        stroke="#0ea5e9"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        style={{
+                          pathLength: 1,
+                          // Total perimeter approx: 2*(177+237) - 4*88.5 + 2*PI*88.5 ≈ ~828 + ~556 = ~806
+                        }}
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: canValidate ? 1 : 0.65 }}
+                        transition={{
+                          pathLength: { duration: canValidate ? 0.6 : 8, ease: 'easeOut' },
+                        }}
+                      />
+                    )}
+                    {/* Full green border when validated */}
+                    {isValidated && (
+                      <motion.rect
+                        x="1.5" y="1.5" width="177" height="237" rx="88.5" ry="88.5"
+                        fill="none"
+                        stroke="#10b981"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        initial={{ pathLength: 0, opacity: 0 }}
+                        animate={{ pathLength: 1, opacity: 1 }}
+                        transition={{ duration: 0.6, ease: 'easeOut' }}
+                      />
+                    )}
+                  </svg>
+
+                  {/* Glow overlay when validated */}
+                  {isValidated && (
+                    <motion.div
+                      className="absolute inset-0 rounded-[90px] pointer-events-none"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: [0, 0.8, 0.3] }}
+                      transition={{ duration: 1.2, ease: 'easeOut' }}
+                      style={{
+                        boxShadow: '0 0 30px rgba(16,185,129,0.5), 0 0 80px rgba(16,185,129,0.2), inset 0 0 30px rgba(16,185,129,0.1)',
+                      }}
+                    />
+                  )}
+
                   {/* Status indicator */}
-                  <div className="absolute top-5 right-1/2 translate-x-1/2" style={{ top: '16px' }}>
+                  <div className="absolute top-5 right-1/2 translate-x-1/2 z-10" style={{ top: '16px' }}>
                     {isValidated ? (
-                      <CheckCircle2 size={16} className="text-emerald-600" />
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.3 }}
+                      >
+                        <CheckCircle2 size={18} className="text-emerald-600" />
+                      </motion.div>
                     ) : canValidate ? (
                       <div className="w-3 h-3 rounded-full bg-orange-400 animate-pulse" />
                     ) : isActive ? (
@@ -887,41 +956,22 @@ function DashboardPage() {
 
                   {/* Icon circle */}
                   <div
-                    className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 mb-3 mt-2"
+                    className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 mb-3 mt-2 relative z-10"
                     style={{
                       background: isValidated ? '#10b981' : '#fb923c',
-                      boxShadow: '0 3px 10px rgba(0,0,0,0.12)',
+                      boxShadow: isValidated ? '0 3px 15px rgba(16,185,129,0.35)' : '0 3px 10px rgba(0,0,0,0.12)',
                     }}
                   >
                     <Icon size={20} className="text-white" />
                   </div>
 
-                  <h3 className="font-extrabold text-[15px] text-gray-900 leading-tight text-center">{meta.title}</h3>
-                  <p className="text-[12px] font-semibold text-gray-500 mt-1 text-center">{meta.subtitle}</p>
+                  <h3 className="font-extrabold text-[15px] text-gray-900 leading-tight text-center relative z-10">{meta.title}</h3>
+                  <p className="text-[12px] font-semibold text-gray-500 mt-1 text-center relative z-10">{meta.subtitle}</p>
 
                   {/* Description */}
-                  <p className="text-[11px] text-gray-600 leading-snug mt-3 text-center">
+                  <p className="text-[11px] text-gray-600 leading-snug mt-3 text-center relative z-10">
                     {meta.desc}
                   </p>
-
-                  {/* Progress bar */}
-                  {!isValidated && isActive && (
-                    <div className="mt-3 w-full h-1 rounded-full overflow-hidden" style={{ background: 'rgba(139,189,212,0.3)' }}>
-                      <motion.div
-                        className="h-full rounded-full"
-                        style={{ background: 'linear-gradient(90deg, #fb923c, #fbbf24, #fb923c)', backgroundSize: '200% 100%' }}
-                        initial={{ width: '0%', backgroundPosition: '100% 0' }}
-                        animate={{ width: canValidate ? '100%' : '65%', backgroundPosition: '0% 0' }}
-                        transition={{
-                          width: { duration: canValidate ? 0.5 : 8, ease: 'easeOut' },
-                          backgroundPosition: { duration: 2, repeat: Infinity, ease: 'linear' }
-                        }}
-                      />
-                    </div>
-                  )}
-                  {isValidated && (
-                    <div className="mt-3 w-full h-1 rounded-full bg-emerald-400" />
-                  )}
                 </motion.div>
               </motion.div>
             );
