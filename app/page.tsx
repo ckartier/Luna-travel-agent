@@ -334,14 +334,13 @@ function DashboardPage() {
               const isValidated = validatedAgents.includes(agent);
               if (!isActive) return null;
 
-              const meta = agentMeta[agent];
-              const wireColor = isValidated ? '#10b981' : meta.color;
+              const wireColor = isValidated ? '#10b981' : '#fb923c'; // Orange active, emerald validated
 
               const curvePaths = [
-                'M 50 50 C 44 46, 56 36, 50 28',
-                'M 50 50 C 46 56, 34 44, 24 50',
-                'M 50 50 C 54 44, 66 56, 76 50',
-                'M 50 50 C 56 54, 44 64, 50 72',
+                'M 50 50 C 44 46, 56 36, 50 25', // top
+                'M 50 50 C 46 56, 34 44, 22 50', // left
+                'M 50 50 C 54 44, 66 56, 78 50', // right
+                'M 50 50 C 56 54, 44 64, 50 75', // bottom
               ];
               const pathD = curvePaths[i];
 
@@ -349,9 +348,9 @@ function DashboardPage() {
                 <motion.path
                   key={agent}
                   d={pathD} fill="none" stroke={wireColor}
-                  strokeWidth="0.3" strokeLinecap="round"
+                  strokeWidth="0.15" strokeLinecap="round"
                   initial={{ opacity: 0, pathLength: 0 }}
-                  animate={{ opacity: isValidated ? 0.7 : 0.45, pathLength: 1 }}
+                  animate={{ opacity: isValidated ? 0.6 : 0.8, pathLength: 1 }}
                   transition={{ duration: 1, delay: i * 0.12, ease: 'easeOut' }}
                 />
               );
@@ -364,15 +363,15 @@ function DashboardPage() {
             const isValidated = validatedAgents.includes(agent);
             if (!isActive) return null;
 
-            const meta = agentMeta[agent];
-            const dotColor = isValidated ? '#10b981' : meta.color;
+            const dotColor = isValidated ? '#10b981' : '#fb923c';
+            const dotGlowColor = isValidated ? 'rgba(16, 185, 129, 0.4)' : 'rgba(251, 146, 60, 0.4)';
 
             // Endpoint positions matching agent card positions
             const endpoints = [
-              { top: '28%', left: '50%' },
-              { top: '50%', left: '24%' },
-              { top: '50%', left: '76%' },
-              { top: '72%', left: '50%' },
+              { top: '25%', left: '50%' },
+              { top: '50%', left: '22%' },
+              { top: '50%', left: '78%' },
+              { top: '75%', left: '50%' },
             ];
             const ep = endpoints[i];
 
@@ -383,20 +382,20 @@ function DashboardPage() {
                   className="absolute z-15 pointer-events-none"
                   style={{ top: ep.top, left: ep.left, transform: 'translate(-50%,-50%)' }}
                   initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 0.85, scale: 1 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: i * 0.12 + 0.8 }}
                 >
-                  <div className="w-[5px] h-[5px] rounded-full" style={{ backgroundColor: dotColor, boxShadow: `0 0 6px ${dotColor}60` }} />
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dotColor, boxShadow: `0 0 8px ${dotGlowColor}` }} />
                 </motion.div>
-                {/* Center dot */}
+                {/* Endpoint dot — at center Super Agent side */}
                 <motion.div
                   className="absolute z-15 pointer-events-none"
                   style={{ top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 0.5 }}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: i * 0.1 }}
                 >
-                  <div className="w-[5px] h-[5px] rounded-full" style={{ backgroundColor: dotColor }} />
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dotColor, boxShadow: `0 0 8px ${dotGlowColor}` }} />
                 </motion.div>
                 {/* Pulsing dot midway on wire */}
                 <div
@@ -405,10 +404,10 @@ function DashboardPage() {
                     top: `${(parseFloat(ep.top) + 50) / 2}%`,
                     left: `${(parseFloat(ep.left) + 50) / 2}%`,
                     transform: 'translate(-50%,-50%)',
-                    animation: `pulseDot ${1.5 + i * 0.2}s ease-in-out infinite`,
+                    animation: `pulseDot ${2 + i * 0.3}s ease-in-out infinite`,
                   }}
                 >
-                  <div className="w-[4px] h-[4px] rounded-full" style={{ backgroundColor: dotColor, boxShadow: `0 0 4px ${dotColor}50` }} />
+                  <div className="w-[3px] h-[3px] rounded-full" style={{ backgroundColor: dotColor }} />
                 </div>
               </div>
             );
@@ -660,7 +659,7 @@ function DashboardPage() {
               </motion.div>
             )}
 
-            {/* ═══ PROCESSING: SUPER AGENT ORB — ENLARGED ═══ */}
+            {/* ═══ PROCESSING: SUPER AGENT ORB — HIGHTECH CLEAN ═══ */}
             {isProcessing && (
               <motion.div
                 key="processing"
@@ -670,69 +669,43 @@ function DashboardPage() {
                 transition={{ type: 'spring', stiffness: 180, damping: 22 }}
                 className="relative z-30"
               >
-                {/* Outer pulsing ring — SKY BLUE */}
+                {/* Outer soft blue glow */}
                 <motion.div
-                  className="absolute -inset-1 rounded-full bg-sky-400 opacity-20 blur-xl"
-                  animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                  className="absolute -inset-10 rounded-full bg-sky-300 opacity-20 blur-3xl z-0"
+                  animate={{ scale: [1, 1.1, 1], opacity: [0.15, 0.25, 0.15] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
                 />
-                {/* Dashed rotating ring — SKY BLUE */}
-                <motion.div
-                  className="absolute inset-0 rounded-full border border-dashed border-sky-300 opacity-40"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
-                />
-                <motion.div
-                  className="absolute inset-2 z-0 rounded-full border-2 border-dashed border-sky-200 opacity-30"
-                  animate={{ rotate: -360 }}
-                  transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-                />
-                {/* Thin rotating line — SKY BLUE */}
-                <motion.div
-                  className="absolute -inset-4 z-0 rounded-full border-t outline-none"
-                  style={{
-                    borderColor: 'rgba(56, 189, 248, 0.4)', // border-sky-400 equivalent
-                  }}
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
-                />
-                {/* Spinning border ring — SKY BLUE */}
-                <motion.div
-                  className="absolute -inset-1.5 rounded-full"
-                  style={{
-                    background: 'conic-gradient(from 0deg, #38bdf8, #7dd3fc, #0284c7, #bae6fd, #38bdf8)', // sky palette
-                  }}
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-                />
-                {/* Inner orb — LARGER */}
-                <div className="relative w-56 h-56 rounded-full bg-white/95 backdrop-blur-2xl flex flex-col items-center justify-center shadow-[0_8px_40px_rgba(56,189,248,0.15)] border border-sky-100/50">
-                  {/* Inner glow — gentle sky blue */}
-                  <div className="absolute inset-4 rounded-full bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-50 opacity-60" />
-                  <div className="relative z-10 flex flex-col items-center px-4">
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-sky-400 via-blue-500 to-sky-400 flex items-center justify-center shadow-lg shadow-sky-200/50 mb-3">
-                      <Sparkles size={24} className="text-white" />
+
+                {/* Inner orb — Clean white with cyan border */}
+                <div className="relative z-10 w-64 h-64 rounded-full bg-white flex flex-col items-center justify-center shadow-[0_12px_48px_rgba(56,189,248,0.2)] border-4 border-sky-400/80">
+                  <div className="relative z-10 flex flex-col items-center px-6 text-center">
+                    {/* Blue Icon */}
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center shadow-md shadow-sky-200 mb-3">
+                      <Sparkles size={22} className="text-white" />
                     </div>
-                    <h3 className="font-serif text-lg font-bold text-black tracking-wide">Super Agent</h3>
-                    <p className="text-xs text-gray-700 font-semibold mt-0.5">Orchestration IA</p>
-                    <div className="flex items-center gap-1.5 mt-2">
+
+                    <h3 className="font-serif text-xl font-bold text-gray-900 tracking-tight">Super Agent</h3>
+                    <p className="text-xs text-gray-500 font-medium mt-0.5 mb-4">Orchestration IA</p>
+
+                    <div className="flex items-center gap-1.5 mb-4">
                       <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 bg-sky-400"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
                       </span>
-                      <span className="text-xs text-black font-bold tracking-wide">
-                        {workflowState === 'ANALYSING' && 'Analyse en cours…'}
-                        {workflowState === 'DISTRIBUTING' && 'Distribution aux agents…'}
-                        {workflowState === 'AGENTS_WORKING' && 'Recherche parallèle…'}
+                      <span className="text-[11px] text-gray-800 font-bold tracking-wide">
+                        {workflowState === 'ANALYSING' && 'Analyse en cours...'}
+                        {workflowState === 'DISTRIBUTING' && 'Distribution en cours...'}
+                        {workflowState === 'AGENTS_WORKING' && 'Recherche parallèle...'}
                         {workflowState === 'VALIDATION' && `${validatedAgents.length}/4 agents validés`}
-                        {workflowState === 'GENERATING_PROPOSALS' && 'Finalisation…'}
+                        {workflowState === 'GENERATING_PROPOSALS' && 'Finalisation...'}
                       </span>
                     </div>
+
                     {/* Agent count info */}
-                    <div className="flex items-center gap-3 mt-3">
-                      <span className="text-[10px] font-bold text-sky-600 uppercase tracking-wider">4 Agents</span>
-                      <span className="h-2.5 w-px border-l border-gray-300" />
-                      <span className="text-[10px] font-bold text-sky-500 uppercase tracking-wider">{activeAgents.length} Actifs</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] font-bold text-sky-500 uppercase tracking-widest">4 AGENTS</span>
+                      <span className="w-px h-3 bg-sky-200" />
+                      <span className="text-[10px] font-bold text-sky-500 uppercase tracking-widest">{activeAgents.length} ACTIFS</span>
                     </div>
                   </div>
                 </div>
@@ -828,89 +801,57 @@ function DashboardPage() {
               >
                 <motion.div
                   whileHover={canValidate ? { scale: 1.04, y: -2 } : {}}
-                  className={`rounded-2xl overflow-hidden transition-all relative shadow-lg border ${canValidate ? 'cursor-pointer' : ''} ${isValidated ? 'border-emerald-200/50' : 'border-white/30'}`}
+                  className={`bg-white rounded-[20px] shadow-[0_8px_30px_rgba(0,0,0,0.06)] border ${canValidate ? 'cursor-pointer' : ''} ${isValidated ? 'border-emerald-200' : 'border-gray-100'} transition-all overflow-hidden relative`}
                   style={{ width: 280 }}
                 >
-                  {/* Premium glass background */}
-                  <div className={`absolute inset-0 backdrop-blur-2xl ${isValidated ? 'bg-white/98' : 'bg-white/95'} rounded-2xl`} />
+                  <div className="p-4 relative">
+                    {/* Top right spinner or checkmark */}
+                    <div className="absolute top-4 right-4">
+                      {isValidated ? (
+                        <CheckCircle2 size={16} className="text-emerald-500" />
+                      ) : canValidate ? (
+                        <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+                      ) : isActive ? (
+                        <Loader2 size={14} className="text-gray-300 animate-spin" />
+                      ) : null}
+                    </div>
 
-                  {/* Left color accent */}
-                  <div className="absolute top-3 bottom-3 left-0 w-[3px] rounded-full" style={{ backgroundColor: isValidated ? '#10b981' : meta.color, opacity: 0.8 }} />
-
-                  {/* Luminous connection dot — positioned on the edge facing center */}
-                  {(() => {
-                    const dotPositions = [
-                      { bottom: -6, left: '50%', transform: 'translateX(-50%)' },
-                      { top: '50%', right: -6, transform: 'translateY(-50%)' },
-                      { top: '50%', left: -6, transform: 'translateY(-50%)' },
-                      { top: -6, left: '50%', transform: 'translateX(-50%)' },
-                    ];
-                    const dotStyle = dotPositions[i];
-                    return (
-                      <div className="absolute z-30" style={dotStyle as any}>
-                        <div className="relative">
-                          <div className="w-[6px] h-[6px] rounded-full border border-white shadow-md" style={{ backgroundColor: isValidated ? '#10b981' : meta.color }} />
-                          {!isValidated && isActive && (
-                            <div className="absolute inset-0 w-[6px] h-[6px] rounded-full animate-ping opacity-40" style={{ backgroundColor: meta.color }} />
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  <div className="relative z-10 p-4">
-                    <div className="flex items-center gap-3">
-                      {/* Icon */}
-                      <div className="relative flex-shrink-0">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md" style={{ backgroundColor: isValidated ? '#10b981' : meta.color }}>
-                          {isValidated ? <CheckCircle2 size={20} className="text-white" /> : <Icon size={20} className="text-white" />}
-                        </div>
-                        {!isValidated && isActive && (
-                          <motion.div
-                            className="absolute inset-0 rounded-xl border-2"
-                            style={{ borderColor: meta.color }}
-                            animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
-                            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                          />
-                        )}
+                    <div className="flex items-start gap-4 mb-3">
+                      {/* Orange rounded square icon */}
+                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: isValidated ? '#10b981' : 'linear-gradient(135deg, #fb923c, #f97316)' }}>
+                        <Icon size={20} className="text-white" />
                       </div>
 
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-[16px] tracking-normal text-black">{meta.title}</h3>
-                        <p className={`text-[13px] mt-0.5 font-semibold ${isValidated ? 'text-emerald-600' : canValidate ? 'text-sky-600' : 'text-gray-700'}`}>
-                          {isValidated ? '✓ Validé' : canValidate ? '● Résultats prêts' : meta.subtitle}
-                        </p>
+                      <div className="flex-1 min-w-0 pt-0.5">
+                        <h3 className="font-bold text-[15px] text-gray-900 tracking-tight leading-tight">{meta.title}</h3>
+                        <p className="text-[12px] font-semibold text-gray-500 mt-1">{meta.subtitle}</p>
                       </div>
-
-                      {/* Status indicator */}
-                      {canValidate && (
-                        <div className="flex-shrink-0">
-                          <span className="relative flex h-3 w-3">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-50" style={{ backgroundColor: meta.color }} />
-                            <span className="relative inline-flex rounded-full h-3 w-3" style={{ backgroundColor: meta.color }} />
-                          </span>
-                        </div>
-                      )}
-                      {!isValidated && !canValidate && isActive && (
-                        <Loader2 size={14} className="flex-shrink-0 text-luna-text-muted/60 animate-spin" />
-                      )}
                     </div>
 
                     {/* Description text */}
-                    <p className="text-xs text-gray-900 leading-relaxed mt-2 pl-[60px] font-medium">{meta.desc}</p>
-
-                    {/* Progress bar */}
-                    {!isValidated && isActive && (
-                      <div className="mt-3 ml-14 h-[3px] rounded-full bg-gray-300/40 overflow-hidden">
-                        <motion.div
-                          className={`h-full rounded-full bg-gradient-to-r ${meta.gradient}`}
-                          initial={{ width: '0%' }}
-                          animate={{ width: canValidate ? '100%' : '65%' }}
-                          transition={{ duration: canValidate ? 0.5 : 8, ease: 'easeOut' }}
-                        />
-                      </div>
-                    )}
+                    <p className="text-[11px] text-gray-700 leading-relaxed font-medium mb-1">
+                      {meta.desc}
+                    </p>
                   </div>
+
+                  {/* Progress bar at the very bottom */}
+                  {!isValidated && isActive && (
+                    <div className="absolute bottom-0 left-4 right-4 h-[3px] rounded-t-full bg-gray-100 overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-t-full"
+                        style={{ background: 'linear-gradient(90deg, #fb923c, #fbd38d, #fb923c)', backgroundSize: '200% 100%' }}
+                        initial={{ width: '0%', backgroundPosition: '100% 0' }}
+                        animate={{ width: canValidate ? '100%' : '65%', backgroundPosition: '0% 0' }}
+                        transition={{
+                          width: { duration: canValidate ? 0.5 : 8, ease: 'easeOut' },
+                          backgroundPosition: { duration: 2, repeat: Infinity, ease: 'linear' }
+                        }}
+                      />
+                    </div>
+                  )}
+                  {isValidated && (
+                    <div className="absolute bottom-0 left-4 right-4 h-[3px] rounded-t-full bg-emerald-400" />
+                  )}
                 </motion.div>
               </motion.div>
             );
