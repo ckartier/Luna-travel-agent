@@ -16,6 +16,7 @@ interface Shape {
     sizeVw?: number;   // for circle
     yPosVh?: number;   // fixed pos for circle
     color: string;
+    opacity: number;
     dur: number;
     del: number;
     dist: number;
@@ -25,14 +26,15 @@ const C1 = '#e4eff7'; // lighter blue
 const C2 = '#c6e0f2'; // darker blue
 const W = 16.8; // 16.666 + slight overlap
 
-function rDur() { return 6 + Math.random() * 8; }
-function rDel() { return Math.random() * -10; }
-function rDist() { return 10 + Math.random() * 20; }
+function rDur() { return 15 + Math.random() * 20; }  // Much slower: 15 to 35 seconds
+function rDel() { return Math.random() * -20; }
+function rDist() { return 15 + Math.random() * 25; }
+function rOpac() { return 0.4 + Math.random() * 0.5; } // Opacity between 0.4 and 0.9
 
 function createGrid(): Shape[] {
     const s: Shape[] = [];
-    const add = (def: Omit<Shape, 'id' | 'dur' | 'del' | 'dist'>) => {
-        s.push({ ...def, id: `s-${s.length}`, dur: rDur(), del: rDel(), dist: rDist() });
+    const add = (def: Omit<Shape, 'id' | 'dur' | 'del' | 'dist' | 'opacity'>) => {
+        s.push({ ...def, id: `s-${s.length}`, opacity: rOpac(), dur: rDur(), del: rDel(), dist: rDist() });
     };
 
     // Col 0 (left edge)
@@ -96,6 +98,7 @@ export function CapsuleBackground() {
                                     height: `${s.sizeVw}vw`,
                                     borderRadius: '50%',
                                     backgroundColor: s.color,
+                                    opacity: s.opacity,
                                     transform: 'translateX(-50%)',
                                     animation: `cf ${s.dur}s ease-in-out ${s.del}s infinite`,
                                     willChange: 'transform',
@@ -117,6 +120,7 @@ export function CapsuleBackground() {
                                 height: `${s.heightVh}vh`,
                                 borderRadius: '9999px',
                                 backgroundColor: s.color,
+                                opacity: s.opacity,
                                 transform: 'translateX(-50%)',
                                 animation: `cf ${s.dur}s ease-in-out ${s.del}s infinite`,
                                 willChange: 'transform',
