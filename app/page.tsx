@@ -325,15 +325,22 @@ function DashboardPage() {
 
 
 
-      {/* ═══ WIRE LINES + ROUND DOTS ═══ */}
+      {/* ═══ WIRE LINES ═══ */}
       {isProcessing && (
         <>
           <style>{`
-            @keyframes floatAgent { 0%,100% { transform: translate(-50%,-50%) translateY(0); } 50% { transform: translate(-50%,-50%) translateY(-8px); } }
-            @keyframes pulseDot { 0%,100% { opacity: 0.6; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.3); } }
+            @keyframes floatAgent { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+            @keyframes capsuleLoad {
+              0% { transform: translateY(100%); }
+              100% { transform: translateY(0%); }
+            }
+            @keyframes capsulePulse {
+              0%,100% { opacity: 0.4; }
+              50% { opacity: 0.8; }
+            }
           `}</style>
 
-          {/* SVG for wire paths only — no circles to avoid oval distortion */}
+          {/* SVG wire paths — 1px lines */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none z-14" viewBox="0 0 100 100" preserveAspectRatio="none">
             {(['transport', 'accommodation', 'client', 'itinerary'] as AgentKey[]).map((agent, i) => {
               const isActive = activeAgents.includes(agent);
@@ -342,11 +349,12 @@ function DashboardPage() {
 
               const wireColor = isValidated ? '#10b981' : '#0ea5e9';
 
+              // 2 left, 2 right layout
               const curvePaths = [
-                'M 50 50 C 44 42, 56 28, 50 15', // top
-                'M 50 50 C 42 56, 28 44, 14 50', // left
-                'M 50 50 C 58 44, 72 56, 86 50', // right
-                'M 50 50 C 56 58, 44 72, 50 85', // bottom
+                'M 50 50 C 36 38, 22 32, 14 35',  // top-left
+                'M 50 50 C 36 62, 22 68, 14 65',  // bottom-left
+                'M 50 50 C 64 38, 78 32, 86 35',  // top-right
+                'M 50 50 C 64 62, 78 68, 86 65',  // bottom-right
               ];
               const pathD = curvePaths[i];
 
@@ -354,70 +362,14 @@ function DashboardPage() {
                 <motion.path
                   key={agent}
                   d={pathD} fill="none" stroke={wireColor}
-                  strokeWidth="0.35" strokeLinecap="round"
+                  strokeWidth="0.12" strokeLinecap="round"
                   initial={{ opacity: 0, pathLength: 0 }}
                   animate={{ opacity: isValidated ? 0.7 : 0.9, pathLength: 1 }}
-                  transition={{ duration: 1, delay: i * 0.12, ease: 'easeOut' }}
+                  transition={{ duration: 0.8, delay: 0.8 + i * 0.15, ease: 'easeOut' }}
                 />
               );
             })}
           </svg>
-
-          {/* HTML dots — perfectly round, no SVG distortion */}
-          {(['transport', 'accommodation', 'client', 'itinerary'] as AgentKey[]).map((agent, i) => {
-            const isActive = activeAgents.includes(agent);
-            const isValidated = validatedAgents.includes(agent);
-            if (!isActive) return null;
-
-            const dotColor = isValidated ? '#10b981' : '#0ea5e9';
-            const dotGlowColor = isValidated ? 'rgba(16, 185, 129, 0.4)' : 'rgba(14, 165, 233, 0.4)';
-
-            // Endpoint positions matching agent card positions
-            const endpoints = [
-              { top: '15%', left: '50%' },
-              { top: '50%', left: '14%' },
-              { top: '50%', left: '86%' },
-              { top: '85%', left: '50%' },
-            ];
-            const ep = endpoints[i];
-
-            return (
-              <div key={`dots-${agent}`}>
-                {/* Dot at agent side */}
-                <motion.div
-                  className="absolute z-15 pointer-events-none"
-                  style={{ top: ep.top, left: ep.left, transform: 'translate(-50%,-50%)' }}
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.12 + 0.8 }}
-                >
-                  <div className="w-3 h-3 rounded-full border-2 border-white" style={{ backgroundColor: dotColor, boxShadow: `0 0 10px ${dotGlowColor}, 0 2px 6px rgba(0,0,0,0.15)` }} />
-                </motion.div>
-                {/* Dot at center Super Agent side */}
-                <motion.div
-                  className="absolute z-15 pointer-events-none"
-                  style={{ top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.1 }}
-                >
-                  <div className="w-3 h-3 rounded-full border-2 border-white" style={{ backgroundColor: dotColor, boxShadow: `0 0 10px ${dotGlowColor}, 0 2px 6px rgba(0,0,0,0.15)` }} />
-                </motion.div>
-                {/* Pulsing dot midway */}
-                <div
-                  className="absolute z-15 pointer-events-none"
-                  style={{
-                    top: `${(parseFloat(ep.top) + 50) / 2}%`,
-                    left: `${(parseFloat(ep.left) + 50) / 2}%`,
-                    transform: 'translate(-50%,-50%)',
-                    animation: `pulseDot ${2 + i * 0.3}s ease-in-out infinite`,
-                  }}
-                >
-                  <div className="w-2 h-2 rounded-full border border-white" style={{ backgroundColor: dotColor, boxShadow: `0 0 8px ${dotGlowColor}` }} />
-                </div>
-              </div>
-            );
-          })}
         </>
       )}
 
@@ -775,7 +727,7 @@ function DashboardPage() {
           </AnimatePresence>
         </div>
 
-        {/* ═══ SATELLITE AGENT NODES — CAPSULE DESIGN ═══ */}
+        {/* ═══ SATELLITE AGENTS — EMERGE FROM SUPER AGENT, 2 LEFT + 2 RIGHT ═══ */}
         <AnimatePresence>
           {isProcessing && (['transport', 'accommodation', 'client', 'itinerary'] as AgentKey[]).map((agentKey, i) => {
             const meta = agentMeta[agentKey];
@@ -784,138 +736,133 @@ function DashboardPage() {
             const isValidated = validatedAgents.includes(agentKey);
             const canValidate = workflowState === 'VALIDATION' && !isValidated && agentResults;
 
-            const positionMap = [
-              { top: '15%', left: '50%' },
-              { top: '50%', left: '14%' },
-              { top: '50%', left: '86%' },
-              { top: '85%', left: '50%' },
+            // 2 left, 2 right positions
+            const finalPositions = [
+              { top: '30%', left: '12%' },   // top-left: Transport
+              { top: '70%', left: '12%' },   // bottom-left: Accommodation
+              { top: '30%', left: '88%' },   // top-right: Client
+              { top: '70%', left: '88%' },   // bottom-right: Itinerary
             ];
-            const pos = positionMap[i];
+            const pos = finalPositions[i];
 
             return (
               <motion.div
                 key={agentKey}
-                initial={{ opacity: 0, scale: 0.3, y: 20 }}
-                animate={{ opacity: isActive ? 1 : 0, scale: isActive ? 1 : 0.3, y: 0 }}
-                exit={{ opacity: 0, scale: 0.3 }}
-                transition={{ type: 'spring', stiffness: 200, damping: 20, delay: isActive ? i * 0.1 : 0 }}
+                initial={{ opacity: 0, scale: 0.2, top: '50%', left: '50%' }}
+                animate={{
+                  opacity: isActive ? 1 : 0,
+                  scale: isActive ? 1 : 0.2,
+                  top: isActive ? pos.top : '50%',
+                  left: isActive ? pos.left : '50%',
+                }}
+                exit={{ opacity: 0, scale: 0.2, top: '50%', left: '50%' }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 120,
+                  damping: 18,
+                  delay: isActive ? 0.3 + i * 0.12 : 0,
+                }}
                 className="absolute z-20 pointer-events-auto"
-                style={{ top: pos.top, left: pos.left, animation: isActive && !isValidated ? 'floatAgent 2.1s ease-in-out infinite' : undefined, transform: 'translate(-50%, -50%)' }}
+                style={{
+                  transform: 'translate(-50%, -50%)',
+                  animation: isActive && !isValidated ? 'floatAgent 3s ease-in-out infinite' : undefined,
+                }}
                 onClick={() => canValidate && setSelectedAgent(agentKey)}
               >
                 <motion.div
-                  whileHover={canValidate ? { scale: 1.04, y: -3 } : {}}
-                  className={`relative ${canValidate ? 'cursor-pointer' : ''} transition-all`}
+                  whileHover={canValidate ? { scale: 1.05, y: -4 } : {}}
+                  className={`relative ${canValidate ? 'cursor-pointer' : ''} transition-all overflow-hidden`}
                   style={{
-                    width: '180px',
-                    minHeight: '240px',
-                    borderRadius: '90px',
+                    width: '160px',
+                    minHeight: '210px',
+                    borderRadius: '80px',
                     background: isValidated ? '#d4f0e0' : '#d5eaf3',
-                    border: 'none',
+                    border: isValidated ? '1.5px solid #10b981' : '1.5px solid #8bbdd4',
                     boxShadow: isValidated
-                      ? '0 0 25px rgba(16,185,129,0.4), 0 0 60px rgba(16,185,129,0.15), 0 8px 30px rgba(0,0,0,0.07)'
-                      : '0 8px 30px rgba(0,0,0,0.07)',
-                    padding: '28px 22px',
+                      ? '0 0 25px rgba(16,185,129,0.4), 0 0 60px rgba(16,185,129,0.15), 0 6px 25px rgba(0,0,0,0.06)'
+                      : '0 6px 25px rgba(0,0,0,0.06)',
+                    padding: '24px 18px',
                     display: 'flex',
                     flexDirection: 'column' as const,
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  {/* SVG contour progress — traces the capsule border */}
-                  <svg
-                    className="absolute inset-0 w-full h-full pointer-events-none"
-                    viewBox="0 0 180 240"
-                    fill="none"
-                    style={{ borderRadius: '90px' }}
-                  >
-                    {/* Background border */}
-                    <rect
-                      x="1.5" y="1.5" width="177" height="237" rx="88.5" ry="88.5"
-                      stroke={isValidated ? '#10b981' : '#8bbdd4'}
-                      strokeWidth="1.5"
-                      fill="none"
-                    />
-                    {/* Animated progress stroke */}
-                    {!isValidated && isActive && (
-                      <motion.rect
-                        x="1.5" y="1.5" width="177" height="237" rx="88.5" ry="88.5"
-                        fill="none"
-                        stroke="#0ea5e9"
-                        strokeWidth="3"
-                        strokeLinecap="round"
+                  {/* Internal capsule loading bar */}
+                  {!isValidated && isActive && (
+                    <div
+                      className="absolute bottom-0 left-1/2 -translate-x-1/2 pointer-events-none"
+                      style={{
+                        width: '40px',
+                        height: '80px',
+                        borderRadius: '20px',
+                        background: 'rgba(14,165,233,0.08)',
+                        overflow: 'hidden',
+                        bottom: '20px',
+                      }}
+                    >
+                      <motion.div
                         style={{
-                          pathLength: 1,
-                          // Total perimeter approx: 2*(177+237) - 4*88.5 + 2*PI*88.5 ≈ ~828 + ~556 = ~806
+                          width: '100%',
+                          borderRadius: '20px',
+                          background: 'linear-gradient(180deg, rgba(14,165,233,0.3), rgba(14,165,233,0.1))',
                         }}
-                        initial={{ pathLength: 0 }}
-                        animate={{ pathLength: canValidate ? 1 : 0.65 }}
-                        transition={{
-                          pathLength: { duration: canValidate ? 0.6 : 8, ease: 'easeOut' },
-                        }}
+                        initial={{ height: '0%' }}
+                        animate={{ height: canValidate ? '100%' : '60%' }}
+                        transition={{ duration: canValidate ? 0.5 : 6, ease: 'easeOut' }}
+                        className="absolute bottom-0"
                       />
-                    )}
-                    {/* Full green border when validated */}
-                    {isValidated && (
-                      <motion.rect
-                        x="1.5" y="1.5" width="177" height="237" rx="88.5" ry="88.5"
-                        fill="none"
-                        stroke="#10b981"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        initial={{ pathLength: 0, opacity: 0 }}
-                        animate={{ pathLength: 1, opacity: 1 }}
-                        transition={{ duration: 0.6, ease: 'easeOut' }}
+                      <div
+                        className="absolute inset-0"
+                        style={{ animation: 'capsulePulse 2s ease-in-out infinite' }}
                       />
-                    )}
-                  </svg>
+                    </div>
+                  )}
 
-                  {/* Glow overlay when validated */}
+                  {/* Validated glow */}
                   {isValidated && (
                     <motion.div
-                      className="absolute inset-0 rounded-[90px] pointer-events-none"
+                      className="absolute inset-0 rounded-[80px] pointer-events-none"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: [0, 0.8, 0.3] }}
                       transition={{ duration: 1.2, ease: 'easeOut' }}
                       style={{
-                        boxShadow: '0 0 30px rgba(16,185,129,0.5), 0 0 80px rgba(16,185,129,0.2), inset 0 0 30px rgba(16,185,129,0.1)',
+                        boxShadow: '0 0 30px rgba(16,185,129,0.5), 0 0 80px rgba(16,185,129,0.2), inset 0 0 20px rgba(16,185,129,0.1)',
                       }}
                     />
                   )}
 
                   {/* Status indicator */}
-                  <div className="absolute top-5 right-1/2 translate-x-1/2 z-10" style={{ top: '16px' }}>
+                  <div className="absolute top-4 right-1/2 translate-x-1/2 z-10">
                     {isValidated ? (
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.3 }}
                       >
-                        <CheckCircle2 size={18} className="text-emerald-600" />
+                        <CheckCircle2 size={16} className="text-emerald-600" />
                       </motion.div>
                     ) : canValidate ? (
                       <div className="w-3 h-3 rounded-full bg-orange-400 animate-pulse" />
                     ) : isActive ? (
-                      <Loader2 size={14} className="text-[#5a9ab5] animate-spin" />
+                      <Loader2 size={12} className="text-[#5a9ab5] animate-spin" />
                     ) : null}
                   </div>
 
                   {/* Icon circle */}
                   <div
-                    className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 mb-3 mt-2 relative z-10"
+                    className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mb-2 mt-1 relative z-10"
                     style={{
                       background: isValidated ? '#10b981' : '#fb923c',
-                      boxShadow: isValidated ? '0 3px 15px rgba(16,185,129,0.35)' : '0 3px 10px rgba(0,0,0,0.12)',
+                      boxShadow: isValidated ? '0 3px 12px rgba(16,185,129,0.35)' : '0 3px 8px rgba(0,0,0,0.1)',
                     }}
                   >
-                    <Icon size={20} className="text-white" />
+                    <Icon size={18} className="text-white" />
                   </div>
 
-                  <h3 className="font-extrabold text-[15px] text-gray-900 leading-tight text-center relative z-10">{meta.title}</h3>
-                  <p className="text-[12px] font-semibold text-gray-500 mt-1 text-center relative z-10">{meta.subtitle}</p>
-
-                  {/* Description */}
-                  <p className="text-[11px] text-gray-600 leading-snug mt-3 text-center relative z-10">
+                  <h3 className="font-extrabold text-[13px] text-gray-900 leading-tight text-center relative z-10">{meta.title}</h3>
+                  <p className="text-[10px] font-semibold text-gray-500 mt-0.5 text-center relative z-10">{meta.subtitle}</p>
+                  <p className="text-[9px] text-gray-500 leading-snug mt-2 text-center relative z-10 line-clamp-3">
                     {meta.desc}
                   </p>
                 </motion.div>
