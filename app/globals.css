@@ -58,9 +58,9 @@
 
   /* ── Premium Button System ── */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white rounded-xl transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none cursor-pointer;
-    background: linear-gradient(135deg, #2c2c2c 0%, #404040 100%);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-luna-charcoal rounded-xl transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none cursor-pointer;
+    background: linear-gradient(135deg, #e4eff7 0%, #c6e0f2 100%);
+    box-shadow: 0 4px 14px rgba(198, 224, 242, 0.4);
   }
 
   .btn-primary:hover {

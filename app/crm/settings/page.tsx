@@ -139,11 +139,19 @@ export default function SettingsPage() {
     const handleCropConfirm = async () => {
         if (!cropCanvasRef.current || !user) return;
         setUploadingPhoto(true);
-        setCropSrc(null);
+
         try {
-            const blob = await new Promise<Blob>((resolve) => {
-                cropCanvasRef.current!.toBlob((b) => resolve(b!), 'image/jpeg', 0.9);
+            const blob = await new Promise<Blob>((resolve, reject) => {
+                if (!cropCanvasRef.current) return reject(new Error("Canvas ref is null"));
+                cropCanvasRef.current.toBlob((b) => {
+                    if (b) resolve(b);
+                    else reject(new Error("Blob creation failed"));
+                }, 'image/jpeg', 0.9);
             });
+
+            // Make sure the modal closes right after we safely have the blob
+            setCropSrc(null);
+
             const storageRef = ref(storage, `avatars/${user.uid}`);
             await uploadBytes(storageRef, blob);
             const downloadURL = await getDownloadURL(storageRef);
@@ -151,6 +159,7 @@ export default function SettingsPage() {
             await refreshProfile();
         } catch (err) {
             console.error('Photo upload error:', err);
+            setCropSrc(null);
         } finally {
             setUploadingPhoto(false);
         }
