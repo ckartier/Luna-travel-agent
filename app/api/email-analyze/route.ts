@@ -35,35 +35,46 @@ export async function POST(request: Request) {
             });
         }
 
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        // Upgrade to gemini-2.5-pro for complex reasoning and unstructured text extraction
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
 
-        const prompt = `Tu es Luna, un assistant IA pour une agence de voyage de luxe.
+        const prompt = `Tu es Luna, l'agent IA d'élite pour une agence de voyage B2B ultra-luxe.
+Ta mission est d'analyser un email entrant (parfois imprécis ou rédigé à la hâte) et d'en extraire une requête de voyage parfaitement structurée.
 
-Analyse cet email entrant et extrait les informations de voyage:
-
+Voici l'email:
+━━━━━━━━━━━━━━━━━━━━━━
 SUJET: ${emailSubject || 'Aucun'}
 DE: ${emailSender || 'Inconnu'}
 CONTENU:
 ${emailBody || 'Contenu non disponible'}
+━━━━━━━━━━━━━━━━━━━━━━
 
-Réponds en JSON avec ce format exact:
+RÈGLES D'EXTRACTION STRICTES:
+1. "destinations": Déduis la ou les villes exactes. Si le client dit "Japon", mets "Tokyo, Japon".
+2. "departureDate" / "returnDate": Traduis les dates vagues en dates réelles au format YYYY-MM-DD. Si le client dit "le mois prochain", calcule la date approximative par rapport à aujourd'hui (nous sommes en 2026).
+3. "pax": Déduis le nombre exact de personnes (ex: "ma femme et moi" = "2 adultes", "famille de 4" = "2 adultes, 2 enfants").
+4. "vibe": Choisis PARMI CES CATEGORIES UNIQUEMENT: "Lune de Miel", "Détente & Bien-être", "Aventure & Découverte", "Culture & Patrimoine", "Voyage d'Affaires".
+5. "budget": Si non mentionné, déduis ou mets "Premium".
+6. "mustHaves": Liste les exigences spécifiques (ex: vols directs, vue mer, sans escale).
+
+Tu DOIS répondre UNIQUEMENT en JSON valide, sans balises Markdown autour, au format exact:
 {
-    "type": "TRAVEL_REQUEST" ou "INFORMATION" ou "COMPLAINT" ou "OTHER",
-    "confidence": 0.0 à 1.0,
+    "type": "TRAVEL_REQUEST",
+    "confidence": 0.95,
     "extracted": {
-        "clientName": "nom du client",
-        "destinations": ["destination1", "destination2"],
-        "departureDate": "date ou null",
-        "returnDate": "date ou null",
-        "pax": "nombre de voyageurs",
-        "budget": "budget mentionné ou null",
-        "vibe": "ambiance souhaitée",
-        "mustHaves": "exigences spécifiques",
-        "specialRequests": "demandes spéciales"
+        "clientName": "Nom Prénom déduit de l'auteur",
+        "destinations": ["Ville Principale"],
+        "departureDate": "YYYY-MM-DD ou null",
+        "returnDate": "YYYY-MM-DD ou null",
+        "pax": "X adultes, Y enfants",
+        "budget": "Valeur ou 'Premium (Non spécifié)'",
+        "vibe": "Une des catégories exactes mentionnées ci-dessus",
+        "mustHaves": "Exigences extraites",
+        "specialRequests": "Demandes spéciales (anniversaire, allergies)"
     },
-    "summary": "résumé court de la demande",
-    "agentRecommendation": "quels agents dispatcher",
-    "priority": "HIGH/MEDIUM/LOW"
+    "summary": "Résumé ultra-concis de 2 phrases de la demande, comme écrit par un assistant de direction.",
+    "agentRecommendation": "Les agents (Transport, Hébergement, Client, Itinéraire) concernés.",
+    "priority": "HIGH" (toujours HIGH pour TRAVEL_REQUEST)
 }`;
 
         const result = await model.generateContent(prompt);
