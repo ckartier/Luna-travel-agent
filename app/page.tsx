@@ -1,8 +1,6 @@
 'use client';
 
-import { MapBackground } from '@/app/components/map/MapBackground';
-import { MAP_STYLES } from '@/app/components/map/LeafletMap';
-import type { LeafletMapHandle } from '@/app/components/map/LeafletMap';
+
 import { CapsuleBackground } from '@/app/components/CapsuleBackground';
 import { WeatherWidget } from '@/src/components/widgets/WeatherWidget';
 import { useAuth } from '@/src/contexts/AuthContext';
@@ -16,12 +14,10 @@ import {
   Send,
   MapPin,
   Plus,
-  Minus,
   X,
   Loader2,
   Sparkles,
-  Radio,
-  ZoomIn
+  Radio
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -74,8 +70,6 @@ function DashboardPage() {
   const [selectedAgent, setSelectedAgent] = useState<AgentKey | null>(null);
   const [activeAgents, setActiveAgents] = useState<AgentKey[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<LeafletMapHandle>(null);
-  const [activeMapStyle, setActiveMapStyle] = useState('light-v11');
   const router = useRouter();
   const [isExporting, setIsExporting] = useState(false);
   const { user, userProfile, tenantId } = useAuth();
@@ -314,18 +308,10 @@ function DashboardPage() {
 
   return (
     <div ref={containerRef} className="relative w-full min-h-screen flex flex-col overflow-hidden">
-      {/* Background swap: Capsule tubes for IDLE, World map for Agent processing */}
-      <AnimatePresence mode="wait">
-        {isProcessing ? (
-          <motion.div key="map-bg" className="absolute inset-0 z-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
-            <MapBackground ref={mapRef} />
-          </motion.div>
-        ) : (
-          <motion.div key="capsule-bg" className="absolute inset-0 z-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
-            <CapsuleBackground />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Background — Capsule animation: blue (idle/done), orange (processing) */}
+      <div className="absolute inset-0 z-0">
+        <CapsuleBackground colorScheme={isProcessing ? 'orange' : 'blue'} />
+      </div>
 
       {/* Weather Widgets (real API) */}
       <div className="absolute top-16 right-3 md:top-20 md:right-5 z-40 w-[220px] md:w-[260px] hidden md:block">
@@ -337,45 +323,7 @@ function DashboardPage() {
         </motion.div>
       </div>
 
-      {/* ═══ MAP CONTROLS — Zoom + Color Selector ═══ */}
-      {isProcessing && (
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 20 }}
-          transition={{ delay: 0.5 }}
-          className="absolute bottom-6 right-5 z-40 flex flex-col gap-3 items-end"
-        >
-          {/* Color selector */}
-          <div className="flex gap-2 bg-white/90 backdrop-blur-sm rounded-full px-3 py-2 shadow-lg border border-gray-200">
-            {MAP_STYLES.map(s => (
-              <button
-                key={s.id}
-                title={s.label}
-                onClick={() => { setActiveMapStyle(s.id); mapRef.current?.setMapStyle(s.id); }}
-                className={`w-6 h-6 rounded-full border-2 transition-all ${activeMapStyle === s.id ? 'border-gray-800 scale-110' : 'border-gray-300 hover:border-gray-500'}`}
-                style={{ backgroundColor: s.color }}
-              />
-            ))}
-          </div>
 
-          {/* Zoom buttons */}
-          <div className="flex flex-col bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <button
-              onClick={() => mapRef.current?.zoomIn()}
-              className="px-3 py-2 hover:bg-gray-100 transition-colors border-b border-gray-200"
-            >
-              <Plus size={18} className="text-gray-700" />
-            </button>
-            <button
-              onClick={() => mapRef.current?.zoomOut()}
-              className="px-3 py-2 hover:bg-gray-100 transition-colors"
-            >
-              <Minus size={18} className="text-gray-700" />
-            </button>
-          </div>
-        </motion.div>
-      )}
 
       {/* ═══ WIRE LINES + ROUND DOTS ═══ */}
       {isProcessing && (
