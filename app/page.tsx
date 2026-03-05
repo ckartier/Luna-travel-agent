@@ -1,6 +1,8 @@
 'use client';
 
 import { MapBackground } from '@/app/components/map/MapBackground';
+import { MAP_STYLES } from '@/app/components/map/LeafletMap';
+import type { LeafletMapHandle } from '@/app/components/map/LeafletMap';
 import { CapsuleBackground } from '@/app/components/CapsuleBackground';
 import { WeatherWidget } from '@/src/components/widgets/WeatherWidget';
 import { useAuth } from '@/src/contexts/AuthContext';
@@ -14,10 +16,12 @@ import {
   Send,
   MapPin,
   Plus,
+  Minus,
   X,
   Loader2,
   Sparkles,
-  Radio
+  Radio,
+  ZoomIn
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -70,6 +74,8 @@ function DashboardPage() {
   const [selectedAgent, setSelectedAgent] = useState<AgentKey | null>(null);
   const [activeAgents, setActiveAgents] = useState<AgentKey[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<LeafletMapHandle>(null);
+  const [activeMapStyle, setActiveMapStyle] = useState('light-v11');
   const router = useRouter();
   const [isExporting, setIsExporting] = useState(false);
   const { user, userProfile, tenantId } = useAuth();
@@ -312,7 +318,7 @@ function DashboardPage() {
       <AnimatePresence mode="wait">
         {isProcessing ? (
           <motion.div key="map-bg" className="absolute inset-0 z-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
-            <MapBackground />
+            <MapBackground ref={mapRef} />
           </motion.div>
         ) : (
           <motion.div key="capsule-bg" className="absolute inset-0 z-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
@@ -331,14 +337,52 @@ function DashboardPage() {
         </motion.div>
       </div>
 
+      {/* ═══ MAP CONTROLS — Zoom + Color Selector ═══ */}
+      {isProcessing && (
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 20 }}
+          transition={{ delay: 0.5 }}
+          className="absolute bottom-6 right-5 z-40 flex flex-col gap-3 items-end"
+        >
+          {/* Color selector */}
+          <div className="flex gap-2 bg-white/90 backdrop-blur-sm rounded-full px-3 py-2 shadow-lg border border-gray-200">
+            {MAP_STYLES.map(s => (
+              <button
+                key={s.id}
+                title={s.label}
+                onClick={() => { setActiveMapStyle(s.id); mapRef.current?.setMapStyle(s.id); }}
+                className={`w-6 h-6 rounded-full border-2 transition-all ${activeMapStyle === s.id ? 'border-gray-800 scale-110' : 'border-gray-300 hover:border-gray-500'}`}
+                style={{ backgroundColor: s.color }}
+              />
+            ))}
+          </div>
+
+          {/* Zoom buttons */}
+          <div className="flex flex-col bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <button
+              onClick={() => mapRef.current?.zoomIn()}
+              className="px-3 py-2 hover:bg-gray-100 transition-colors border-b border-gray-200"
+            >
+              <Plus size={18} className="text-gray-700" />
+            </button>
+            <button
+              onClick={() => mapRef.current?.zoomOut()}
+              className="px-3 py-2 hover:bg-gray-100 transition-colors"
+            >
+              <Minus size={18} className="text-gray-700" />
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       {/* ═══ WIRE LINES + ROUND DOTS ═══ */}
       {isProcessing && (
         <>
           <style>{`
             @keyframes floatAgent { 0%,100% { transform: translate(-50%,-50%) translateY(0); } 50% { transform: translate(-50%,-50%) translateY(-6px); } }
             @keyframes pulseDot { 0%,100% { opacity: 0.6; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.3); } }
-            @keyframes capsuleGlow { 0%,100% { box-shadow: 0 0 20px rgba(186,217,248,0.3), inset 0 0 20px rgba(186,217,248,0.05); } 50% { box-shadow: 0 0 35px rgba(186,217,248,0.5), inset 0 0 30px rgba(186,217,248,0.1); } }
-            @keyframes capsulePulse { 0%,100% { opacity: 0.85; } 50% { opacity: 1; } }
           `}</style>
 
           {/* SVG for wire paths only — no circles to avoid oval distortion */}
@@ -348,13 +392,13 @@ function DashboardPage() {
               const isValidated = validatedAgents.includes(agent);
               if (!isActive) return null;
 
-              const wireColor = isValidated ? '#10b981' : '#0ea5e9'; // Blue active, emerald validated
+              const wireColor = isValidated ? '#10b981' : '#0ea5e9';
 
               const curvePaths = [
-                'M 50 50 C 44 46, 56 36, 50 25', // top
-                'M 50 50 C 46 56, 34 44, 22 50', // left
-                'M 50 50 C 54 44, 66 56, 78 50', // right
-                'M 50 50 C 56 54, 44 64, 50 75', // bottom
+                'M 50 50 C 44 42, 56 28, 50 15', // top
+                'M 50 50 C 42 56, 28 44, 14 50', // left
+                'M 50 50 C 58 44, 72 56, 86 50', // right
+                'M 50 50 C 56 58, 44 72, 50 85', // bottom
               ];
               const pathD = curvePaths[i];
 
@@ -362,9 +406,9 @@ function DashboardPage() {
                 <motion.path
                   key={agent}
                   d={pathD} fill="none" stroke={wireColor}
-                  strokeWidth="0.15" strokeLinecap="round"
+                  strokeWidth="0.35" strokeLinecap="round"
                   initial={{ opacity: 0, pathLength: 0 }}
-                  animate={{ opacity: isValidated ? 0.6 : 0.8, pathLength: 1 }}
+                  animate={{ opacity: isValidated ? 0.7 : 0.9, pathLength: 1 }}
                   transition={{ duration: 1, delay: i * 0.12, ease: 'easeOut' }}
                 />
               );
@@ -382,16 +426,16 @@ function DashboardPage() {
 
             // Endpoint positions matching agent card positions
             const endpoints = [
-              { top: '25%', left: '50%' },
-              { top: '50%', left: '22%' },
-              { top: '50%', left: '78%' },
-              { top: '75%', left: '50%' },
+              { top: '15%', left: '50%' },
+              { top: '50%', left: '14%' },
+              { top: '50%', left: '86%' },
+              { top: '85%', left: '50%' },
             ];
             const ep = endpoints[i];
 
             return (
               <div key={`dots-${agent}`}>
-                {/* Endpoint dot — at agent side */}
+                {/* Dot at agent side */}
                 <motion.div
                   className="absolute z-15 pointer-events-none"
                   style={{ top: ep.top, left: ep.left, transform: 'translate(-50%,-50%)' }}
@@ -399,9 +443,9 @@ function DashboardPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: i * 0.12 + 0.8 }}
                 >
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dotColor, boxShadow: `0 0 8px ${dotGlowColor}` }} />
+                  <div className="w-3 h-3 rounded-full border-2 border-white" style={{ backgroundColor: dotColor, boxShadow: `0 0 10px ${dotGlowColor}, 0 2px 6px rgba(0,0,0,0.15)` }} />
                 </motion.div>
-                {/* Endpoint dot — at center Super Agent side */}
+                {/* Dot at center Super Agent side */}
                 <motion.div
                   className="absolute z-15 pointer-events-none"
                   style={{ top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}
@@ -409,9 +453,9 @@ function DashboardPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: i * 0.1 }}
                 >
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dotColor, boxShadow: `0 0 8px ${dotGlowColor}` }} />
+                  <div className="w-3 h-3 rounded-full border-2 border-white" style={{ backgroundColor: dotColor, boxShadow: `0 0 10px ${dotGlowColor}, 0 2px 6px rgba(0,0,0,0.15)` }} />
                 </motion.div>
-                {/* Pulsing dot midway on wire */}
+                {/* Pulsing dot midway */}
                 <div
                   className="absolute z-15 pointer-events-none"
                   style={{
@@ -421,7 +465,7 @@ function DashboardPage() {
                     animation: `pulseDot ${2 + i * 0.3}s ease-in-out infinite`,
                   }}
                 >
-                  <div className="w-[3px] h-[3px] rounded-full" style={{ backgroundColor: dotColor }} />
+                  <div className="w-2 h-2 rounded-full border border-white" style={{ backgroundColor: dotColor, boxShadow: `0 0 8px ${dotGlowColor}` }} />
                 </div>
               </div>
             );
@@ -673,7 +717,7 @@ function DashboardPage() {
               </motion.div>
             )}
 
-            {/* ═══ PROCESSING: SUPER AGENT — CAPSULE DESIGN ═══ */}
+            {/* ═══ PROCESSING: SUPER AGENT — VERTICAL CAPSULE ═══ */}
             {isProcessing && (
               <motion.div
                 key="processing"
@@ -683,58 +727,43 @@ function DashboardPage() {
                 transition={{ type: 'spring', stiffness: 160, damping: 20 }}
                 className="relative z-30"
               >
-                {/* Outer capsule glow */}
-                <div className="absolute -inset-3 rounded-[60px] bg-gradient-to-b from-[#bad9f8]/20 to-[#a8cef0]/10 blur-xl pointer-events-none" />
-
-                {/* Main capsule shape — tall vertical pill */}
                 <div
-                  className="relative z-10 flex flex-col items-center justify-center px-10 py-8 min-w-[220px]"
+                  className="relative flex flex-col items-center justify-center"
                   style={{
-                    borderRadius: '100px',
-                    background: 'linear-gradient(180deg, rgba(186,217,248,0.35) 0%, rgba(168,206,240,0.25) 50%, rgba(186,217,248,0.35) 100%)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    border: '2px solid rgba(186,217,248,0.5)',
-                    boxShadow: '0 8px 40px rgba(186,217,248,0.3), inset 0 1px 0 rgba(255,255,255,0.6)',
-                    animation: 'capsuleGlow 3s ease-in-out infinite',
+                    width: '220px',
+                    minHeight: '300px',
+                    borderRadius: '110px',
+                    background: '#d5eaf3',
+                    border: '1.5px solid #8bbdd4',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
+                    padding: '40px 30px',
                   }}
                 >
-                  {/* Capsule highlight — top shine */}
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60%] h-[30%] rounded-b-full bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />
-
-                  <div className="relative z-10 flex flex-col items-center text-center">
-                    {/* Icon in small capsule */}
-                    <div
-                      className="w-12 h-12 rounded-full flex items-center justify-center mb-4"
-                      style={{
-                        background: 'linear-gradient(135deg, #0ea5e9, #38bdf8)',
-                        boxShadow: '0 4px 20px rgba(14,165,233,0.35)',
-                      }}
-                    >
-                      <Sparkles size={20} className="text-white" />
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-14 h-14 rounded-full bg-[#0ea5e9] flex items-center justify-center mb-5 shadow-md">
+                      <Sparkles size={24} className="text-white" />
                     </div>
 
-                    <h3 className="font-serif text-xl font-bold text-gray-900 tracking-tight">Super Agent</h3>
-                    <p className="text-[11px] text-gray-600 font-semibold mt-1 mb-4 uppercase tracking-widest">Orchestration IA</p>
+                    <h3 className="text-xl font-extrabold text-gray-900 tracking-tight leading-tight">Super Agent</h3>
+                    <p className="text-xs text-gray-600 font-bold mt-1.5 mb-5 uppercase tracking-[0.2em]">Orchestration IA</p>
 
-                    <div className="flex items-center gap-1.5 mb-5">
-                      <span className="relative flex h-2 w-2">
+                    <div className="flex items-center gap-2 mb-5">
+                      <span className="relative flex h-2.5 w-2.5">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 bg-[#0ea5e9]"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0ea5e9]"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#0ea5e9]"></span>
                       </span>
-                      <span className="text-[11px] text-gray-800 font-bold tracking-wide">
+                      <span className="text-[13px] text-gray-800 font-bold">
                         {workflowState === 'ANALYSING' && 'Analyse en cours...'}
-                        {workflowState === 'DISTRIBUTING' && 'Distribution en cours...'}
+                        {workflowState === 'DISTRIBUTING' && 'Distribution...'}
                         {workflowState === 'AGENTS_WORKING' && 'Recherche parallèle...'}
-                        {workflowState === 'VALIDATION' && `${validatedAgents.length}/4 agents validés`}
+                        {workflowState === 'VALIDATION' && `${validatedAgents.length}/4 validés`}
                         {workflowState === 'GENERATING_PROPOSALS' && 'Finalisation...'}
                       </span>
                     </div>
 
-                    {/* Agent count — capsule pills */}
                     <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-full text-[10px] font-bold text-[#0369a1] uppercase tracking-widest" style={{ background: 'rgba(186,217,248,0.4)' }}>4 AGENTS</span>
-                      <span className="px-3 py-1 rounded-full text-[10px] font-bold text-[#0369a1] uppercase tracking-widest" style={{ background: 'rgba(186,217,248,0.4)' }}>{activeAgents.length} ACTIFS</span>
+                      <span className="px-3 py-1 rounded-full bg-white text-[11px] font-bold text-sky-700 uppercase tracking-wider">4 Agents</span>
+                      <span className="px-3 py-1 rounded-full bg-white text-[11px] font-bold text-sky-700 uppercase tracking-wider">{activeAgents.length} Actifs</span>
                     </div>
                   </div>
                 </div>
@@ -810,15 +839,12 @@ function DashboardPage() {
             const canValidate = workflowState === 'VALIDATION' && !isValidated && agentResults;
 
             const positionMap = [
-              { top: '22%', left: '50%' },
-              { top: '50%', left: '20%' },
-              { top: '50%', left: '80%' },
-              { top: '78%', left: '50%' },
+              { top: '15%', left: '50%' },
+              { top: '50%', left: '14%' },
+              { top: '50%', left: '86%' },
+              { top: '85%', left: '50%' },
             ];
             const pos = positionMap[i];
-
-            // Capsule orientation: top/bottom are horizontal, left/right are vertical
-            const isVertical = i === 1 || i === 2;
 
             return (
               <motion.div
@@ -832,69 +858,58 @@ function DashboardPage() {
                 onClick={() => canValidate && setSelectedAgent(agentKey)}
               >
                 <motion.div
-                  whileHover={canValidate ? { scale: 1.05, y: -3 } : {}}
+                  whileHover={canValidate ? { scale: 1.04, y: -3 } : {}}
                   className={`relative overflow-hidden ${canValidate ? 'cursor-pointer' : ''} transition-all`}
                   style={{
-                    borderRadius: '80px',
-                    background: isValidated
-                      ? 'linear-gradient(135deg, rgba(167,243,208,0.4) 0%, rgba(110,231,183,0.25) 100%)'
-                      : 'linear-gradient(135deg, rgba(186,217,248,0.35) 0%, rgba(168,206,240,0.25) 100%)',
-                    backdropFilter: 'blur(16px)',
-                    WebkitBackdropFilter: 'blur(16px)',
-                    border: isValidated ? '2px solid rgba(110,231,183,0.5)' : '2px solid rgba(186,217,248,0.45)',
-                    boxShadow: isValidated
-                      ? '0 8px 30px rgba(110,231,183,0.2), inset 0 1px 0 rgba(255,255,255,0.5)'
-                      : '0 8px 30px rgba(186,217,248,0.25), inset 0 1px 0 rgba(255,255,255,0.5)',
-                    width: isVertical ? 200 : 260,
-                    padding: isVertical ? '24px 20px' : '20px 24px',
-                    animation: isActive && !isValidated ? 'capsulePulse 3s ease-in-out infinite' : undefined,
+                    width: '180px',
+                    minHeight: '240px',
+                    borderRadius: '90px',
+                    background: isValidated ? '#d4f0e0' : '#d5eaf3',
+                    border: isValidated ? '1.5px solid #6bc9a0' : '1.5px solid #8bbdd4',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.07)',
+                    padding: '28px 22px',
+                    display: 'flex',
+                    flexDirection: 'column' as const,
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
-                  {/* Capsule top shine */}
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[25%] rounded-b-full bg-gradient-to-b from-white/35 to-transparent pointer-events-none" />
-
-                  <div className="relative z-10">
-                    {/* Top right spinner or checkmark */}
-                    <div className="absolute top-0 right-0">
-                      {isValidated ? (
-                        <CheckCircle2 size={16} className="text-emerald-500" />
-                      ) : canValidate ? (
-                        <div className="w-2.5 h-2.5 rounded-full bg-orange-400 animate-pulse" />
-                      ) : isActive ? (
-                        <Loader2 size={14} className="text-sky-400/60 animate-spin" />
-                      ) : null}
-                    </div>
-
-                    <div className="flex items-start gap-3 mb-2">
-                      {/* Icon in capsule pill */}
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{
-                          background: isValidated ? 'linear-gradient(135deg, #10b981, #34d399)' : 'linear-gradient(135deg, #fb923c, #f97316)',
-                          boxShadow: isValidated ? '0 4px 15px rgba(16,185,129,0.3)' : '0 4px 15px rgba(251,146,60,0.3)',
-                        }}
-                      >
-                        <Icon size={18} className="text-white" />
-                      </div>
-
-                      <div className="flex-1 min-w-0 pt-0.5">
-                        <h3 className="font-bold text-[14px] text-gray-900 tracking-tight leading-tight">{meta.title}</h3>
-                        <p className="text-[11px] font-semibold text-gray-500 mt-0.5">{meta.subtitle}</p>
-                      </div>
-                    </div>
-
-                    {/* Description text */}
-                    <p className="text-[10px] text-gray-700 leading-relaxed font-medium">
-                      {meta.desc}
-                    </p>
+                  {/* Status indicator */}
+                  <div className="absolute top-5 right-1/2 translate-x-1/2" style={{ top: '16px' }}>
+                    {isValidated ? (
+                      <CheckCircle2 size={16} className="text-emerald-600" />
+                    ) : canValidate ? (
+                      <div className="w-3 h-3 rounded-full bg-orange-400 animate-pulse" />
+                    ) : isActive ? (
+                      <Loader2 size={14} className="text-[#5a9ab5] animate-spin" />
+                    ) : null}
                   </div>
 
-                  {/* Progress indicator — capsule bar at bottom */}
+                  {/* Icon circle */}
+                  <div
+                    className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 mb-3 mt-2"
+                    style={{
+                      background: isValidated ? '#10b981' : '#fb923c',
+                      boxShadow: '0 3px 10px rgba(0,0,0,0.12)',
+                    }}
+                  >
+                    <Icon size={20} className="text-white" />
+                  </div>
+
+                  <h3 className="font-extrabold text-[15px] text-gray-900 leading-tight text-center">{meta.title}</h3>
+                  <p className="text-[12px] font-semibold text-gray-500 mt-1 text-center">{meta.subtitle}</p>
+
+                  {/* Description */}
+                  <p className="text-[11px] text-gray-600 leading-snug mt-3 text-center">
+                    {meta.desc}
+                  </p>
+
+                  {/* Progress bar */}
                   {!isValidated && isActive && (
-                    <div className="mt-3 h-[3px] rounded-full overflow-hidden" style={{ background: 'rgba(186,217,248,0.3)' }}>
+                    <div className="mt-3 w-full h-1 rounded-full overflow-hidden" style={{ background: 'rgba(139,189,212,0.3)' }}>
                       <motion.div
                         className="h-full rounded-full"
-                        style={{ background: 'linear-gradient(90deg, #fb923c, #fbd38d, #fb923c)', backgroundSize: '200% 100%' }}
+                        style={{ background: 'linear-gradient(90deg, #fb923c, #fbbf24, #fb923c)', backgroundSize: '200% 100%' }}
                         initial={{ width: '0%', backgroundPosition: '100% 0' }}
                         animate={{ width: canValidate ? '100%' : '65%', backgroundPosition: '0% 0' }}
                         transition={{
@@ -905,7 +920,7 @@ function DashboardPage() {
                     </div>
                   )}
                   {isValidated && (
-                    <div className="mt-3 h-[3px] rounded-full bg-emerald-400" />
+                    <div className="mt-3 w-full h-1 rounded-full bg-emerald-400" />
                   )}
                 </motion.div>
               </motion.div>
