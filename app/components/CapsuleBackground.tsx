@@ -3,112 +3,115 @@
 import { useMemo } from 'react';
 
 /**
- * CapsuleBackground — Matches reference: opaque light-blue pills + circles
- * arranged as a frame (dense on edges, open center for content).
+ * CapsuleBackground — pixel-perfect replica of reference image.
+ *
+ * Layout from reference:
+ * - LEFT: 3 tall pills packed tight
+ * - RIGHT: 3 tall pills packed tight
+ * - TOP: 4 half-circles peeking down between the pill groups
+ * - BOTTOM: 6 half-circles peeking up across the full width
+ * - CENTER: clear for content
+ * - All shapes opaque, soft light blue tones
  */
 
-type ShapeType = 'pill' | 'circle';
-
-interface ShapeConfig {
+interface Shape {
     id: number;
-    type: ShapeType;
-    width: number;          // vw
-    height: number;         // vh or vw for circles
-    x: number;              // % from left
-    y: number;              // % from top
+    x: number;      // % left
+    y: number;      // % top (can be negative for half-hidden shapes)
+    w: number;      // vw
+    h: number;      // vh (or vw for circles)
+    rx: string;     // border-radius
     color: string;
-    duration: number;
-    delay: number;
-    distance: number;
+    dur: number;    // animation duration
+    del: number;    // animation delay
+    dist: number;   // translateY distance
 }
 
-// Hand-placed shapes mimicking the reference frame layout
-function generateShapes(): ShapeConfig[] {
-    const blues = [
-        'hsl(207, 60%, 85%)',   // lightest
-        'hsl(207, 55%, 82%)',
-        'hsl(210, 50%, 80%)',   // medium
-        'hsl(210, 55%, 78%)',
-        'hsl(212, 45%, 83%)',   // soft
+const B1 = 'hsl(208, 52%, 87%)';  // lightest
+const B2 = 'hsl(208, 48%, 84%)';  // light
+const B3 = 'hsl(210, 45%, 81%)';  // medium
+const B4 = 'hsl(210, 42%, 79%)';  // slightly deeper
+
+function r(min: number, max: number) { return min + Math.random() * (max - min); }
+
+function createShapes(): Shape[] {
+    let id = 0;
+    const s: Omit<Shape, 'id'>[] = [
+
+        // ════════════ LEFT GROUP — 3 tall pills ════════════
+        // Pill 1: far-left edge
+        { x: -1, y: 5, w: 8, h: 75, rx: '9999px', color: B3, dur: r(7, 12), del: r(-8, 0), dist: r(10, 20) },
+        // Pill 2: overlapping pill 1
+        { x: 7, y: -2, w: 8, h: 65, rx: '9999px', color: B1, dur: r(7, 12), del: r(-8, 0), dist: r(10, 20) },
+        // Pill 3
+        { x: 14, y: 5, w: 7, h: 55, rx: '9999px', color: B2, dur: r(7, 12), del: r(-8, 0), dist: r(10, 20) },
+        // Circle bottom-left
+        { x: 2, y: 72, w: 13, h: 13, rx: '50%', color: B1, dur: r(7, 12), del: r(-8, 0), dist: r(10, 18) },
+        // Circle bottom-left #2
+        { x: 13, y: 70, w: 12, h: 12, rx: '50%', color: B2, dur: r(7, 12), del: r(-8, 0), dist: r(10, 18) },
+
+        // ════════════ TOP — 4 half-circles peeking from top edge ════════════
+        { x: 26, y: -7, w: 14, h: 14, rx: '50%', color: B2, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
+        { x: 40, y: -8, w: 13, h: 13, rx: '50%', color: B1, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
+        { x: 53, y: -7, w: 12, h: 12, rx: '50%', color: B3, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
+        { x: 66, y: -8, w: 14, h: 14, rx: '50%', color: B2, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
+
+        // ════════════ RIGHT GROUP — 3 tall pills ════════════
+        // Pill right 1
+        { x: 79, y: 5, w: 7, h: 55, rx: '9999px', color: B2, dur: r(7, 12), del: r(-8, 0), dist: r(10, 20) },
+        // Pill right 2
+        { x: 86, y: -2, w: 8, h: 70, rx: '9999px', color: B1, dur: r(7, 12), del: r(-8, 0), dist: r(10, 20) },
+        // Pill right 3: far-right edge
+        { x: 93, y: 5, w: 8, h: 75, rx: '9999px', color: B3, dur: r(7, 12), del: r(-8, 0), dist: r(10, 20) },
+        // Circle bottom-right
+        { x: 82, y: 70, w: 12, h: 12, rx: '50%', color: B1, dur: r(7, 12), del: r(-8, 0), dist: r(10, 18) },
+        // Circle bottom-right #2
+        { x: 92, y: 72, w: 11, h: 11, rx: '50%', color: B2, dur: r(7, 12), del: r(-8, 0), dist: r(10, 18) },
+
+        // ════════════ BOTTOM — 6 half-circles peeking from bottom ════════════
+        { x: 3, y: 85, w: 14, h: 14, rx: '50%', color: B2, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
+        { x: 18, y: 83, w: 15, h: 15, rx: '50%', color: B1, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
+        { x: 34, y: 85, w: 14, h: 14, rx: '50%', color: B3, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
+        { x: 50, y: 84, w: 14, h: 14, rx: '50%', color: B2, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
+        { x: 66, y: 85, w: 13, h: 13, rx: '50%', color: B1, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
+        { x: 82, y: 84, w: 14, h: 14, rx: '50%', color: B3, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
     ];
 
-    const pick = () => blues[Math.floor(Math.random() * blues.length)];
-    const rDur = () => 6 + Math.random() * 8;
-    const rDel = () => Math.random() * -10;
-    const rDist = () => 12 + Math.random() * 25;
-
-    const shapes: Omit<ShapeConfig, 'id'>[] = [
-        // ═══ LEFT EDGE — dense column of pills + circles ═══
-        { type: 'pill', width: 7, height: 55, x: 3, y: 30, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-        { type: 'pill', width: 7, height: 50, x: 11, y: 25, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-        { type: 'circle', width: 10, height: 10, x: 7, y: 80, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-        { type: 'circle', width: 9, height: 9, x: 15, y: 78, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-        { type: 'pill', width: 6, height: 45, x: 18, y: 10, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-
-        // ═══ TOP CENTER — circles peeking from top ═══
-        { type: 'circle', width: 11, height: 11, x: 30, y: -2, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-        { type: 'circle', width: 10, height: 10, x: 42, y: -3, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-        { type: 'circle', width: 9, height: 9, x: 55, y: -2, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-        { type: 'circle', width: 10, height: 10, x: 68, y: -3, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-
-        // ═══ RIGHT EDGE — dense column of pills + circles ═══
-        { type: 'pill', width: 7, height: 55, x: 88, y: 25, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-        { type: 'pill', width: 7, height: 48, x: 96, y: 30, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-        { type: 'pill', width: 6, height: 40, x: 82, y: 15, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-        { type: 'circle', width: 10, height: 10, x: 85, y: 78, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-        { type: 'circle', width: 9, height: 9, x: 93, y: 75, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-
-        // ═══ BOTTOM — circles peeking from bottom ═══
-        { type: 'circle', width: 11, height: 11, x: 8, y: 92, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-        { type: 'circle', width: 12, height: 12, x: 25, y: 90, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-        { type: 'circle', width: 11, height: 11, x: 42, y: 92, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-        { type: 'circle', width: 12, height: 12, x: 60, y: 90, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-        { type: 'circle', width: 11, height: 11, x: 78, y: 92, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-        { type: 'circle', width: 10, height: 10, x: 92, y: 93, color: pick(), duration: rDur(), delay: rDel(), distance: rDist() },
-    ];
-
-    return shapes.map((s, i) => ({ ...s, id: i }));
+    return s.map(shape => ({ ...shape, id: id++ }));
 }
 
 export function CapsuleBackground() {
-    const shapes = useMemo(() => generateShapes(), []);
+    const shapes = useMemo(() => createShapes(), []);
 
     return (
         <>
             <style jsx global>{`
-                @keyframes capsule-float {
+                @keyframes cf {
                     0%, 100% { transform: translateY(0); }
                     50% { transform: translateY(var(--d, 15px)); }
                 }
             `}</style>
 
             <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
-                {/* Warm white/cream base like the reference */}
-                <div className="absolute inset-0 bg-[#f5f3ef]" />
+                <div className="absolute inset-0 bg-[#f5f2ed]" />
 
-                {shapes.map(s => {
-                    const isCircle = s.type === 'circle';
-                    const w = `${s.width}vw`;
-                    const h = isCircle ? `${s.height}vw` : `${s.height}vh`;
-
-                    return (
-                        <div
-                            key={s.id}
-                            style={{
-                                position: 'absolute',
-                                left: `${s.x}%`,
-                                top: `${s.y}%`,
-                                width: w,
-                                height: h,
-                                borderRadius: isCircle ? '50%' : '9999px',
-                                backgroundColor: s.color,
-                                animation: `capsule-float ${s.duration}s ease-in-out ${s.delay}s infinite`,
-                                willChange: 'transform',
-                                ['--d' as string]: `${s.distance}px`,
-                            }}
-                        />
-                    );
-                })}
+                {shapes.map(s => (
+                    <div
+                        key={s.id}
+                        style={{
+                            position: 'absolute',
+                            left: `${s.x}%`,
+                            top: `${s.y}%`,
+                            width: `${s.w}vw`,
+                            height: s.rx === '50%' ? `${s.h}vw` : `${s.h}vh`,
+                            borderRadius: s.rx,
+                            backgroundColor: s.color,
+                            animation: `cf ${s.dur}s ease-in-out ${s.del}s infinite`,
+                            willChange: 'transform',
+                            ['--d' as string]: `${s.dist}px`,
+                        }}
+                    />
+                ))}
             </div>
         </>
     );
