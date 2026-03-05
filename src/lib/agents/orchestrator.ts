@@ -19,7 +19,6 @@ export interface OrchestrationResult {
  * and decides which sub-agents to wake up and what tasks to assign them.
  */
 export async function orchestrateLead(leadData: TravelLeadExtraction): Promise<OrchestrationResult> {
-    console.log('[LUNA ORCHESTRATOR] Analyzing new lead data...', leadData);
 
     const actions: AgentAction[] = [];
 
@@ -64,7 +63,6 @@ export async function orchestrateLead(leadData: TravelLeadExtraction): Promise<O
     // Generate a very premium draft reply using the AI context
     const suggestedReply = `Bonjour,\n\nMerci d'avoir contacté notre agence. Mon assistant IA, Luna, a bien analysé votre demande pour ${leadData.destination || 'votre prochain voyage'} (${leadData.summary}).\n\nNos experts (Vols, Hôtels) sont déjà en train d'explorer les meilleures options correspondant à vos critères de confort et votre budget. Nous reviendrons vers vous d'ici 24h avec une première proposition étincelante.\n\nCordialement,\n\nL'équipe`;
 
-    console.log(`[LUNA ORCHESTRATOR] Orchestration complete. Triggering ${actions.length} agents.`);
 
     return {
         leadData,

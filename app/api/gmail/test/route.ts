@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 import { google } from 'googleapis';
 
-export async function GET() {
+export async function GET(request: Request) {
+    const auth = await verifyAuth(request);
+    if (auth instanceof Response) return auth;
     try {
         const oauth2Client = new google.auth.OAuth2(
             process.env.APP_GMAIL_CLIENT_ID,

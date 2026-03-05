@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/src/lib/firebase/admin';
+import { verifyAdmin } from '@/src/lib/firebase/apiAuth';
 
 // GET /api/admin/stats — platform statistics
-export async function GET() {
+export async function GET(request: Request) {
+    const auth = await verifyAdmin(request);
+    if (auth instanceof Response) return auth;
     try {
         const [usersSnap, leadsSnap, contactsSnap, tripsSnap, subsSnap] = await Promise.all([
             adminDb.collection('users').get(),

@@ -14,7 +14,18 @@ import {
     Settings,
     ArrowLeft,
     Menu,
-    X
+    X,
+    Plane,
+    Hotel,
+    FileText,
+    CreditCard,
+    ShieldCheck,
+    Megaphone,
+    ListChecks,
+    UsersRound,
+    Bot,
+    Mail,
+    Sparkles,
 } from 'lucide-react';
 import { LunaLogo } from '@/app/components/LunaLogo';
 import { useAuth } from '@/src/contexts/AuthContext';
@@ -24,97 +35,149 @@ function getInitials(name: string | null | undefined): string {
     return name.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
 }
 
+interface NavSection {
+    label: string;
+    links: { name: string; href: string; icon: any }[];
+}
+
 export function CRMSidebar() {
     const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
     const { user, userProfile } = useAuth();
 
-    const photoURL = user?.photoURL || userProfile?.photoURL;
+    const photoURL = userProfile?.photoURL || user?.photoURL;
     const displayName = userProfile?.displayName || user?.displayName || 'Utilisateur';
     const email = userProfile?.email || user?.email || '';
 
-    const links = [
-        { name: 'Dashboard', href: '/crm', icon: LayoutDashboard },
-        { name: 'Boîte de Réception', href: '/crm/mails', icon: MessageSquare },
-        { name: 'Pipeline', href: '/crm/pipeline', icon: Trello },
-        { name: 'Planning', href: '/crm/planning', icon: Calendar },
-        { name: 'Contacts', href: '/crm/contacts', icon: Users },
-        { name: 'Activités', href: '/crm/activities', icon: CalendarDays },
-        { name: 'Analytics', href: '/crm/analytics', icon: BarChart3 },
+    const sections: NavSection[] = [
+        {
+            label: '',
+            links: [
+                { name: 'Dashboard', href: '/crm', icon: LayoutDashboard },
+                { name: 'Boîte de Réception', href: '/crm/mails', icon: Mail },
+                { name: 'Pipeline', href: '/crm/pipeline', icon: Trello },
+                { name: 'Planning', href: '/crm/planning', icon: Calendar },
+                { name: 'Contacts', href: '/crm/contacts', icon: Users },
+                { name: 'Activités', href: '/crm/activities', icon: CalendarDays },
+            ],
+        },
+        {
+            label: 'Opérations',
+            links: [
+                { name: 'Réservations', href: '/crm/bookings', icon: Plane },
+                { name: 'Catalogue', href: '/crm/catalog', icon: Hotel },
+            ],
+        },
+        {
+            label: 'Finance',
+            links: [
+                { name: 'Factures', href: '/crm/invoices', icon: FileText },
+                { name: 'Paiements', href: '/crm/payments', icon: CreditCard },
+            ],
+        },
+        {
+            label: 'Communication',
+            links: [
+                { name: 'Messages', href: '/crm/messages', icon: MessageSquare },
+                { name: 'Documents', href: '/crm/documents', icon: ShieldCheck },
+                { name: 'Marketing', href: '/crm/marketing', icon: Megaphone },
+            ],
+        },
+        {
+            label: 'Gestion',
+            links: [
+                { name: 'Tâches', href: '/crm/tasks', icon: ListChecks },
+                { name: 'Équipe', href: '/crm/team', icon: UsersRound },
+                { name: 'Analytics', href: '/crm/analytics', icon: BarChart3 },
+                { name: 'Agent Super Luna', href: '/crm/ai', icon: Bot },
+                { name: 'Intégrations', href: '/crm/integrations', icon: Plane },
+            ],
+        },
     ];
 
     const sidebarContent = (
         <>
-            <div>
-                {/* Logo */}
-                <div className="px-5 mb-8 flex items-center gap-2.5">
-                    <LunaLogo size={24} />
-                    <div>
-                        <h1 className="font-serif text-base font-semibold text-luna-charcoal tracking-tight leading-none">Luna</h1>
-                        <span className="text-[8px] font-semibold text-luna-text-muted uppercase tracking-[0.15em]">CRM</span>
-                    </div>
-                    {/* Close button on mobile */}
-                    <button onClick={() => setMobileOpen(false)} className="ml-auto md:hidden text-luna-text-muted hover:text-luna-charcoal p-1">
-                        <X size={18} />
+            <div className="flex-1 overflow-y-auto no-scrollbar">
+                {/* Mobile close button */}
+                <div className="flex justify-end px-3 mb-2 md:hidden">
+                    <button onClick={() => setMobileOpen(false)} className="text-luna-text-muted hover:text-luna-charcoal p-1">
+                        <X size={20} />
                     </button>
                 </div>
 
-                {/* Nav */}
-                <nav className="flex flex-col gap-0.5 px-3">
-                    {links.map((link) => {
-                        const Icon = link.icon;
-                        const isActive = pathname === link.href || (pathname.startsWith(link.href) && link.href !== '/crm');
-
-                        return (
-                            <Link
-                                key={link.name}
-                                href={link.href}
-                                onClick={() => setMobileOpen(false)}
-                                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all text-[13px] ${isActive
-                                    ? 'bg-luna-charcoal text-white font-medium shadow-sm'
-                                    : 'text-luna-text-muted hover:bg-luna-cream hover:text-luna-charcoal font-light'
-                                    }`}
-                            >
-                                <Icon size={15} strokeWidth={isActive ? 2 : 1.5} />
-                                {link.name}
-                            </Link>
-                        );
-                    })}
-                </nav>
-            </div>
-
-            <div className="px-3 flex flex-col gap-0.5">
-                {/* User block */}
+                {/* User avatar — circle */}
                 <Link
                     href="/crm/settings"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl mb-2 bg-luna-cream/50 hover:bg-luna-cream border border-luna-warm-gray/10 transition-all group"
+                    className="flex flex-col items-center gap-2 mx-3 px-3 py-5 mb-3 rounded-xl hover:bg-white/40 transition-all group"
                 >
                     {photoURL ? (
-                        <img src={photoURL} alt={displayName} className="w-8 h-8 rounded-full object-cover border border-white/80 shadow-sm" referrerPolicy="no-referrer" />
+                        <img src={photoURL} alt={displayName} className="w-14 h-14 rounded-full object-cover border-[3px] border-white shadow-[0_4px_14px_rgba(0,0,0,0.1)] group-hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] transition-shadow" referrerPolicy="no-referrer" />
                     ) : (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-violet-500 flex items-center justify-center text-white text-[10px] font-bold border border-white/80 shadow-sm">
+                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-luna-charcoal to-gray-600 flex items-center justify-center text-white text-lg font-medium border-[3px] border-white shadow-[0_4px_14px_rgba(0,0,0,0.1)]">
                             {getInitials(displayName)}
                         </div>
                     )}
-                    <div className="min-w-0 flex-1">
-                        <p className="text-[12px] font-semibold text-luna-charcoal truncate leading-tight">{displayName}</p>
-                        <p className="text-[10px] text-luna-text-muted truncate leading-tight">{email}</p>
+                    <div className="text-center min-w-0 w-full">
+                        <p className="text-sm font-medium text-luna-charcoal truncate leading-tight">{displayName}</p>
+                        <p className="text-[11px] text-luna-text-muted truncate leading-tight mt-0.5">{email}</p>
                     </div>
                 </Link>
 
+                {/* Voyages CTA — prominent link back to main agent */}
+                <Link
+                    href="/"
+                    onClick={() => setMobileOpen(false)}
+                    className="btn-primary btn-lg mx-3 mb-4 text-sm tracking-[0.1em] uppercase group"
+                >
+                    <Sparkles size={16} className="opacity-70" />
+                    <span>Voyages</span>
+                </Link>
+
+                {/* Nav */}
+                <nav className="flex flex-col gap-0.5 px-3">
+                    {sections.map((section, sIdx) => (
+                        <div key={sIdx}>
+                            {section.label && (
+                                <p className="text-[10px] font-medium text-gray-400 tracking-[0.15em] px-3 pt-5 pb-2">{section.label}</p>
+                            )}
+                            {section.links.map((link) => {
+                                const Icon = link.icon;
+                                const isActive = pathname === link.href || (pathname.startsWith(link.href) && link.href !== '/crm');
+
+                                return (
+                                    <Link
+                                        key={link.name}
+                                        href={link.href}
+                                        onClick={() => setMobileOpen(false)}
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-[13px] ${isActive
+                                            ? 'bg-luna-charcoal text-white font-medium shadow-[0_4px_14px_rgba(0,0,0,0.1)]'
+                                            : 'text-gray-400 hover:bg-white/60 hover:text-luna-charcoal font-light'
+                                            }`}
+                                    >
+                                        <Icon size={16} strokeWidth={isActive ? 2 : 1.5} />
+                                        {link.name}
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    ))}
+                </nav>
+            </div>
+
+            <div className="px-3 flex flex-col gap-1">
                 <Link href="/crm/settings"
                     onClick={() => setMobileOpen(false)}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all text-[13px] ${pathname === '/crm/settings'
-                        ? 'bg-luna-charcoal text-white font-medium shadow-sm'
-                        : 'text-luna-text-muted hover:bg-luna-cream hover:text-luna-charcoal font-light'
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-[13px] ${pathname === '/crm/settings'
+                        ? 'bg-luna-charcoal text-white font-medium shadow-[0_4px_14px_rgba(0,0,0,0.1)]'
+                        : 'text-gray-400 hover:bg-white/60 hover:text-luna-charcoal font-light'
                         }`}>
-                    <Settings size={15} strokeWidth={1.5} />
+                    <Settings size={16} strokeWidth={1.5} />
                     Paramètres
                 </Link>
                 <Link href="/"
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sky-600 hover:bg-sky-50 transition-all text-[13px] font-medium mt-1">
-                    <ArrowLeft size={15} strokeWidth={1.5} />
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sky-600 hover:bg-sky-50 transition-all text-[13px] font-medium mt-1">
+                    <ArrowLeft size={16} strokeWidth={1.5} />
                     Orchestrateur
                 </Link>
             </div>
@@ -144,7 +207,7 @@ export function CRMSidebar() {
             )}
 
             {/* Desktop sidebar */}
-            <div className="hidden md:flex w-56 h-[calc(100%-16px)] my-2 ml-2 bg-white/70 backdrop-blur-2xl border border-luna-warm-gray/10 rounded-2xl flex-col justify-between py-5 z-50 shadow-sm overflow-hidden">
+            <div className="hidden md:flex w-64 h-[calc(100%-16px)] my-2 ml-2 bg-white/70 backdrop-blur-2xl border border-luna-warm-gray/10 rounded-2xl flex-col justify-between py-6 z-50 shadow-sm overflow-hidden">
                 {sidebarContent}
             </div>
         </>

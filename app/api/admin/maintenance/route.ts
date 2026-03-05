@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/src/lib/firebase/admin';
+import { verifyAdmin } from '@/src/lib/firebase/apiAuth';
 
 // GET /api/admin/maintenance — get maintenance status
-export async function GET() {
+export async function GET(request: Request) {
+    const auth = await verifyAdmin(request);
+    if (auth instanceof Response) return auth;
     try {
         const doc = await adminDb.collection('settings').doc('maintenance').get();
         if (!doc.exists) {
@@ -16,6 +19,8 @@ export async function GET() {
 
 // POST /api/admin/maintenance — toggle maintenance mode
 export async function POST(request: Request) {
+    const auth = await verifyAdmin(request);
+    if (auth instanceof Response) return auth;
     try {
         const data = await request.json();
         await adminDb.collection('settings').doc('maintenance').set({

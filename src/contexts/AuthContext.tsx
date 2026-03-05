@@ -2,11 +2,12 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { loginWithEmail, loginWithGoogle as firebaseLoginWithGoogle, logout as firebaseLogout, onAuthChange, type User } from '@/src/lib/firebase/auth';
-import { getOrCreateUser, type CRMUser } from '@/src/lib/firebase/crm';
+import { getOrCreateUser, getUser, type CRMUser } from '@/src/lib/firebase/crm';
 
 interface AuthContextType {
     user: User | null;
     userProfile: CRMUser | null;
+    tenantId: string | null;
     loading: boolean;
     login: (email: string, password: string) => Promise<{ error: string | null }>;
     loginWithGoogle: () => Promise<{ error: string | null }>;
@@ -31,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
             setUserProfile(profile);
         } catch (err) {
-            console.warn('Failed to load user profile from Firestore:', err);
+            // User profile load skipped
         }
     }, []);
 
@@ -64,11 +65,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const refreshProfile = async () => {
-        if (user) await loadProfile(user);
+        if (user) {
+            // Read directly from Firestore to get custom-uploaded photoURL
+            const profile = await getUser(user.uid);
+            if (profile) setUserProfile(profile);
+        }
     };
 
     return (
-        <AuthContext.Provider value={{ user, userProfile, loading, login, loginWithGoogle, logout, refreshProfile }}>
+        <AuthContext.Provider value={{ user, userProfile, tenantId: userProfile?.tenantId || null, loading, login, loginWithGoogle, logout, refreshProfile }}>
             {children}
         </AuthContext.Provider>
     );

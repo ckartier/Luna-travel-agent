@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 
 // ── MASSIVE AIRPORTS DATABASE (IATA-keyed) ────────────────────────
 // ALL airports keyed by IATA code for direct lookup from AviationStack
@@ -255,9 +256,11 @@ const AIRLINE_FLAGS: Record<string, string> = {
     'LO': '🇵🇱', 'AY': '🇫🇮', 'SK': '🇩🇰', 'EI': '🇮🇪', 'SN': '🇧🇪', 'OS': '🇦🇹',
 };
 
-const AVIATIONSTACK_KEY = process.env.AVIATIONSTACK_API_KEY || '6df3ccd78bd6292f30bdb3fc095fc63d';
+const AVIATIONSTACK_KEY = process.env.AVIATIONSTACK_API_KEY || '';
 
-export async function GET() {
+export async function GET(request: Request) {
+    const auth = await verifyAuth(request);
+    if (auth instanceof Response) return auth;
     try {
         const flights = await fetchAviationStack();
         if (flights && flights.length > 0) {
@@ -265,7 +268,7 @@ export async function GET() {
         }
         throw new Error('AviationStack returned no valid flights');
     } catch (avErr: any) {
-        console.warn('AviationStack fallback:', avErr.message);
+        // silent fallback
         try {
             const flights = await fetchOpenSky();
             return NextResponse.json({ flights, live: true, source: 'OpenSky', count: flights.length, timestamp: new Date().toISOString() });

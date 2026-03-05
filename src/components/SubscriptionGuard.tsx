@@ -10,14 +10,15 @@ import { CreditCard, X } from 'lucide-react';
 const PUBLIC_PATHS = ['/login', '/pricing', '/cgv', '/landing', '/admin'];
 
 export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
-    const { user, loading: authLoading } = useAuth();
+    const { user, userProfile, loading: authLoading } = useAuth();
     const { isActive, loading: subLoading } = useSubscription();
     const pathname = usePathname();
     const [dismissed, setDismissed] = useState(false);
 
     // Always render children — guard is non-blocking (shows banner only)
     const isPublic = PUBLIC_PATHS.some(p => pathname.startsWith(p));
-    const showBanner = !authLoading && !subLoading && user && !isActive && !isPublic && !dismissed;
+    const isAdmin = userProfile?.role === 'Admin';
+    const showBanner = !authLoading && !subLoading && user && !isActive && !isPublic && !dismissed && !isAdmin;
 
     return (
         <>

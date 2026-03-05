@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Search, Check, Users as UsersIcon } from 'lucide-react';
+import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 
 interface UserRecord {
     uid: string;
@@ -22,7 +23,7 @@ export default function AdminUsersPage() {
     const [success, setSuccess] = useState<string | null>(null);
 
     const loadUsers = () => {
-        fetch('/api/admin/users').then(r => r.json()).then(data => {
+        fetchWithAuth('/api/admin/users').then(r => r.json()).then(data => {
             setUsers(data.users || []);
             setLoading(false);
         });
@@ -32,7 +33,7 @@ export default function AdminUsersPage() {
 
     const changeRole = async (uid: string, role: string) => {
         setUpdating(uid);
-        await fetch('/api/admin/users', {
+        await fetchWithAuth('/api/admin/users', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ uid, role }),
@@ -96,15 +97,15 @@ export default function AdminUsersPage() {
                                 </div>
                                 <p className="text-sm text-white/50">{u.email}</p>
                                 <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${u.role === 'Admin' ? 'bg-violet-500/20 text-violet-400' :
-                                        u.role === 'Manager' ? 'bg-amber-500/20 text-amber-400' :
-                                            'bg-sky-500/20 text-sky-400'
+                                    u.role === 'Manager' ? 'bg-amber-500/20 text-amber-400' :
+                                        'bg-sky-500/20 text-sky-400'
                                     }`}>{u.role || 'Agent'}</span>
                                 <div className="flex gap-1.5">
                                     {['Agent', 'Manager', 'Admin'].map(role => (
                                         <button key={role} disabled={u.role === role || updating === u.uid}
                                             onClick={() => changeRole(u.uid, role)}
                                             className={`text-[10px] px-2.5 py-1 rounded-lg font-semibold transition-all ${u.role === role ? 'bg-white/10 text-white/30 cursor-default' :
-                                                    'bg-white/5 text-white/50 hover:bg-violet-500/20 hover:text-violet-400'
+                                                'bg-white/5 text-white/50 hover:bg-violet-500/20 hover:text-violet-400'
                                                 }`}>
                                             {success === u.uid && u.role === role ? <Check size={10} /> : role}
                                         </button>

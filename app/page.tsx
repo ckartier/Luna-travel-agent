@@ -4,6 +4,7 @@ import { MapBackground } from '@/app/components/map/MapBackground';
 import type { LeafletMapHandle } from '@/app/components/map/LeafletMap';
 import { MAP_STYLES } from '@/app/components/map/LeafletMap';
 import { WeatherWidget } from '@/src/components/widgets/WeatherWidget';
+import { useAuth } from '@/src/contexts/AuthContext';
 import {
   Plane,
   Hotel,
@@ -26,6 +27,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createLead, createContact } from '@/src/lib/firebase/crm';
 import { LunaLogo } from '@/app/components/LunaLogo';
 import { PdfExport } from '@/app/components/PdfExport';
+import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 
 type WorkflowState = 'IDLE' | 'ANALYSING' | 'DISTRIBUTING' | 'AGENTS_WORKING' | 'VALIDATION' | 'GENERATING_PROPOSALS' | 'PROPOSALS_READY';
 
@@ -73,6 +75,9 @@ function DashboardPage() {
   const [activeMapStyle, setActiveMapStyle] = useState('light-v11');
   const router = useRouter();
   const [isExporting, setIsExporting] = useState(false);
+  const { user, userProfile, tenantId } = useAuth();
+  const userPhotoURL = userProfile?.photoURL || user?.photoURL || null;
+  const userDisplayName = userProfile?.displayName || user?.displayName || '';
 
   // Autocomplete
   const [suggestions, setSuggestions] = useState<{ id: string; name: string; country: string }[]>([]);
@@ -169,7 +174,7 @@ function DashboardPage() {
 
   const callAgentsAPI = async () => {
     try {
-      const res = await fetch('/api/agents', {
+      const res = await fetchWithAuth('/api/agents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -265,7 +270,7 @@ function DashboardPage() {
       const clientEmail = searchParams?.get('clientEmail') || '';
       let contactId: string | undefined;
       try {
-        contactId = await createContact({
+        contactId = await createContact(tenantId!, {
           firstName: clientName.split(' ')[0] || 'Nouveau',
           lastName: clientName.split(' ').slice(1).join(' ') || 'Client',
           email: clientEmail || `client-${Date.now()}@luna.travel`,
@@ -273,11 +278,11 @@ function DashboardPage() {
           preferences: [vibe || 'Luxe', ...destinations.filter(d => d.city.trim()).map(d => d.city)],
         });
       } catch (e) {
-        console.warn('Contact creation skipped:', e);
+        // Contact creation skipped
       }
 
       // Create lead linked to contact
-      const leadId = await createLead({
+      const leadId = await createLead(tenantId!, {
         clientName,
         clientId: contactId,
         destination: destinations.filter(d => d.city.trim()).map(d => d.city).join(', '),
@@ -458,216 +463,236 @@ function DashboardPage() {
                 key="idle"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
+                exit={{ opacity: 0, scale: 0.92, y: 30, transition: { duration: 0.2, ease: 'easeIn' } }}
                 transition={{ duration: 0.5, ease: 'easeOut' }}
-                className="glass-card w-[90vw] max-w-[480px] max-h-[85vh] overflow-y-auto p-6 md:p-10 shadow-luxury relative"
+                className="relative w-[90vw] max-w-[480px]"
               >
-                <div className="absolute -top-16 -right-16 w-32 h-32 bg-luna-accent/10 rounded-full blur-[60px] pointer-events-none" />
-
-                {/* Header */}
-                <div className="flex flex-col items-center mb-8">
-                  <div className="w-14 h-14 rounded-full bg-luna-charcoal flex-center mb-4 shadow-lg">
-                    <LunaLogo size={32} />
-                  </div>
-                  <h2 className="font-serif text-2xl md:text-3xl font-semibold text-luna-charcoal tracking-tight">Luna</h2>
-                  <p className="text-luna-text-muted text-sm font-light tracking-wide mt-1">Votre Concierge Voyage</p>
-                </div>
-
-                <form onSubmit={handleStartAnalysis} className="flex flex-col gap-5">
-
-                  {/* ── DEPARTURE CITY ── */}
-                  <div>
-                    <label className="input-label">Départ de</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Ville de départ (ex: Paris)"
-                        className="input-underline pr-8"
-                        value={departureCity}
-                        onChange={e => { setDepartureCity(e.target.value); fetchSuggestions(e.target.value, 'departure'); }}
-                        onFocus={() => { if (departureCity.length >= 2) fetchSuggestions(departureCity, 'departure'); }}
-                        onBlur={() => setTimeout(() => { if (activeInputId === 'departure') { setSuggestions([]); setActiveInputId(null); } }, 200)}
-                        autoComplete="off"
-                      />
-                      <Plane className="absolute right-0 top-3 w-4 h-4 text-luna-text-muted/40" strokeWidth={1.5} />
-                      <AnimatePresence>
-                        {activeInputId === 'departure' && suggestions.length > 0 && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -4 }}
-                            className="absolute left-0 right-0 top-full mt-1 bg-white/98 backdrop-blur-xl rounded-xl border border-luna-warm-gray/15 shadow-luxury z-50 overflow-hidden"
-                          >
-                            {suggestions.map(s => (
-                              <button
-                                key={s.id}
-                                type="button"
-                                className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 hover:bg-luna-cream/80 transition-colors"
-                                onMouseDown={e => e.preventDefault()}
-                                onClick={() => { setDepartureCity(s.name); setSuggestions([]); setActiveInputId(null); }}
-                              >
-                                <MapPin size={13} className="text-luna-accent flex-shrink-0" strokeWidth={1.5} />
-                                <span className="text-sm text-luna-charcoal font-normal">{s.name}</span>
-                                <span className="text-[10px] text-luna-text-muted ml-auto">{s.country}</span>
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-
-                  {/* ── DESTINATIONS (Multi) ── */}
-                  <div>
-                    <label className="input-label flex items-center justify-between">
-                      <span>Destinations</span>
-                      <button type="button" onClick={addDestination} className="text-luna-accent hover:text-luna-accent-dark transition-colors flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider">
-                        <Plus size={12} /> Ajouter
-                      </button>
-                    </label>
-                    <div className="flex flex-col gap-2">
-                      {destinations.map((dest, idx) => (
-                        <motion.div
-                          key={dest.id}
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="relative flex items-center gap-2"
-                        >
-                          {destinations.length > 1 && (
-                            <span className="text-[10px] font-bold text-luna-accent w-5 text-center">{idx + 1}</span>
-                          )}
-                          <div className="relative flex-1">
-                            <input
-                              type="text"
-                              placeholder={idx === 0 ? 'Où souhaitez-vous voyager ?' : `Destination ${idx + 1}`}
-                              className="input-underline w-full pr-8"
-                              value={dest.city}
-                              onChange={e => { updateDestination(dest.id, e.target.value); fetchSuggestions(e.target.value, dest.id); }}
-                              onFocus={() => { if (dest.city.length >= 2) fetchSuggestions(dest.city, dest.id); }}
-                              onBlur={() => setTimeout(() => { if (activeInputId === dest.id) { setSuggestions([]); setActiveInputId(null); } }, 200)}
-                              required={idx === 0}
-                              autoComplete="off"
-                            />
-                            {/* Autocomplete dropdown */}
-                            <AnimatePresence>
-                              {activeInputId === dest.id && suggestions.length > 0 && (
-                                <motion.div
-                                  initial={{ opacity: 0, y: -4 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  exit={{ opacity: 0, y: -4 }}
-                                  className="absolute left-0 right-0 top-full mt-1 bg-white/98 backdrop-blur-xl rounded-xl border border-luna-warm-gray/15 shadow-luxury z-50 overflow-hidden"
-                                >
-                                  {suggestions.map(s => (
-                                    <button
-                                      key={s.id}
-                                      type="button"
-                                      className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 hover:bg-luna-cream/80 transition-colors"
-                                      onMouseDown={e => e.preventDefault()}
-                                      onClick={() => { updateDestination(dest.id, s.name); setSuggestions([]); setActiveInputId(null); }}
-                                    >
-                                      <MapPin size={13} className="text-luna-accent flex-shrink-0" strokeWidth={1.5} />
-                                      <span className="text-sm text-luna-charcoal font-normal">{s.name}</span>
-                                      <span className="text-[10px] text-luna-text-muted ml-auto">{s.country}</span>
-                                    </button>
-                                  ))}
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                          {destinations.length > 1 && (
-                            <button type="button" onClick={() => removeDestination(dest.id)} className="absolute right-0 top-3 text-luna-text-muted/40 hover:text-red-400 transition-colors">
-                              <X size={14} />
-                            </button>
-                          )}
-                          {idx === 0 && destinations.length === 1 && (
-                            <MapPin className="absolute right-0 top-3 w-4 h-4 text-luna-text-muted/40" strokeWidth={1.5} />
-                          )}
-                        </motion.div>
-                      ))}
-                    </div>
-                    {/* Route summary */}
-                    {(departureCity.trim() || destinations.filter(d => d.city.trim()).length > 1) && (
-                      <div className="flex items-center gap-1 mt-2 flex-wrap">
-                        {departureCity.trim() && (
-                          <span className="flex items-center text-[10px] font-semibold text-luna-charcoal">
-                            <Plane size={10} className="mr-0.5" />{departureCity}
-                          </span>
-                        )}
-                        {destinations.filter(d => d.city.trim()).map((d, i) => (
-                          <span key={d.id} className="flex items-center text-[10px] font-semibold text-luna-accent-dark">
-                            <ArrowRight size={10} className="mx-1 text-luna-warm-gray" />
-                            {d.city}
-                          </span>
-                        ))}
+                {/* Avatar circle — sits ABOVE the card, overflowing */}
+                <div className="flex justify-center relative z-10">
+                  <div className="w-36 h-36 md:w-44 md:h-44 rounded-full overflow-hidden border-[5px] border-white shadow-[0_10px_40px_rgba(0,0,0,0.18)] mb-[-70px] md:mb-[-85px]">
+                    {userPhotoURL ? (
+                      <img src={userPhotoURL} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-luna-charcoal to-gray-600 flex items-center justify-center text-white text-4xl md:text-5xl font-light">
+                        {(userDisplayName || 'U').split(' ').map((w: string) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
                       </div>
                     )}
                   </div>
+                </div>
 
-                  {/* ── DEPARTURE + RETURN ── */}
-                  <div className="flex gap-3 md:gap-6">
-                    <div className="flex-1">
-                      <label className="input-label">Départ</label>
-                      <input type="date" className="input-underline [color-scheme:light]" value={departureDate} onChange={e => setDepartureDate(e.target.value)} />
-                    </div>
-                    <div className="flex-1">
-                      <label className="input-label">Retour</label>
-                      <input type="date" className="input-underline [color-scheme:light]" value={returnDate} onChange={e => setReturnDate(e.target.value)} />
-                    </div>
+                {/* Glass card — below the avatar */}
+                <div className="glass-card max-h-[75vh] overflow-y-auto p-6 pt-20 pb-10 md:p-10 md:pt-24 md:pb-12 shadow-luxury relative">
+                  <div className="absolute -top-16 -right-16 w-32 h-32 bg-luna-accent/10 rounded-full blur-[60px] pointer-events-none" />
+
+                  <div className="flex flex-col items-center mb-6">
+                    <p className="text-luna-text-muted text-sm font-light tracking-wide">Votre Concierge Voyage</p>
                   </div>
 
-                  {/* Flexibility */}
-                  <div>
-                    <label className="input-label">Flexibilité</label>
-                    <div className="flex gap-1.5 md:gap-2 mt-1 flex-wrap">
-                      {['Dates Exactes', '+/- 3 Jours', 'Mois Flexible'].map(opt => (
-                        <button key={opt} type="button" onClick={() => setFlexibility(opt)}
-                          className={`px-3 py-1.5 rounded-full text-[11px] font-semibold tracking-wide border transition-all ${flexibility === opt
-                            ? 'bg-luna-charcoal text-luna-cream border-luna-charcoal'
-                            : 'bg-transparent text-luna-text-muted border-luna-warm-gray/40 hover:border-luna-accent'
-                            }`}
-                        >{opt}</button>
-                      ))}
+                  <form id="voyage-form" onSubmit={handleStartAnalysis} className="flex flex-col gap-5">
+
+                    {/* ── DEPARTURE CITY ── */}
+                    <div>
+                      <label className="input-label">Départ de</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Ville de départ (ex: Paris)"
+                          className="input-underline pr-8"
+                          value={departureCity}
+                          onChange={e => { setDepartureCity(e.target.value); fetchSuggestions(e.target.value, 'departure'); }}
+                          onFocus={() => { if (departureCity.length >= 2) fetchSuggestions(departureCity, 'departure'); }}
+                          onBlur={() => setTimeout(() => { if (activeInputId === 'departure') { setSuggestions([]); setActiveInputId(null); } }, 200)}
+                          autoComplete="off"
+                        />
+                        <Plane className="absolute right-0 top-3 w-4 h-4 text-luna-text-muted/40" strokeWidth={1.5} />
+                        <AnimatePresence>
+                          {activeInputId === 'departure' && suggestions.length > 0 && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -4 }}
+                              className="absolute left-0 right-0 top-full mt-1 bg-white/98 backdrop-blur-xl rounded-xl border border-luna-warm-gray/15 shadow-luxury z-50 overflow-hidden"
+                            >
+                              {suggestions.map(s => (
+                                <button
+                                  key={s.id}
+                                  type="button"
+                                  className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 hover:bg-luna-cream/80 transition-colors"
+                                  onMouseDown={e => e.preventDefault()}
+                                  onClick={() => { setDepartureCity(s.name); setSuggestions([]); setActiveInputId(null); }}
+                                >
+                                  <MapPin size={13} className="text-luna-accent flex-shrink-0" strokeWidth={1.5} />
+                                  <span className="text-sm text-luna-charcoal font-normal">{s.name}</span>
+                                  <span className="text-[10px] text-luna-text-muted ml-auto">{s.country}</span>
+                                </button>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Budget + Pax */}
-                  <div className="flex gap-3 md:gap-6">
-                    <div className="flex-1">
-                      <label className="input-label">Budget</label>
-                      <input type="text" placeholder="ex: 10 000 €" className="input-underline" value={budget} onChange={e => setBudget(e.target.value)} />
+                    {/* ── DESTINATIONS (Multi) ── */}
+                    <div>
+                      <label className="input-label flex items-center justify-between">
+                        <span>Destinations</span>
+                        <button type="button" onClick={addDestination} className="text-luna-accent hover:text-luna-accent-dark transition-colors flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider">
+                          <Plus size={12} /> Ajouter
+                        </button>
+                      </label>
+                      <div className="flex flex-col gap-2">
+                        {destinations.map((dest, idx) => (
+                          <motion.div
+                            key={dest.id}
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="relative flex items-center gap-2"
+                          >
+                            {destinations.length > 1 && (
+                              <span className="text-[10px] font-bold text-luna-accent w-5 text-center">{idx + 1}</span>
+                            )}
+                            <div className="relative flex-1">
+                              <input
+                                type="text"
+                                placeholder={idx === 0 ? 'Où souhaitez-vous voyager ?' : `Destination ${idx + 1}`}
+                                className="input-underline w-full pr-8"
+                                value={dest.city}
+                                onChange={e => { updateDestination(dest.id, e.target.value); fetchSuggestions(e.target.value, dest.id); }}
+                                onFocus={() => { if (dest.city.length >= 2) fetchSuggestions(dest.city, dest.id); }}
+                                onBlur={() => setTimeout(() => { if (activeInputId === dest.id) { setSuggestions([]); setActiveInputId(null); } }, 200)}
+                                required={idx === 0}
+                                autoComplete="off"
+                              />
+                              {/* Autocomplete dropdown */}
+                              <AnimatePresence>
+                                {activeInputId === dest.id && suggestions.length > 0 && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: -4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -4 }}
+                                    className="absolute left-0 right-0 top-full mt-1 bg-white/98 backdrop-blur-xl rounded-xl border border-luna-warm-gray/15 shadow-luxury z-50 overflow-hidden"
+                                  >
+                                    {suggestions.map(s => (
+                                      <button
+                                        key={s.id}
+                                        type="button"
+                                        className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 hover:bg-luna-cream/80 transition-colors"
+                                        onMouseDown={e => e.preventDefault()}
+                                        onClick={() => { updateDestination(dest.id, s.name); setSuggestions([]); setActiveInputId(null); }}
+                                      >
+                                        <MapPin size={13} className="text-luna-accent flex-shrink-0" strokeWidth={1.5} />
+                                        <span className="text-sm text-luna-charcoal font-normal">{s.name}</span>
+                                        <span className="text-[10px] text-luna-text-muted ml-auto">{s.country}</span>
+                                      </button>
+                                    ))}
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                            {destinations.length > 1 && (
+                              <button type="button" onClick={() => removeDestination(dest.id)} className="absolute right-0 top-3 text-luna-text-muted/40 hover:text-red-400 transition-colors">
+                                <X size={14} />
+                              </button>
+                            )}
+                            {idx === 0 && destinations.length === 1 && (
+                              <MapPin className="absolute right-0 top-3 w-4 h-4 text-luna-text-muted/40" strokeWidth={1.5} />
+                            )}
+                          </motion.div>
+                        ))}
+                      </div>
+                      {/* Route summary */}
+                      {(departureCity.trim() || destinations.filter(d => d.city.trim()).length > 1) && (
+                        <div className="flex items-center gap-1 mt-2 flex-wrap">
+                          {departureCity.trim() && (
+                            <span className="flex items-center text-[10px] font-semibold text-luna-charcoal">
+                              <Plane size={10} className="mr-0.5" />{departureCity}
+                            </span>
+                          )}
+                          {destinations.filter(d => d.city.trim()).map((d, i) => (
+                            <span key={d.id} className="flex items-center text-[10px] font-semibold text-luna-accent-dark">
+                              <ArrowRight size={10} className="mx-1 text-luna-warm-gray" />
+                              {d.city}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div className="flex-1">
-                      <label className="input-label">Voyageurs</label>
-                      <input type="text" placeholder="2 adultes" className="input-underline" value={pax} onChange={e => setPax(e.target.value)} />
+
+                    {/* ── DEPARTURE + RETURN ── */}
+                    <div className="flex gap-3 md:gap-6">
+                      <div className="flex-1">
+                        <label className="input-label">Départ</label>
+                        <input type="date" className="input-underline [color-scheme:light]" value={departureDate} onChange={e => setDepartureDate(e.target.value)} />
+                      </div>
+                      <div className="flex-1">
+                        <label className="input-label">Retour</label>
+                        <input type="date" className="input-underline [color-scheme:light]" value={returnDate} onChange={e => setReturnDate(e.target.value)} />
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Vibe */}
-                  <div>
-                    <label className="input-label">Expérience souhaitée</label>
-                    <select className="input-underline appearance-none cursor-pointer bg-transparent" value={vibe} onChange={e => setVibe(e.target.value)}>
-                      <option value="" disabled>Sélectionnez une ambiance</option>
-                      <option>Détente & Bien-être</option>
-                      <option>Aventure & Découverte</option>
-                      <option>Culture & Patrimoine</option>
-                      <option>Lune de Miel</option>
-                      <option>Voyage d'Affaires</option>
-                    </select>
-                  </div>
+                    {/* Flexibility */}
+                    <div>
+                      <label className="input-label">Flexibilité</label>
+                      <div className="flex gap-1.5 md:gap-2 mt-1 flex-wrap">
+                        {['Dates Exactes', '+/- 3 Jours', 'Mois Flexible'].map(opt => (
+                          <button key={opt} type="button" onClick={() => setFlexibility(opt)}
+                            className={`px-3 py-1.5 rounded-full text-[11px] font-semibold tracking-wide border transition-all ${flexibility === opt
+                              ? 'bg-luna-charcoal text-luna-cream border-luna-charcoal'
+                              : 'bg-transparent text-luna-text-muted border-luna-warm-gray/40 hover:border-luna-accent'
+                              }`}
+                          >{opt}</button>
+                        ))}
+                      </div>
+                    </div>
 
-                  {/* Notes */}
-                  <div>
-                    <label className="input-label">Notes particulières</label>
-                    <textarea placeholder="Vol direct, vue mer, transferts privés..." className="input-underline resize-none h-16 leading-relaxed" value={mustHaves} onChange={e => setMustHaves(e.target.value)} />
-                  </div>
+                    {/* Budget + Pax */}
+                    <div className="flex gap-3 md:gap-6">
+                      <div className="flex-1">
+                        <label className="input-label">Budget</label>
+                        <input type="text" placeholder="ex: 10 000 €" className="input-underline" value={budget} onChange={e => setBudget(e.target.value)} />
+                      </div>
+                      <div className="flex-1">
+                        <label className="input-label">Voyageurs</label>
+                        <input type="text" placeholder="2 adultes" className="input-underline" value={pax} onChange={e => setPax(e.target.value)} />
+                      </div>
+                    </div>
 
-                  {/* CTA */}
-                  <button type="submit" className="mt-3 w-full py-4 bg-luna-charcoal hover:bg-[#1a1a1a] text-luna-cream font-medium text-sm tracking-[0.15em] uppercase rounded-xl shadow-luxury transition-all hover:shadow-2xl active:scale-[0.98] flex justify-center items-center gap-3 group">
+                    {/* Vibe */}
+                    <div>
+                      <label className="input-label">Expérience souhaitée</label>
+                      <select className="input-underline appearance-none cursor-pointer bg-transparent" value={vibe} onChange={e => setVibe(e.target.value)}>
+                        <option value="" disabled>Sélectionnez une ambiance</option>
+                        <option>Détente & Bien-être</option>
+                        <option>Aventure & Découverte</option>
+                        <option>Culture & Patrimoine</option>
+                        <option>Lune de Miel</option>
+                        <option>Voyage d'Affaires</option>
+                      </select>
+                    </div>
+
+                    {/* Notes */}
+                    <div>
+                      <label className="input-label">Notes particulières</label>
+                      <textarea placeholder="Vol direct, vue mer, transferts privés..." className="input-underline resize-none h-16 leading-relaxed" value={mustHaves} onChange={e => setMustHaves(e.target.value)} />
+                    </div>
+
+                    {/* CTA removed from inside card — placed below */}
+                  </form>
+                </div>
+
+                {/* CTA button — overflows below the card like avatar overflows above */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: 0.4, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex justify-center relative z-10"
+                >
+                  <button type="submit" form="voyage-form" className="btn-primary btn-lg w-[85%] -mt-7 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.28)] text-sm tracking-[0.15em] uppercase group py-4 rounded-2xl">
                     <span>Créer le Voyage</span>
                     <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                   </button>
-                </form>
+                </motion.div>
               </motion.div>
             )}
 

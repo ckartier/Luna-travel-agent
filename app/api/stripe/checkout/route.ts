@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 import Stripe from 'stripe';
 
 function getStripe() {
@@ -20,6 +21,8 @@ function getBaseUrl(request: Request): string {
 }
 
 export async function POST(request: Request) {
+    const auth = await verifyAuth(request);
+    if (auth instanceof Response) return auth;
     try {
         const body = await request.json();
         const { planId, email, successUrl, cancelUrl } = body;

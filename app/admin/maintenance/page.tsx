@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Power, Clock, MessageSquare, Check, AlertTriangle, Globe, Plane, Wifi, WifiOff } from 'lucide-react';
+import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 
 // ═══ ANIMATED FLIGHT ROUTES (same as app) ═══
 const FLIGHT_ROUTES = [
@@ -37,7 +38,7 @@ export default function AdminMaintenancePage() {
     useEffect(() => { setMounted(true); }, []);
 
     useEffect(() => {
-        fetch('/api/admin/maintenance').then(r => r.json()).then(data => {
+        fetchWithAuth('/api/admin/maintenance').then(r => r.json()).then(data => {
             setEnabled(!!data.enabled);
             if (data.message) setMessage(data.message);
             if (data.plannedEnd) setPlannedEnd(data.plannedEnd);
@@ -47,7 +48,7 @@ export default function AdminMaintenancePage() {
 
     const save = async () => {
         setSaving(true);
-        await fetch('/api/admin/maintenance', {
+        await fetchWithAuth('/api/admin/maintenance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ enabled, message, plannedEnd }),
@@ -151,8 +152,8 @@ export default function AdminMaintenancePage() {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${enabled
-                                            ? 'bg-gradient-to-br from-red-500/20 to-orange-500/20 border border-red-500/20'
-                                            : 'bg-gradient-to-br from-emerald-500/20 to-sky-500/20 border border-emerald-500/20'
+                                        ? 'bg-gradient-to-br from-red-500/20 to-orange-500/20 border border-red-500/20'
+                                        : 'bg-gradient-to-br from-emerald-500/20 to-sky-500/20 border border-emerald-500/20'
                                         }`}>
                                         {enabled ? <WifiOff size={20} className="text-red-400" /> : <Wifi size={20} className="text-emerald-400" />}
                                     </div>
@@ -171,8 +172,8 @@ export default function AdminMaintenancePage() {
 
                             {/* Status indicator */}
                             <div className={`mt-4 flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-medium uppercase tracking-wider transition-all ${enabled
-                                    ? 'bg-red-500/10 text-red-400 border border-red-500/10'
-                                    : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10'
+                                ? 'bg-red-500/10 text-red-400 border border-red-500/10'
+                                : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10'
                                 }`}>
                                 <div className={`w-1.5 h-1.5 rounded-full ${enabled ? 'bg-red-400 animate-pulse' : 'bg-emerald-400'}`} />
                                 {enabled ? 'Maintenance active' : 'Système opérationnel'}

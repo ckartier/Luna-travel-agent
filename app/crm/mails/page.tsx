@@ -6,8 +6,11 @@ import Link from 'next/link';
 import { Mail, Search, RefreshCw, AlertCircle, CalendarClock, Sparkles, Plane, Hotel, Users, CalendarRange, ArrowRight, CheckCircle2, Loader2, X, PlusCircle, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createLead, createActivity, createContact, findContactByEmail } from '@/src/lib/firebase/crm';
+import { useAuth } from '@/src/contexts/AuthContext';
+import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 
 export default function MailsPage() {
+    const { tenantId } = useAuth();
     const [emails, setEmails] = useState<any[]>([]);
     const router = useRouter();
     const [loading, setLoading] = useState(true);
@@ -25,7 +28,7 @@ export default function MailsPage() {
         setLoading(true);
         setError('');
         try {
-            const res = await fetch('/api/gmail/list');
+            const res = await fetchWithAuth('/api/gmail/list');
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             setEmails(data.emails || []);
@@ -62,7 +65,7 @@ export default function MailsPage() {
         if (!selectedEmail) return;
         setAnalyzing(true);
         try {
-            const res = await fetch('/api/email-analyze', {
+            const res = await fetchWithAuth('/api/email-analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -103,12 +106,12 @@ export default function MailsPage() {
             const clientName = ext.clientName || selectedEmail?.sender?.replace(/<.*>/, '').trim() || 'Client';
             let contactId = '';
             try {
-                const existing = await findContactByEmail(senderEmail);
+                const existing = await findContactByEmail(tenantId!, senderEmail);
                 if (existing?.id) {
                     contactId = existing.id;
                 } else if (senderEmail) {
                     const names = clientName.split(' ');
-                    contactId = await createContact({
+                    contactId = await createContact(tenantId!, {
                         firstName: names[0] || clientName,
                         lastName: names.slice(1).join(' ') || '',
                         email: senderEmail.toLowerCase().trim(),
@@ -121,7 +124,7 @@ export default function MailsPage() {
             // Add to pipeline with contact link
             let leadId = '';
             try {
-                leadId = await createLead({
+                leadId = await createLead(tenantId!, {
                     clientName,
                     clientId: contactId,
                     destination: destinations.join(', '),
@@ -136,7 +139,7 @@ export default function MailsPage() {
 
             // Auto-create follow-up activity
             try {
-                await createActivity({
+                await createActivity(tenantId!, {
                     title: `Suivi email — ${clientName} (${destinations.join(', ')})`,
                     time: 'Aujourd\'hui',
                     type: 'email',
@@ -172,12 +175,12 @@ export default function MailsPage() {
             // Find or create contact
             let contactId = '';
             try {
-                const existing = await findContactByEmail(senderEmail);
+                const existing = await findContactByEmail(tenantId!, senderEmail);
                 if (existing?.id) {
                     contactId = existing.id;
                 } else if (senderEmail) {
                     const names = clientName.split(' ');
-                    contactId = await createContact({
+                    contactId = await createContact(tenantId!, {
                         firstName: names[0] || clientName,
                         lastName: names.slice(1).join(' ') || '',
                         email: senderEmail.toLowerCase().trim(),
@@ -188,7 +191,7 @@ export default function MailsPage() {
             } catch (e) { console.error('Contact save failed:', e); }
 
             // Create lead linked to contact
-            const leadId = await createLead({
+            const leadId = await createLead(tenantId!, {
                 clientName,
                 clientId: contactId,
                 destination: destinations.join(', '),
@@ -202,7 +205,7 @@ export default function MailsPage() {
 
             // Auto-create follow-up activity
             try {
-                await createActivity({
+                await createActivity(tenantId!, {
                     title: `Nouvelle demande — ${clientName} (${destinations.join(', ')})`,
                     time: 'Aujourd\'hui',
                     type: 'email',
@@ -240,7 +243,7 @@ export default function MailsPage() {
         <div className="h-full flex flex-col pt-4">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="font-serif text-xl md:text-2xl font-semibold text-luna-charcoal tracking-tight flex items-center gap-2 md:gap-3">
+                    <h1 className="font-serif text-xl md:text-2xl font-serif font-light text-luna-charcoal tracking-tight flex items-center gap-2 md:gap-3">
                         Boîte de Réception <span className="bg-luna-accent/10 text-luna-accent-dark text-xs py-0.5 px-2.5 rounded-full font-sans font-semibold">{emails.length}</span>
                     </h1>
                     <p className="text-luna-text-muted text-xs md:text-sm mt-0.5 hidden sm:block">Analysez les demandes avec Luna AI et dispatchez aux agents.</p>
@@ -359,7 +362,7 @@ export default function MailsPage() {
                                                 </div>
 
                                                 {/* Summary */}
-                                                <div className="bg-white rounded-xl p-3.5 border border-sky-100/30 mb-4 shadow-sm">
+                                                <div className="bg-white rounded-xl p-3.5 border border-sky-100/30 mb-4 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
                                                     <p className="text-xs text-luna-charcoal leading-relaxed">{analysis.summary}</p>
                                                 </div>
 
@@ -402,7 +405,7 @@ export default function MailsPage() {
                                                 {/* Dispatch button */}
                                                 {!dispatched ? (
                                                     <button onClick={handleDispatchToAgents} disabled={dispatching}
-                                                        className="w-full py-2.5 bg-luna-charcoal hover:bg-[#1a1a1a] text-white font-semibold text-xs tracking-wider uppercase rounded-lg shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-60">
+                                                        className="w-full py-2.5 btn-primary font-semibold text-xs tracking-wider uppercase rounded-lg shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-60">
                                                         {dispatching ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} />}
                                                         {dispatching ? 'Dispatch…' : 'Dispatcher aux 4 Agents'}
                                                     </button>

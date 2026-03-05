@@ -8,12 +8,13 @@ import {
     ExternalLink, Filter
 } from 'lucide-react';
 import { getTrips, createTrip, updateTrip, deleteTrip, CRMTrip } from '@/src/lib/firebase/crm';
+import { useAuth } from '@/src/contexts/AuthContext';
 
 // ═══ STATUS CONFIG ═══
 const STATUS_CONFIG: Record<CRMTrip['status'], { label: string; color: string; bg: string; icon: typeof Clock }> = {
-    PENDING: { label: 'En attente', color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200', icon: Clock },
+    DRAFT: { label: 'Brouillon', color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200', icon: Clock },
+    PROPOSAL: { label: 'Devis', color: 'text-sky-600', bg: 'bg-sky-50 border-sky-200', icon: Clock },
     CONFIRMED: { label: 'Confirmé', color: 'text-blue-600', bg: 'bg-blue-50 border-blue-200', icon: CheckCircle2 },
-    PAID: { label: 'Payé', color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200', icon: CreditCard },
     IN_PROGRESS: { label: 'En cours', color: 'text-purple-600', bg: 'bg-purple-50 border-purple-200', icon: Plane },
     COMPLETED: { label: 'Terminé', color: 'text-gray-500', bg: 'bg-gray-50 border-gray-200', icon: CheckCircle2 },
     CANCELLED: { label: 'Annulé', color: 'text-red-500', bg: 'bg-red-50 border-red-200', icon: X },
@@ -64,7 +65,7 @@ function exportToICS(trip: CRMTrip) {
         `SUMMARY:${trip.title} — ${trip.destination}`,
         `DESCRIPTION:Client: ${trip.clientName}\\nMontant: ${trip.amount}€\\n${trip.notes}`,
         `LOCATION:${trip.destination}`,
-        `STATUS:${trip.status === 'CONFIRMED' || trip.status === 'PAID' ? 'CONFIRMED' : 'TENTATIVE'}`,
+        `STATUS:${trip.status === 'CONFIRMED' ? 'CONFIRMED' : 'TENTATIVE'}`,
         'END:VEVENT', 'END:VCALENDAR'
     ].join('\r\n');
     const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
@@ -81,11 +82,12 @@ const emptyTrip = (): Omit<CRMTrip, 'id' | 'createdAt' | 'updatedAt'> => ({
     title: '', destination: '', clientName: '', clientId: '',
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
-    status: 'PENDING', paymentStatus: 'UNPAID', amount: 0, notes: '', color: TRIP_COLORS[0],
+    status: 'DRAFT', paymentStatus: 'UNPAID', amount: 0, notes: '', color: TRIP_COLORS[0],
 });
 
 // ═══ MAIN COMPONENT ═══
 export default function PlanningPage() {
+    const { tenantId } = useAuth();
     const today = new Date();
     const [year, setYear] = useState(today.getFullYear());
     const [month, setMonth] = useState(today.getMonth());
@@ -98,10 +100,11 @@ export default function PlanningPage() {
     const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
     const loadTrips = useCallback(async () => {
+        if (!tenantId) return;
         setLoading(true);
-        try { setTrips(await getTrips()); } catch (e) { console.error(e); }
+        try { setTrips(await getTrips(tenantId)); } catch (e) { console.error(e); }
         setLoading(false);
-    }, []);
+    }, [tenantId]);
 
     useEffect(() => { loadTrips(); }, [loadTrips]);
 
@@ -152,9 +155,9 @@ export default function PlanningPage() {
         if (!form.title || !form.destination || !form.clientName) return;
         try {
             if (editingTrip?.id) {
-                await updateTrip(editingTrip.id, form);
+                await updateTrip(tenantId!, editingTrip.id, form);
             } else {
-                await createTrip(form);
+                await createTrip(tenantId!, form);
             }
             setModalOpen(false);
             loadTrips();
@@ -164,7 +167,7 @@ export default function PlanningPage() {
     const handleDelete = async () => {
         if (!editingTrip?.id) return;
         if (!confirm('Supprimer ce voyage ?')) return;
-        await deleteTrip(editingTrip.id);
+        await deleteTrip(tenantId!, editingTrip.id);
         setModalOpen(false);
         loadTrips();
     };
@@ -174,11 +177,11 @@ export default function PlanningPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="font-serif text-2xl font-semibold text-luna-charcoal">Planning</h1>
+                    <h1 className="font-serif text-2xl font-serif font-light text-luna-charcoal">Planning</h1>
                     <p className="text-luna-text-muted text-sm mt-0.5">Calendrier des voyages et suivi des paiements</p>
                 </div>
                 <button onClick={() => openNewTrip()}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-luna-charcoal text-white text-sm font-medium rounded-xl hover:bg-[#1a1a1a] transition-all shadow-sm">
+                    className="flex items-center gap-2 px-4 py-2.5 bg-luna-charcoal text-white text-sm font-medium rounded-xl hover:bg-[#1a1a1a] transition-all shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
                     <Plus size={16} /> Nouveau voyage
                 </button>
             </div>
@@ -189,9 +192,9 @@ export default function PlanningPage() {
                     { label: 'Voyages ce mois', value: monthTrips.length, icon: Calendar, color: 'text-sky-500' },
                     { label: 'Revenus prévus', value: `${totalRevenue.toLocaleString('fr-FR')}€`, icon: CreditCard, color: 'text-emerald-500' },
                     { label: 'Payés', value: paidCount, icon: CheckCircle2, color: 'text-emerald-500' },
-                    { label: 'En attente', value: monthTrips.filter(t => t.status === 'PENDING').length, icon: Clock, color: 'text-amber-500' },
+                    { label: 'En attente', value: monthTrips.filter(t => t.status === 'DRAFT').length, icon: Clock, color: 'text-amber-500' },
                 ].map((stat, i) => (
-                    <div key={i} className="bg-white/80 backdrop-blur-xl rounded-2xl border border-luna-warm-gray/10 p-4 shadow-sm">
+                    <div key={i} className="bg-white/80 backdrop-blur-xl rounded-2xl border border-luna-warm-gray/10 p-4 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
                         <div className="flex items-center gap-2 mb-2">
                             <stat.icon size={14} className={stat.color} />
                             <span className="text-[10px] uppercase tracking-[0.15em] text-luna-text-muted font-semibold">{stat.label}</span>
@@ -223,7 +226,7 @@ export default function PlanningPage() {
             </div>
 
             {/* Calendar grid */}
-            <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-luna-warm-gray/10 overflow-hidden shadow-sm">
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-luna-warm-gray/10 overflow-hidden shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
                 {/* Day headers */}
                 <div className="grid grid-cols-7 border-b border-luna-warm-gray/10">
                     {DAYS.map(d => (

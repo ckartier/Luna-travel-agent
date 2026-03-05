@@ -5,6 +5,7 @@ import { Users, Search, Star, Phone, Mail, RefreshCcw, X, Plus, ChevronRight, Pl
 import { getContacts, createContact, getLeadsForContact, getTripsForContact, getActivitiesForContact, CRMContact, CRMLead, CRMTrip, CRMActivity } from '@/src/lib/firebase/crm';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { useAuth } from '@/src/contexts/AuthContext';
 
 const VIP_COLORS: Record<string, string> = {
     Standard: 'bg-gray-100 text-gray-600',
@@ -14,6 +15,7 @@ const VIP_COLORS: Record<string, string> = {
 };
 
 export default function CRMContacts() {
+    const { tenantId } = useAuth();
     const [contacts, setContacts] = useState<CRMContact[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -29,18 +31,19 @@ export default function CRMContacts() {
     });
 
     const loadContacts = useCallback(async () => {
+        if (!tenantId) return;
         setLoading(true);
-        try { setContacts(await getContacts()); }
+        try { setContacts(await getContacts(tenantId)); }
         catch (e) { console.error(e); }
         finally { setLoading(false); }
-    }, []);
+    }, [tenantId]);
 
     useEffect(() => { loadContacts(); }, [loadContacts]);
 
     const handleAddContact = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await createContact({
+            await createContact(tenantId!, {
                 firstName: newContact.firstName, lastName: newContact.lastName,
                 email: newContact.email, phone: newContact.phone,
                 vipLevel: newContact.vipLevel,
@@ -57,9 +60,9 @@ export default function CRMContacts() {
         setLoadingDetails(true);
         try {
             const [leads, trips, activities] = await Promise.all([
-                getLeadsForContact(contact.id!),
-                getTripsForContact(contact.id!),
-                getActivitiesForContact(contact.id!),
+                getLeadsForContact(tenantId!, contact.id!),
+                getTripsForContact(tenantId!, contact.id!),
+                getActivitiesForContact(tenantId!, contact.id!),
             ]);
             setContactLeads(leads);
             setContactTrips(trips);

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 import {
     searchTransport,
     searchAccommodation,
@@ -10,6 +11,8 @@ import {
 } from '@/src/lib/ai/gemini';
 
 export async function POST(request: Request) {
+    const auth = await verifyAuth(request);
+    if (auth instanceof Response) return auth;
     try {
         const body = await request.json();
         const { destinations, departureCity, departureDate, returnDate, budget, pax, vibe, mustHaves } = body;
@@ -118,7 +121,7 @@ export async function POST(request: Request) {
                 bookingHotels = bookingData.hotels;
             }
         } catch (e) {
-            console.warn('Booking.com API unavailable, using Gemini fallback:', e);
+            // Booking fallback
         }
 
         // Run all 4 agents in parallel

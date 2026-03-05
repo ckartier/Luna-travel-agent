@@ -23,7 +23,7 @@ export async function POST(req: Request) {
         const emailAddress = notification.emailAddress;
         const historyId = notification.historyId;
 
-        console.log(`Received Gmail notification for ${emailAddress} (History ID: ${historyId})`);
+        // Gmail notification received
 
         // --- MOCK LOGIC FOR DEMONSTRATION OF THE FULL FLOW ---
 
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
         // Here we simulate fetching the message body from the API.
         const messageId = "simulated_message_id_12345";
 
-        console.log(`[LUNA SUPER AGENT] Fetching email content for message ${messageId}...`);
+        // Processing email
         // const emailData = await getEmailContent(messageId); 
         // We comment the real call out since we don't naturally have the OAuth tokens injected yet.
 
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
             bodyText: "Bonjour,\n\nNous aimerions partir à Bali cet été entre le 15 Juillet et le 5 Août. Nous sommes 2 adultes et 1 enfant de 5 ans.\nNotre budget maximum est de 4500 EUR.\nEst-il possible d'avoir un hôtel proche de la plage avec une piscine ?\n\nMerci,\nJean",
         };
 
-        console.log(`[LUNA SUPER AGENT] Extracting travel lead data via AI...`);
+        // Processing email
         // 2. Pass the raw email body to our AI extractor
         // const extractedData = await extractTravelLeadFromEmail(emailData.bodyText);
 
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
             summary: "Famille de 3 personnes cherchant des vacances à Bali cet été avec un budget de 4500 EUR dans un hôtel avec piscine près de la plage."
         };
 
-        console.log(`[LUNA SUPER AGENT] Extraction complète :`, simulateAI);
+        // Processing email
 
         // 3. Save to CRM (Supabase)
         // await supabase.from('leads').insert([...]);
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
         const { orchestrateLead } = await import('@/src/lib/agents/orchestrator');
         const orchestrationPlan = await orchestrateLead(simulateAI as any);
 
-        console.log(`[ORCHESTRATION PLAN RESULT]:\n`, JSON.stringify(orchestrationPlan, null, 2));
+        // Orchestration complete
 
         return NextResponse.json({
             success: true,

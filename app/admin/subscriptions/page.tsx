@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CreditCard, Plus, Check } from 'lucide-react';
+import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 
 export default function AdminSubscriptionsPage() {
     const [subscriptions, setSubscriptions] = useState<any[]>([]);
@@ -13,7 +14,7 @@ export default function AdminSubscriptionsPage() {
     const [adding, setAdding] = useState(false);
 
     const loadSubs = () => {
-        fetch('/api/admin/subscriptions').then(r => r.json()).then(data => {
+        fetchWithAuth('/api/admin/subscriptions').then(r => r.json()).then(data => {
             setSubscriptions(data.subscriptions || []);
             setLoading(false);
         });
@@ -25,7 +26,7 @@ export default function AdminSubscriptionsPage() {
         if (!newEmail) return;
         setAdding(true);
         const planNames: Record<string, string> = { starter: 'Starter', pro: 'Pro', enterprise: 'Enterprise' };
-        await fetch('/api/admin/subscriptions', {
+        await fetchWithAuth('/api/admin/subscriptions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: newEmail, planId: newPlan, planName: planNames[newPlan], status: 'active' }),
@@ -96,8 +97,8 @@ export default function AdminSubscriptionsPage() {
                                 className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-5 py-3.5 items-center hover:bg-white/[0.02] transition-colors">
                                 <p className="text-sm font-medium">{s.email || s.id}</p>
                                 <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${s.planId === 'enterprise' ? 'bg-amber-500/20 text-amber-400' :
-                                        s.planId === 'pro' ? 'bg-violet-500/20 text-violet-400' :
-                                            'bg-sky-500/20 text-sky-400'
+                                    s.planId === 'pro' ? 'bg-violet-500/20 text-violet-400' :
+                                        'bg-sky-500/20 text-sky-400'
                                     }`}>{s.planName || s.planId}</span>
                                 <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${s.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
                                     }`}>{s.status}</span>

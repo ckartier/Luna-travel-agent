@@ -46,7 +46,7 @@ export default function LandingPage() {
                     </div>
                     <div className="flex items-center gap-3">
                         <Link href="/login" className="text-sm text-luna-text-muted hover:text-luna-charcoal font-medium px-4 py-2 transition-colors">Connexion</Link>
-                        <Link href="/pricing" className="text-sm bg-luna-charcoal text-white px-5 py-2 rounded-xl font-medium hover:bg-[#1a1a1a] transition-all shadow-sm">
+                        <Link href="/pricing" className="text-sm btn-primary">
                             Commencer →
                         </Link>
                     </div>
@@ -81,7 +81,7 @@ export default function LandingPage() {
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <Link href="/pricing"
-                                className="group bg-luna-charcoal hover:bg-[#1a1a1a] text-white font-semibold px-8 py-4 rounded-2xl shadow-xl hover:shadow-2xl transition-all flex items-center gap-3 text-base">
+                                className="group btn-primary font-semibold px-8 py-4 rounded-2xl shadow-xl hover:shadow-2xl transition-all flex items-center gap-3 text-base">
                                 Démarrer maintenant
                                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                             </Link>

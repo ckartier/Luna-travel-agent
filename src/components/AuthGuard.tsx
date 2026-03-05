@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { LunaLogo } from '@/app/components/LunaLogo';
 
 /** Public routes that don't require authentication */
-const PUBLIC_ROUTES = ['/login', '/pricing', '/cgv', '/landing', '/admin'];
+const PUBLIC_ROUTES = ['/login', '/pricing', '/cgv', '/landing'];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
     const { user, loading } = useAuth();

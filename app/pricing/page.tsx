@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Check, Sparkles, Shield, Zap, Globe, Users, BarChart3, Headphones, ArrowRight, Star } from 'lucide-react';
 import Link from 'next/link';
 import { LunaLogo } from '@/app/components/LunaLogo';
+import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 
 const PLANS = [
     {
@@ -76,7 +77,7 @@ export default function PricingPage() {
     const handleSubscribe = async (planId: string) => {
         setLoading(planId);
         try {
-            const res = await fetch('/api/stripe/checkout', {
+            const res = await fetchWithAuth('/api/stripe/checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ planId }),
@@ -102,7 +103,7 @@ export default function PricingPage() {
                 </Link>
                 <div className="flex items-center gap-6">
                     <Link href="/cgv" className="text-sm text-luna-text-muted hover:text-luna-charcoal transition-colors font-medium">CGV</Link>
-                    <Link href="/login" className="text-sm bg-luna-charcoal text-white px-5 py-2 rounded-xl font-medium hover:bg-[#1a1a1a] transition-all shadow-sm">
+                    <Link href="/login" className="text-sm btn-primary">
                         Connexion
                     </Link>
                 </div>
@@ -175,8 +176,8 @@ export default function PricingPage() {
                                 <button onClick={() => handleSubscribe(plan.id)}
                                     disabled={loading === plan.id}
                                     className={`w-full py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${plan.popular
-                                            ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-200/50 hover:shadow-xl hover:shadow-violet-200/70'
-                                            : 'bg-luna-charcoal text-white hover:bg-[#1a1a1a]'
+                                        ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-200/50 hover:shadow-xl hover:shadow-violet-200/70'
+                                        : 'bg-luna-charcoal text-white hover:bg-[#1a1a1a]'
                                         } ${loading === plan.id ? 'opacity-60' : ''}`}>
                                     {loading === plan.id ? (
                                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

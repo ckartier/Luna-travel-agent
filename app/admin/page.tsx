@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, CreditCard, Globe, BarChart3, TrendingUp, Activity, Layers, ArrowUpRight } from 'lucide-react';
+import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 
 interface Stats {
     totalUsers: number;
@@ -22,7 +23,7 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('/api/admin/stats').then(r => r.json()).then(data => {
+        fetchWithAuth('/api/admin/stats').then(r => r.json()).then(data => {
             setStats(data.stats);
             setUsers(data.users || []);
             setSubscriptions(data.subscriptions || []);
@@ -98,8 +99,8 @@ export default function AdminDashboard() {
                                     </div>
                                 </div>
                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${u.role === 'Admin' ? 'bg-violet-500/20 text-violet-400' :
-                                        u.role === 'Manager' ? 'bg-amber-500/20 text-amber-400' :
-                                            'bg-sky-500/20 text-sky-400'
+                                    u.role === 'Manager' ? 'bg-amber-500/20 text-amber-400' :
+                                        'bg-sky-500/20 text-sky-400'
                                     }`}>{u.role || 'Agent'}</span>
                             </div>
                         ))}

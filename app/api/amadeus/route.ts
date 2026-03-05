@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 
 // ── AMADEUS API INTEGRATION ─────────────────────────────────────────
 // Requires free registration at https://developers.amadeus.com
@@ -128,6 +129,8 @@ async function searchFlights(token: string, from: string, to: string, date: stri
 
 // ── API ROUTE ───────────────────────────────────────────────────────
 export async function POST(request: Request) {
+    const auth = await verifyAuth(request);
+    if (auth instanceof Response) return auth;
     try {
         const body = await request.json();
         const { from, to, date, pax, type } = body;
@@ -157,7 +160,9 @@ export async function POST(request: Request) {
 }
 
 // Also support GET for health check
-export async function GET() {
+export async function GET(request: Request) {
+    const auth = await verifyAuth(request);
+    if (auth instanceof Response) return auth;
     const hasKeys = !!(process.env.AMADEUS_API_KEY && process.env.AMADEUS_API_SECRET);
     return NextResponse.json({
         available: hasKeys,

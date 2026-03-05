@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, MoreHorizontal, MessageSquare, Clock, Globe, RefreshCcw, X, CheckCircle2, Calendar, Plane } from 'lucide-react';
 import { getLeads, createLead, updateLeadStatus, createTrip, createActivity, CRMLead } from '@/src/lib/firebase/crm';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/src/contexts/AuthContext';
 
 const STAGES = ['NOUVEAU', 'IA EN COURS', 'DEVIS ENVOYÉ', 'GAGNÉ'] as const;
 
@@ -27,6 +28,7 @@ const mapStatusToStage = (status: string) => {
 
 export default function CRMPipeline() {
     const router = useRouter();
+    const { tenantId } = useAuth();
     const [deals, setDeals] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,7 +38,7 @@ export default function CRMPipeline() {
     const handleAddDeal = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await createLead({
+            await createLead(tenantId!, {
                 clientName: newDeal.clientName, destination: newDeal.destination,
                 dates: newDeal.dates, budget: newDeal.budget, pax: newDeal.pax, status: 'NEW',
             });
@@ -47,9 +49,10 @@ export default function CRMPipeline() {
     };
 
     const loadLeads = async () => {
+        if (!tenantId) return;
         setLoading(true);
         try {
-            const leads = await getLeads();
+            const leads = await getLeads(tenantId);
             setDeals(leads.map(l => ({
                 id: l.id, client: l.clientName || 'Client Inconnu',
                 destination: l.destination || 'Non définie', budget: l.budget || 'À définir',
@@ -61,7 +64,7 @@ export default function CRMPipeline() {
         finally { setLoading(false); }
     };
 
-    useEffect(() => { loadLeads(); }, []);
+    useEffect(() => { loadLeads(); }, [tenantId]);
 
     // Move deal to a stage
     const moveToStage = async (dealId: string, targetStage: string) => {
@@ -71,7 +74,7 @@ export default function CRMPipeline() {
         const newStatus = stageToStatus[targetStage];
         if (!newStatus) return;
 
-        await updateLeadStatus(dealId, newStatus);
+        await updateLeadStatus(tenantId!, dealId, newStatus);
 
         // If moving to GAGNÉ → open trip creation modal
         if (targetStage === 'GAGNÉ') {
@@ -89,7 +92,7 @@ export default function CRMPipeline() {
         const nextWeek = new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0];
 
         try {
-            const tripId = await createTrip({
+            const tripId = await createTrip(tenantId!, {
                 title: `${d.destination} — ${d.client}`,
                 destination: d.destination,
                 clientName: d.client,
@@ -104,7 +107,7 @@ export default function CRMPipeline() {
             });
 
             // Auto-create follow-up activity
-            await createActivity({
+            await createActivity(tenantId!, {
                 title: `Organiser le voyage ${d.destination} pour ${d.client}`,
                 time: 'Cette semaine',
                 type: 'meeting',

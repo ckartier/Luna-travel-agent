@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 
 // ── BOOKING.COM API via RapidAPI ────────────────────────────────────
 // Free tier: 500 requests/month
@@ -121,6 +122,8 @@ async function searchHotels(
 
 // ── API Route ───────────────────────────────────────────────────────
 export async function POST(request: Request) {
+    const auth = await verifyAuth(request);
+    if (auth instanceof Response) return auth;
     try {
         const body = await request.json();
         const { city, checkin, checkout, adults, rooms } = body;
@@ -178,7 +181,9 @@ export async function POST(request: Request) {
 }
 
 // Health check
-export async function GET() {
+export async function GET(request: Request) {
+    const auth = await verifyAuth(request);
+    if (auth instanceof Response) return auth;
     const hasKey = !!process.env.RAPIDAPI_KEY;
     return NextResponse.json({
         available: hasKey,

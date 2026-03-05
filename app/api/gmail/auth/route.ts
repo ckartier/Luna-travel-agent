@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 
 // Generates the Google OAuth 2.0 URL
-export async function GET() {
+export async function GET(request: Request) {
+    const auth = await verifyAuth(request);
+    if (auth instanceof Response) return auth;
     const clientId = process.env.APP_GMAIL_CLIENT_ID;
     const redirectUri = process.env.APP_GMAIL_REDIRECT_URI;
 
@@ -23,6 +26,5 @@ export async function GET() {
         `&access_type=offline` +
         `&prompt=consent`; // Forces refresh token generation
 
-    console.log("Generated Auth URL:", authUrl);
     return NextResponse.redirect(authUrl);
 }

@@ -251,7 +251,7 @@ export default function LoginPage() {
                         </div>
 
                         <button type="submit" disabled={isLoading}
-                            className="w-full py-3.5 bg-luna-charcoal hover:bg-[#1a1a1a] text-white font-medium text-sm tracking-wider uppercase rounded-xl shadow-lg transition-all hover:shadow-xl active:scale-[0.98] flex justify-center items-center gap-2 disabled:opacity-60">
+                            className="w-full py-3.5 btn-primary font-medium text-sm tracking-wider uppercase rounded-xl shadow-lg transition-all hover:shadow-xl active:scale-[0.98] flex justify-center items-center gap-2 disabled:opacity-60">
                             {isLoading ? (
                                 <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
                                     className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />

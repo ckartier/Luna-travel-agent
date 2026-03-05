@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/src/lib/firebase/admin';
+import { verifyAdmin } from '@/src/lib/firebase/apiAuth';
 
 // GET /api/admin/users — list all users
-export async function GET() {
+export async function GET(request: Request) {
+    const auth = await verifyAdmin(request);
+    if (auth instanceof Response) return auth;
     try {
         const snapshot = await adminDb.collection('users').get();
         const users = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
@@ -14,6 +17,8 @@ export async function GET() {
 
 // POST /api/admin/users — update user role
 export async function POST(request: Request) {
+    const auth = await verifyAdmin(request);
+    if (auth instanceof Response) return auth;
     try {
         const { uid, role } = await request.json();
         if (!uid || !role) return NextResponse.json({ error: 'uid and role required' }, { status: 400 });

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 import Stripe from 'stripe';
 
 const getStripe = () => new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-01-27.acacia' as any });
@@ -12,6 +13,8 @@ function getBaseUrl(request: Request): string {
 }
 
 export async function POST(request: Request) {
+    const auth = await verifyAuth(request);
+    if (auth instanceof Response) return auth;
     try {
         const { customerId, returnUrl } = await request.json();
 

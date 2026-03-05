@@ -124,7 +124,7 @@ export default function AnalyticsPage() {
                     {/* Charts row */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Destinations bar chart */}
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white/80 backdrop-blur-xl rounded-2xl border border-luna-warm-gray/10 p-6 shadow-sm">
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white/80 backdrop-blur-xl rounded-2xl border border-luna-warm-gray/10 p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
                             <h3 className="text-[11px] font-bold text-luna-text-muted uppercase tracking-wider mb-4">Destinations populaires</h3>
                             <div className="h-[220px]">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -144,7 +144,7 @@ export default function AnalyticsPage() {
                         </motion.div>
 
                         {/* Vibes pie chart */}
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="bg-white/80 backdrop-blur-xl rounded-2xl border border-luna-warm-gray/10 p-6 shadow-sm">
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="bg-white/80 backdrop-blur-xl rounded-2xl border border-luna-warm-gray/10 p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
                             <h3 className="text-[11px] font-bold text-luna-text-muted uppercase tracking-wider mb-4">Types de voyage</h3>
                             <div className="h-[220px] flex items-center">
                                 {vibeChart.length > 0 ? (
@@ -165,7 +165,7 @@ export default function AnalyticsPage() {
 
                     {/* Activity over time */}
                     {timeChart.length > 1 && (
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-white/80 backdrop-blur-xl rounded-2xl border border-luna-warm-gray/10 p-6 shadow-sm">
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-white/80 backdrop-blur-xl rounded-2xl border border-luna-warm-gray/10 p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
                             <h3 className="text-[11px] font-bold text-luna-text-muted uppercase tracking-wider mb-4">Activité de recherche</h3>
                             <div className="h-[160px]">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -187,7 +187,7 @@ export default function AnalyticsPage() {
                     )}
 
                     {/* Recent searches table */}
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="bg-white/80 backdrop-blur-xl rounded-2xl border border-luna-warm-gray/10 p-6 shadow-sm">
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="bg-white/80 backdrop-blur-xl rounded-2xl border border-luna-warm-gray/10 p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
                         <h3 className="text-[11px] font-bold text-luna-text-muted uppercase tracking-wider mb-4">Dernières recherches</h3>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">

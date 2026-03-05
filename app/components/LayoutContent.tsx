@@ -18,7 +18,7 @@ function getInitials(name: string | null | undefined): string {
 export function LayoutContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { user, userProfile, logout } = useAuth();
-    const showHeader = !HEADERLESS_ROUTES.includes(pathname) && !!user;
+    const showHeader = !HEADERLESS_ROUTES.includes(pathname) && !pathname.startsWith('/crm') && !!user;
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -33,7 +33,7 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
         return () => document.removeEventListener('mousedown', handleClick);
     }, [dropdownOpen]);
 
-    const photoURL = user?.photoURL || userProfile?.photoURL;
+    const photoURL = userProfile?.photoURL || user?.photoURL;
     const displayName = userProfile?.displayName || user?.displayName || 'Utilisateur';
     const email = userProfile?.email || user?.email || '';
 
@@ -50,93 +50,46 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
                             <Link href="/" className="text-luna-charcoal px-2 py-0.5 md:px-2.5 md:py-1 text-[9px] md:text-[10px] font-semibold rounded-full bg-luna-charcoal/5 uppercase tracking-wider">Voyages</Link>
                             <Link href="/crm" className="text-luna-text-muted hover:text-luna-charcoal px-2 py-0.5 md:px-2.5 md:py-1 text-[9px] md:text-[10px] font-semibold rounded-full transition-colors uppercase tracking-wider">CRM</Link>
                         </nav>
-                    </div>
 
-                    {/* User Avatar & Dropdown */}
-                    <div ref={dropdownRef} className="relative pointer-events-auto">
-                        <button
-                            onClick={() => setDropdownOpen(prev => !prev)}
-                            className="glass-pill p-0.5 md:p-1 shadow-glass flex items-center gap-2 hover:shadow-md transition-all"
-                        >
-                            {photoURL ? (
-                                <img
-                                    src={photoURL}
-                                    alt={displayName}
-                                    className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover border-2 border-white/80"
-                                    referrerPolicy="no-referrer"
-                                />
-                            ) : (
-                                <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-sky-400 to-violet-500 flex items-center justify-center text-white text-[10px] md:text-xs font-bold border-2 border-white/80">
-                                    {getInitials(displayName)}
+                        {/* Avatar inside the pill */}
+                        <div ref={dropdownRef} className="relative ml-1">
+                            <button onClick={() => setDropdownOpen(p => !p)} className="rounded-full transition-transform hover:scale-105 active:scale-95">
+                                {photoURL ? (
+                                    <img src={photoURL} alt={displayName} className="w-[43px] h-[43px] rounded-full object-cover border-[3px] border-white shadow-md" referrerPolicy="no-referrer" />
+                                ) : (
+                                    <div className="w-[43px] h-[43px] rounded-full bg-gradient-to-br from-sky-400 to-violet-500 flex items-center justify-center text-white text-sm font-bold border-[3px] border-white shadow-md">
+                                        {getInitials(displayName)}
+                                    </div>
+                                )}
+                            </button>
+
+                            {dropdownOpen && (
+                                <div className="absolute right-0 top-full mt-2 w-60 bg-white/95 backdrop-blur-2xl rounded-2xl border border-luna-warm-gray/15 shadow-xl overflow-hidden">
+                                    <div className="px-4 py-3 border-b border-luna-warm-gray/10">
+                                        <p className="text-sm font-semibold text-luna-charcoal truncate">{displayName}</p>
+                                        <p className="text-[11px] text-luna-text-muted truncate">{email}</p>
+                                    </div>
+                                    <div className="py-1">
+                                        <Link href="/crm/settings" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-luna-charcoal hover:bg-luna-cream/80 transition-colors">
+                                            <User size={14} strokeWidth={1.5} className="text-luna-text-muted" /> Mon Profil
+                                        </Link>
+                                        <Link href="/crm/settings" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-luna-charcoal hover:bg-luna-cream/80 transition-colors">
+                                            <Settings size={14} strokeWidth={1.5} className="text-luna-text-muted" /> Paramètres
+                                        </Link>
+                                        {userProfile?.role === 'Admin' && (
+                                            <Link href="/admin" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-violet-600 hover:bg-violet-50 transition-colors">
+                                                <Shield size={14} strokeWidth={1.5} /> Administration
+                                            </Link>
+                                        )}
+                                    </div>
+                                    <div className="border-t border-luna-warm-gray/10 py-1">
+                                        <button onClick={() => { setDropdownOpen(false); logout(); }} className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-red-500 hover:bg-red-50 transition-colors w-full text-left">
+                                            <LogOut size={14} strokeWidth={1.5} /> Déconnexion
+                                        </button>
+                                    </div>
                                 </div>
                             )}
-                        </button>
-
-                        {/* Dropdown */}
-                        {dropdownOpen && (
-                            <div className="absolute right-0 top-full mt-2 w-64 bg-white/95 backdrop-blur-2xl rounded-2xl border border-luna-warm-gray/15 shadow-luxury overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                                {/* User info header */}
-                                <div className="px-4 py-3.5 border-b border-luna-warm-gray/10">
-                                    <div className="flex items-center gap-3">
-                                        {photoURL ? (
-                                            <img src={photoURL} alt={displayName} className="w-10 h-10 rounded-full object-cover border-2 border-luna-warm-gray/10" referrerPolicy="no-referrer" />
-                                        ) : (
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-violet-500 flex items-center justify-center text-white text-sm font-bold">
-                                                {getInitials(displayName)}
-                                            </div>
-                                        )}
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-semibold text-luna-charcoal truncate">{displayName}</p>
-                                            <p className="text-[11px] text-luna-text-muted truncate">{email}</p>
-                                        </div>
-                                    </div>
-                                    {userProfile?.role && (
-                                        <span className="inline-block mt-2 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-sky-50 text-sky-600 rounded-full">{userProfile.role}</span>
-                                    )}
-                                </div>
-
-                                {/* Links */}
-                                <div className="py-1.5">
-                                    <Link
-                                        href="/crm/settings"
-                                        onClick={() => setDropdownOpen(false)}
-                                        className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-luna-charcoal hover:bg-luna-cream/80 transition-colors"
-                                    >
-                                        <User size={14} strokeWidth={1.5} className="text-luna-text-muted" />
-                                        Mon Profil
-                                    </Link>
-                                    <Link
-                                        href="/crm/settings"
-                                        onClick={() => setDropdownOpen(false)}
-                                        className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-luna-charcoal hover:bg-luna-cream/80 transition-colors"
-                                    >
-                                        <Settings size={14} strokeWidth={1.5} className="text-luna-text-muted" />
-                                        Paramètres
-                                    </Link>
-                                    {userProfile?.role === 'Admin' && (
-                                        <Link
-                                            href="/admin"
-                                            onClick={() => setDropdownOpen(false)}
-                                            className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-violet-600 hover:bg-violet-50 transition-colors"
-                                        >
-                                            <Shield size={14} strokeWidth={1.5} />
-                                            Administration
-                                        </Link>
-                                    )}
-                                </div>
-
-                                {/* Logout */}
-                                <div className="border-t border-luna-warm-gray/10 py-1.5">
-                                    <button
-                                        onClick={() => { setDropdownOpen(false); logout(); }}
-                                        className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-red-500 hover:bg-red-50 transition-colors w-full text-left"
-                                    >
-                                        <LogOut size={14} strokeWidth={1.5} />
-                                        Déconnexion
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+                        </div>
                     </div>
                 </header>
             )}

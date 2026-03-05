@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 
 export async function GET(request: Request) {
+    const auth = await verifyAuth(request);
+    if (auth instanceof Response) return auth;
     const { searchParams } = new URL(request.url);
     const city = searchParams.get('city');
 

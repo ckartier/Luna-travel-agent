@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Calendar, Clock, CheckCircle2, PhoneCall, Mail, AlertTriangle, MessageSquare, RefreshCcw, X, Plus, User, Target, Plane } from 'lucide-react';
 import { getActivities, createActivity, updateActivityStatus, getContacts, CRMActivity, CRMContact } from '@/src/lib/firebase/crm';
+import { useAuth } from '@/src/contexts/AuthContext';
 
 const iconMap: Record<string, any> = {
     'AlertTriangle': AlertTriangle,
@@ -14,6 +15,7 @@ const iconMap: Record<string, any> = {
 };
 
 export default function CRMActivities() {
+    const { tenantId } = useAuth();
     const [activities, setActivities] = useState<any[]>([]);
     const [contacts, setContacts] = useState<CRMContact[]>([]);
     const [loading, setLoading] = useState(true);
@@ -31,7 +33,7 @@ export default function CRMActivities() {
     const loadActivities = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await getActivities();
+            const data = await getActivities(tenantId!);
             const formatted = data.map(a => ({
                 ...a,
                 icon: iconMap[a.iconName] || Calendar
@@ -45,7 +47,7 @@ export default function CRMActivities() {
     }, []);
 
     const loadContacts = useCallback(async () => {
-        try { setContacts(await getContacts()); } catch (e) { console.error(e); }
+        try { setContacts(await getContacts(tenantId!)); } catch (e) { console.error(e); }
     }, []);
 
     useEffect(() => { loadActivities(); loadContacts(); }, [loadActivities, loadContacts]);
@@ -53,7 +55,7 @@ export default function CRMActivities() {
     const handleAddTask = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await createActivity({
+            await createActivity(tenantId!, {
                 title: newTask.title,
                 time: newTask.time,
                 type: newTask.type,
@@ -72,7 +74,7 @@ export default function CRMActivities() {
     };
 
     const handleMarkDone = async (id: string) => {
-        try { await updateActivityStatus(id, 'DONE'); loadActivities(); }
+        try { await updateActivityStatus(tenantId!, id, 'DONE'); loadActivities(); }
         catch (error) { console.error("Failed to update task", error); }
     };
 
