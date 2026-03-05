@@ -15,6 +15,13 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'to and message required' }, { status: 400 });
         }
 
+        // Get user's tenantId for tenant-scoped storage
+        const userDoc = await adminDb.collection('users').doc(auth.uid).get();
+        const tenantId = userDoc.exists ? userDoc.data()?.tenantId : auth.uid;
+        if (!tenantId) {
+            return NextResponse.json({ error: 'No tenant found for user' }, { status: 400 });
+        }
+
         const token = process.env.WHATSAPP_TOKEN;
         const phoneId = process.env.WHATSAPP_PHONE_ID;
 
@@ -43,7 +50,6 @@ export async function POST(request: Request) {
                 if (response.ok) {
                     deliveryStatus = 'sent';
                     waMessageId = data.messages?.[0]?.id;
-                    // WhatsApp sent successfully
                 } else {
                     deliveryStatus = 'failed';
                     deliveryError = data.error?.message || 'Failed to send';
@@ -56,14 +62,14 @@ export async function POST(request: Request) {
             }
         }
 
-        // Always save to Firestore via Admin SDK
-        await adminDb.collection('messages').add({
+        // Save to tenant-scoped collection via Admin SDK
+        await adminDb.collection('tenants').doc(tenantId).collection('messages').add({
             clientId: to,
             clientName: clientName || to,
             channel: 'WHATSAPP',
             direction: 'OUTBOUND',
             content: message,
-            senderId: 'luna-agent',
+            senderId: auth.uid,
             isRead: true,
             deliveryStatus,
             createdAt: new Date(),

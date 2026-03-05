@@ -53,3 +53,19 @@ env:
     secret: STRIPE_PRICE_PRO
   - variable: STRIPE_PRICE_ENTERPRISE
     secret: STRIPE_PRICE_ENTERPRISE
+
+  # Booking.com via RapidAPI
+  - variable: RAPIDAPI_KEY
+    secret: RAPIDAPI_KEY
+
+  # WhatsApp Business API
+  - variable: WHATSAPP_TOKEN
+    secret: WHATSAPP_TOKEN
+  - variable: WHATSAPP_PHONE_ID
+    secret: WHATSAPP_PHONE_ID
+  - variable: WHATSAPP_VERIFY_TOKEN
+    secret: WHATSAPP_VERIFY_TOKEN
+
+  # Gmail OAuth
+  - variable: APP_GMAIL_REDIRECT_URI
+    secret: APP_GMAIL_REDIRECT_URI

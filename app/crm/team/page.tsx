@@ -3,24 +3,49 @@
 import { useState, useEffect } from 'react';
 import { UserPlus, Shield, Search, Clock, CheckCircle2, Users, Loader2, MoreVertical } from 'lucide-react';
 import { CRMUser, getUser } from '@/src/lib/firebase/crm';
+import { getTenant } from '@/src/lib/firebase/tenant';
 import { useAuth } from '@/src/contexts/AuthContext';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/src/lib/firebase/client';
 
 export default function TeamPage() {
-    const { user } = useAuth();
+    const { user, tenantId } = useAuth();
     const [members, setMembers] = useState<CRMUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    useEffect(() => { loadTeam(); }, []);
+    useEffect(() => { if (tenantId) loadTeam(); }, [tenantId]);
 
     const loadTeam = async () => {
+        if (!tenantId) return;
         setLoading(true);
         try {
-            const snapshot = await getDocs(collection(db, 'users'));
-            const users = snapshot.docs.map(d => ({ ...d.data(), uid: d.id } as CRMUser));
-            setMembers(users);
+            // Read the tenant document to get the members map
+            const tenant = await getTenant(tenantId);
+            if (tenant?.members) {
+                const memberUids = Object.keys(tenant.members);
+                // Load each member's full profile (users/{uid} is allowed per-user)
+                const profiles = await Promise.all(
+                    memberUids.map(async (uid) => {
+                        const profile = await getUser(uid);
+                        if (profile) return profile;
+                        // Fallback: use the basic info from tenant.members
+                        const m = tenant.members[uid];
+                        return {
+                            uid,
+                            displayName: m.displayName || 'Utilisateur',
+                            email: m.email || '',
+                            photoURL: null,
+                            role: m.role === 'owner' ? 'Admin' : m.role === 'admin' ? 'Admin' : 'Agent',
+                            agency: '',
+                            phone: '',
+                            bio: '',
+                            tenantId: tenantId,
+                            createdAt: m.joinedAt,
+                            updatedAt: new Date(),
+                        } as CRMUser;
+                    })
+                );
+                setMembers(profiles);
+            }
         } catch (e) { console.error(e); }
         setLoading(false);
     };

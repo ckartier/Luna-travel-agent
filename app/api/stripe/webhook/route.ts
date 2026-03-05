@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/src/lib/firebase/client';
+import { adminDb } from '@/src/lib/firebase/admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 const getStripe = () => new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-01-27.acacia' as any });
 
@@ -29,16 +29,15 @@ export async function POST(request: Request) {
             const planName = session.metadata?.planName || 'Unknown';
 
             if (email) {
-                const subRef = doc(db, 'subscriptions', email);
-                await setDoc(subRef, {
+                await adminDb.collection('subscriptions').doc(email).set({
                     email,
                     planId,
                     planName,
                     stripeCustomerId: session.customer,
                     stripeSubscriptionId: session.subscription,
                     status: 'active',
-                    activatedAt: serverTimestamp(),
-                    updatedAt: serverTimestamp(),
+                    activatedAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp(),
                 });
             }
             break;
@@ -51,8 +50,10 @@ export async function POST(request: Request) {
             try {
                 const stripeCustomer = await getStripe().customers.retrieve(customer);
                 if (!stripeCustomer.deleted && 'email' in stripeCustomer && stripeCustomer.email) {
-                    const subRef = doc(db, 'subscriptions', stripeCustomer.email);
-                    await setDoc(subRef, { status: 'cancelled', updatedAt: serverTimestamp() }, { merge: true });
+                    await adminDb.collection('subscriptions').doc(stripeCustomer.email).set(
+                        { status: 'cancelled', updatedAt: FieldValue.serverTimestamp() },
+                        { merge: true }
+                    );
                 }
             } catch (e) { console.error(e); }
             break;

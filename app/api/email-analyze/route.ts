@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 export async function POST(request: Request) {
     const auth = await verifyAuth(request);
@@ -37,9 +37,6 @@ export async function POST(request: Request) {
                 },
             });
         }
-
-        // Upgrade to gemini-2.5-pro for complex reasoning and unstructured text extraction
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
 
         const prompt = `Tu es Luna, l'agent IA d'élite pour une agence de voyage B2B ultra-luxe.
 Ta mission est d'analyser un email entrant (parfois imprécis ou rédigé à la hâte) et d'en extraire une requête de voyage parfaitement structurée.
@@ -80,8 +77,8 @@ Tu DOIS répondre UNIQUEMENT en JSON valide, sans balises Markdown autour, au fo
     "priority": "HIGH" (toujours HIGH pour TRAVEL_REQUEST)
 }`;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
+        const result = await ai.models.generateContent({ model: 'gemini-2.5-pro', contents: prompt });
+        const text = result.text || '';
 
         try {
             const jsonMatch = text.match(/\{[\s\S]*\}/);
