@@ -133,25 +133,23 @@ const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMap({ map
 
         const map = new mapboxgl.Map({
             container: containerRef.current,
-            style: 'mapbox://styles/mapbox/dark-v11',
+            style: 'mapbox://styles/mapbox/light-v11',
             center: [20, 40], zoom: 4, projection: 'globe',
             attributionControl: false, antialias: true, dragRotate: true,
         });
 
         map.on('style.load', () => {
-            const name = (map.getStyle().name || '').toLowerCase();
-            const isDark = name.includes('dark') || name.includes('satellite');
             map.setFog({
-                color: isDark ? 'rgb(50,50,55)' : 'rgb(235,232,226)',
-                'high-color': isDark ? 'rgb(70,75,90)' : 'rgb(210,215,225)',
-                'horizon-blend': 0.04,
-                'space-color': 'rgb(220,218,212)' as any,
-                'star-intensity': 0,
+                color: 'rgb(235,232,226)',
+                'high-color': 'rgb(180,190,210)',
+                'horizon-blend': 0.03,
+                'space-color': '#080818' as any,
+                'star-intensity': 0.9,
             });
             try {
                 const labels = map.getStyle().layers?.filter((l: any) => l.type === 'symbol' && l.id.includes('label')) || [];
                 labels.forEach((l: any) => {
-                    map.setPaintProperty(l.id, 'text-halo-color', isDark ? 'rgba(100,160,255,0.2)' : 'rgba(120,160,220,0.25)');
+                    map.setPaintProperty(l.id, 'text-halo-color', 'rgba(120,160,220,0.25)');
                     map.setPaintProperty(l.id, 'text-halo-width', 3);
                     map.setPaintProperty(l.id, 'text-halo-blur', 4);
                 });
