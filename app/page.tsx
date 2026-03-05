@@ -1,6 +1,7 @@
 'use client';
 
 import { MapBackground } from '@/app/components/map/MapBackground';
+import { CapsuleBackground } from '@/app/components/CapsuleBackground';
 import { WeatherWidget } from '@/src/components/widgets/WeatherWidget';
 import { useAuth } from '@/src/contexts/AuthContext';
 import {
@@ -307,7 +308,18 @@ function DashboardPage() {
 
   return (
     <div ref={containerRef} className="relative w-full min-h-screen flex flex-col overflow-hidden">
-      <MapBackground />
+      {/* Background swap: Capsule tubes for IDLE, World map for Agent processing */}
+      <AnimatePresence mode="wait">
+        {isProcessing ? (
+          <motion.div key="map-bg" className="absolute inset-0 z-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
+            <MapBackground />
+          </motion.div>
+        ) : (
+          <motion.div key="capsule-bg" className="absolute inset-0 z-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
+            <CapsuleBackground />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Weather Widgets (real API) */}
       <div className="absolute top-16 right-3 md:top-20 md:right-5 z-40 w-[220px] md:w-[260px] hidden md:block">
