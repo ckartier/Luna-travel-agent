@@ -503,10 +503,8 @@ function DashboardPage() {
 
                 {/* Glass card — below the avatar */}
                 <div className="glass-card max-h-[75vh] overflow-y-auto p-6 pt-20 pb-10 md:p-10 md:pt-24 md:pb-12 shadow-luxury relative">
-                  <div className="absolute -top-16 -right-16 w-32 h-32 bg-luna-accent/10 rounded-full blur-[60px] pointer-events-none" />
-
                   <div className="flex flex-col items-center mb-6">
-                    <p className="text-luna-text-muted text-sm font-light tracking-wide">Votre Concierge Voyage</p>
+                    <p className="text-gray-600 text-sm font-medium tracking-wide">Votre Concierge Voyage</p>
                   </div>
 
                   <form id="voyage-form" onSubmit={handleStartAnalysis} className="flex flex-col gap-5">
