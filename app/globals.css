@@ -49,11 +49,11 @@
 
   /* Premium underline input style */
   .input-underline {
-    @apply w-full bg-transparent border-0 border-b border-luna-warm-gray/50 px-0 py-3 text-black font-medium text-[17px] placeholder:text-gray-400 placeholder:font-light focus:outline-none focus:border-luna-accent focus:ring-0 transition-colors duration-300;
+    @apply w-full bg-transparent border-0 border-b border-luna-warm-gray/50 px-0 py-3 text-black font-medium text-base placeholder:text-gray-400 placeholder:font-light focus:outline-none focus:border-luna-accent focus:ring-0 transition-colors duration-300;
   }
 
   .input-label {
-    @apply text-[13px] uppercase tracking-[0.12em] font-bold text-black mb-1.5 block;
+    @apply text-xs uppercase tracking-wider font-bold text-black mb-2 block;
   }
 }
 

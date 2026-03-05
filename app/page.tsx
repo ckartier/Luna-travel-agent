@@ -887,8 +887,8 @@ function DashboardPage() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-[15px] tracking-tight text-black">{meta.title}</h3>
-                        <p className={`text-xs mt-0.5 font-semibold ${isValidated ? 'text-emerald-600' : canValidate ? 'text-sky-600' : 'text-gray-500'}`}>
+                        <h3 className="font-bold text-[16px] tracking-normal text-black">{meta.title}</h3>
+                        <p className={`text-[13px] mt-0.5 font-semibold ${isValidated ? 'text-emerald-600' : canValidate ? 'text-sky-600' : 'text-gray-700'}`}>
                           {isValidated ? '✓ Validé' : canValidate ? '● Résultats prêts' : meta.subtitle}
                         </p>
                       </div>
@@ -908,7 +908,7 @@ function DashboardPage() {
                     </div>
 
                     {/* Description text */}
-                    <p className="text-[11px] text-gray-600 leading-relaxed mt-2 pl-[60px] font-medium">{meta.desc}</p>
+                    <p className="text-xs text-gray-900 leading-relaxed mt-2 pl-[60px] font-medium">{meta.desc}</p>
 
                     {/* Progress bar */}
                     {!isValidated && isActive && (
