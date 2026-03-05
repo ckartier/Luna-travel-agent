@@ -16,8 +16,9 @@ export async function GET(request: Request) {
             return NextResponse.json(emailContent);
         }
 
-        // Default: list emails
-        const emails = await listEmails(query);
+        // Default: list inbox emails only (from lunaconcierge@gmail.com)
+        const inboxQuery = query ? `in:inbox ${query}` : 'in:inbox';
+        const emails = await listEmails(inboxQuery);
         return NextResponse.json({ emails });
     } catch (error: any) {
         console.error('API /gmail/list error:', error);

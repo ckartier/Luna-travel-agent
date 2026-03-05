@@ -1,8 +1,6 @@
 'use client';
 
-import { MapBackground } from '@/app/components/map/MapBackground';
-import type { LeafletMapHandle } from '@/app/components/map/LeafletMap';
-import { MAP_STYLES } from '@/app/components/map/LeafletMap';
+import { CapsuleBackground } from '@/app/components/CapsuleBackground';
 import { WeatherWidget } from '@/src/components/widgets/WeatherWidget';
 import { useAuth } from '@/src/contexts/AuthContext';
 import {
@@ -71,8 +69,6 @@ function DashboardPage() {
   const [selectedAgent, setSelectedAgent] = useState<AgentKey | null>(null);
   const [activeAgents, setActiveAgents] = useState<AgentKey[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<LeafletMapHandle>(null);
-  const [activeMapStyle, setActiveMapStyle] = useState('light-v11');
   const router = useRouter();
   const [isExporting, setIsExporting] = useState(false);
   const { user, userProfile, tenantId } = useAuth();
@@ -311,39 +307,7 @@ function DashboardPage() {
 
   return (
     <div ref={containerRef} className="relative w-full min-h-screen flex flex-col overflow-hidden">
-      <MapBackground ref={mapRef} />
-
-      {/* ═══ MAP CONTROLS — z-50 above form overlay ═══ */}
-      <div className="absolute bottom-5 right-5 z-50 pointer-events-auto flex flex-col items-end gap-3">
-        {/* Zoom buttons */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-xl shadow-lg border border-luna-warm-gray/15 flex flex-col overflow-hidden">
-          <button
-            onClick={() => mapRef.current?.zoomIn()}
-            className="w-9 h-9 flex items-center justify-center text-luna-charcoal hover:bg-luna-cream transition-colors text-base cursor-pointer select-none"
-          >+</button>
-          <div className="h-px bg-luna-warm-gray/20 mx-1" />
-          <button
-            onClick={() => mapRef.current?.zoomOut()}
-            className="w-9 h-9 flex items-center justify-center text-luna-charcoal hover:bg-luna-cream transition-colors text-base cursor-pointer select-none"
-          >−</button>
-        </div>
-
-        {/* Style selector */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-xl p-1.5 border border-luna-warm-gray/15 shadow-lg flex flex-col gap-1">
-          {MAP_STYLES.map(s => (
-            <button
-              key={s.id}
-              onClick={() => {
-                setActiveMapStyle(s.id);
-                mapRef.current?.setMapStyle(s.id);
-              }}
-              title={s.label}
-              className={`w-6 h-6 rounded-lg cursor-pointer transition-all duration-200 ${activeMapStyle === s.id ? 'ring-2 ring-luna-accent ring-offset-1 scale-110' : 'opacity-50 hover:opacity-100 hover:scale-110'}`}
-              style={{ backgroundColor: s.color }}
-            />
-          ))}
-        </div>
-      </div>
+      <CapsuleBackground />
 
       {/* Weather Widgets (real API) */}
       <div className="absolute top-16 right-3 md:top-20 md:right-5 z-40 w-[220px] md:w-[260px] hidden md:block">
