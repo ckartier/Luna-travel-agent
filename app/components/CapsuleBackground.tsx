@@ -3,85 +3,71 @@
 import { useMemo } from 'react';
 
 /**
- * CapsuleBackground — pixel-perfect replica of reference image.
- *
- * Layout from reference:
- * - LEFT: 3 tall pills packed tight
- * - RIGHT: 3 tall pills packed tight
- * - TOP: 4 half-circles peeking down between the pill groups
- * - BOTTOM: 6 half-circles peeking up across the full width
- * - CENTER: clear for content
- * - All shapes opaque, soft light blue tones
+ * CapsuleBackground — Precise replica of the reference 7-column grid layout.
+ * Columns: 0%, 16.6%, 33.3%, 50%, 66.6%, 83.3%, 100%.
+ * Width of shapes: slightly more than 16.66vw so they touch with zero gaps.
  */
 
 interface Shape {
-    id: number;
-    x: number;      // % left
-    y: number;      // % top (can be negative for half-hidden shapes)
-    w: number;      // vw
-    h: number;      // vh (or vw for circles)
-    rx: string;     // border-radius
+    id: string;
+    col: number;    // 0 to 6
+    type: 'top' | 'bottom' | 'circle';
+    heightVh?: number; // for top/bottom
+    sizeVw?: number;   // for circle
+    yPosVh?: number;   // fixed pos for circle
     color: string;
-    dur: number;    // animation duration
-    del: number;    // animation delay
-    dist: number;   // translateY distance
+    dur: number;
+    del: number;
+    dist: number;
 }
 
-const B1 = 'hsl(208, 52%, 87%)';  // lightest
-const B2 = 'hsl(208, 48%, 84%)';  // light
-const B3 = 'hsl(210, 45%, 81%)';  // medium
-const B4 = 'hsl(210, 42%, 79%)';  // slightly deeper
+const C1 = '#e4eff7'; // lighter blue
+const C2 = '#c6e0f2'; // darker blue
+const W = 16.8; // 16.666 + slight overlap
 
-function r(min: number, max: number) { return min + Math.random() * (max - min); }
+function rDur() { return 6 + Math.random() * 8; }
+function rDel() { return Math.random() * -10; }
+function rDist() { return 10 + Math.random() * 20; }
 
-function createShapes(): Shape[] {
-    let id = 0;
-    const s: Omit<Shape, 'id'>[] = [
+function createGrid(): Shape[] {
+    const s: Shape[] = [];
+    const add = (def: Omit<Shape, 'id' | 'dur' | 'del' | 'dist'>) => {
+        s.push({ ...def, id: `s-${s.length}`, dur: rDur(), del: rDel(), dist: rDist() });
+    };
 
-        // ════════════ LEFT GROUP — 3 tall pills ════════════
-        // Pill 1: far-left edge
-        { x: -1, y: 5, w: 8, h: 75, rx: '9999px', color: B3, dur: r(7, 12), del: r(-8, 0), dist: r(10, 20) },
-        // Pill 2: overlapping pill 1
-        { x: 7, y: -2, w: 8, h: 65, rx: '9999px', color: B1, dur: r(7, 12), del: r(-8, 0), dist: r(10, 20) },
-        // Pill 3
-        { x: 14, y: 5, w: 7, h: 55, rx: '9999px', color: B2, dur: r(7, 12), del: r(-8, 0), dist: r(10, 20) },
-        // Circle bottom-left
-        { x: 2, y: 72, w: 13, h: 13, rx: '50%', color: B1, dur: r(7, 12), del: r(-8, 0), dist: r(10, 18) },
-        // Circle bottom-left #2
-        { x: 13, y: 70, w: 12, h: 12, rx: '50%', color: B2, dur: r(7, 12), del: r(-8, 0), dist: r(10, 18) },
+    // Col 0 (left edge)
+    add({ col: 0, type: 'top', heightVh: 82, color: C2 });
+    add({ col: 0, type: 'bottom', heightVh: 45, color: C1 });
 
-        // ════════════ TOP — 4 half-circles peeking from top edge ════════════
-        { x: 26, y: -7, w: 14, h: 14, rx: '50%', color: B2, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
-        { x: 40, y: -8, w: 13, h: 13, rx: '50%', color: B1, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
-        { x: 53, y: -7, w: 12, h: 12, rx: '50%', color: B3, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
-        { x: 66, y: -8, w: 14, h: 14, rx: '50%', color: B2, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
+    // Col 1
+    add({ col: 1, type: 'top', heightVh: 88, color: C1 });
+    add({ col: 1, type: 'bottom', heightVh: 40, color: C2 });
 
-        // ════════════ RIGHT GROUP — 3 tall pills ════════════
-        // Pill right 1
-        { x: 79, y: 5, w: 7, h: 55, rx: '9999px', color: B2, dur: r(7, 12), del: r(-8, 0), dist: r(10, 20) },
-        // Pill right 2
-        { x: 86, y: -2, w: 8, h: 70, rx: '9999px', color: B1, dur: r(7, 12), del: r(-8, 0), dist: r(10, 20) },
-        // Pill right 3: far-right edge
-        { x: 93, y: 5, w: 8, h: 75, rx: '9999px', color: B3, dur: r(7, 12), del: r(-8, 0), dist: r(10, 20) },
-        // Circle bottom-right
-        { x: 82, y: 70, w: 12, h: 12, rx: '50%', color: B1, dur: r(7, 12), del: r(-8, 0), dist: r(10, 18) },
-        // Circle bottom-right #2
-        { x: 92, y: 72, w: 11, h: 11, rx: '50%', color: B2, dur: r(7, 12), del: r(-8, 0), dist: r(10, 18) },
+    // Col 2
+    add({ col: 2, type: 'top', heightVh: 52, color: C2 });
+    add({ col: 2, type: 'bottom', heightVh: 88, color: C1 });
 
-        // ════════════ BOTTOM — 6 half-circles peeking from bottom ════════════
-        { x: 3, y: 85, w: 14, h: 14, rx: '50%', color: B2, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
-        { x: 18, y: 83, w: 15, h: 15, rx: '50%', color: B1, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
-        { x: 34, y: 85, w: 14, h: 14, rx: '50%', color: B3, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
-        { x: 50, y: 84, w: 14, h: 14, rx: '50%', color: B2, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
-        { x: 66, y: 85, w: 13, h: 13, rx: '50%', color: B1, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
-        { x: 82, y: 84, w: 14, h: 14, rx: '50%', color: B3, dur: r(7, 12), del: r(-8, 0), dist: r(8, 15) },
-    ];
+    // Col 3 (Center)
+    add({ col: 3, type: 'circle', sizeVw: W, yPosVh: 3, color: C1 });
+    add({ col: 3, type: 'bottom', heightVh: 35, color: C2 });
 
-    return s.map(shape => ({ ...shape, id: id++ }));
+    // Col 4
+    add({ col: 4, type: 'top', heightVh: 52, color: C2 });
+    add({ col: 4, type: 'bottom', heightVh: 88, color: C1 });
+
+    // Col 5
+    add({ col: 5, type: 'top', heightVh: 88, color: C1 });
+    add({ col: 5, type: 'bottom', heightVh: 40, color: C2 });
+
+    // Col 6 (right edge)
+    add({ col: 6, type: 'top', heightVh: 55, color: C2 });
+    add({ col: 6, type: 'bottom', heightVh: 85, color: C1 });
+
+    return s;
 }
 
 export function CapsuleBackground() {
-    const shapes = useMemo(() => createShapes(), []);
+    const shapes = useMemo(() => createGrid(), []);
 
     return (
         <>
@@ -93,25 +79,56 @@ export function CapsuleBackground() {
             `}</style>
 
             <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
-                <div className="absolute inset-0 bg-[#f5f2ed]" />
+                <div className="absolute inset-0 bg-[#f9fafb]" />
 
-                {shapes.map(s => (
-                    <div
-                        key={s.id}
-                        style={{
-                            position: 'absolute',
-                            left: `${s.x}%`,
-                            top: `${s.y}%`,
-                            width: `${s.w}vw`,
-                            height: s.rx === '50%' ? `${s.h}vw` : `${s.h}vh`,
-                            borderRadius: s.rx,
-                            backgroundColor: s.color,
-                            animation: `cf ${s.dur}s ease-in-out ${s.del}s infinite`,
-                            willChange: 'transform',
-                            ['--d' as string]: `${s.dist}px`,
-                        }}
-                    />
-                ))}
+                {shapes.map(s => {
+                    const left = (100 / 6) * s.col;
+
+                    if (s.type === 'circle') {
+                        return (
+                            <div
+                                key={s.id}
+                                style={{
+                                    position: 'absolute',
+                                    left: `${left}%`,
+                                    top: `${s.yPosVh}vh`,
+                                    width: `${s.sizeVw}vw`,
+                                    height: `${s.sizeVw}vw`,
+                                    borderRadius: '50%',
+                                    backgroundColor: s.color,
+                                    transform: 'translateX(-50%)',
+                                    animation: `cf ${s.dur}s ease-in-out ${s.del}s infinite`,
+                                    willChange: 'transform',
+                                    ['--d' as string]: `${s.dist}px`,
+                                }}
+                            />
+                        );
+                    }
+
+                    const isTop = s.type === 'top';
+                    return (
+                        <div
+                            key={s.id}
+                            style={{
+                                position: 'absolute',
+                                left: `${left}%`,
+                                [isTop ? 'top' : 'bottom']: '-20vh',
+                                width: `${W}vw`,
+                                height: `${s.heightVh}vh`,
+                                borderRadius: '9999px',
+                                backgroundColor: s.color,
+                                transform: 'translateX(-50%)',
+                                animation: `cf ${s.dur}s ease-in-out ${s.del}s infinite`,
+                                willChange: 'transform',
+                                ['--d' as string]: `${isTop ? s.dist : -s.dist}px`,
+                            }}
+                        />
+                    );
+                })}
+
+                {/* Optional faint content fade to ensure text readability if needed */}
+                <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/40 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white/40 to-transparent" />
             </div>
         </>
     );
