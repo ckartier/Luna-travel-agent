@@ -36,8 +36,7 @@ export default function LandingPage() {
             <nav className="fixed top-0 w-full z-50 backdrop-blur-xl bg-[#faf8f5]/80 border-b border-luna-warm-gray/10">
                 <div className="max-w-7xl mx-auto flex items-center justify-between px-6 md:px-12 py-4">
                     <Link href="/landing" className="flex items-center gap-3">
-                        <LunaLogo size={32} />
-                        <span className="font-serif text-xl font-semibold text-luna-charcoal">Luna</span>
+                        <LunaLogo size={28} />
                     </Link>
                     <div className="hidden md:flex items-center gap-8 text-sm text-luna-text-muted font-medium">
                         <a href="#features" className="hover:text-luna-charcoal transition-colors">Fonctionnalités</a>
@@ -287,8 +286,7 @@ export default function LandingPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
                         <div>
                             <div className="flex items-center gap-2 mb-4">
-                                <LunaLogo size={24} />
-                                <span className="font-serif text-lg font-semibold text-luna-charcoal">Luna</span>
+                                <LunaLogo size={20} />
                             </div>
                             <p className="text-xs text-luna-text-muted leading-relaxed">La plateforme IA B2B pour les professionnels du voyage.</p>
                         </div>

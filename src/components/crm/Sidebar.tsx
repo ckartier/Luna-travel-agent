@@ -180,6 +180,10 @@ export function CRMSidebar() {
                     <ArrowLeft size={16} strokeWidth={1.5} />
                     Orchestrateur
                 </Link>
+                {/* Luna logo — footer branding */}
+                <div className="flex justify-center pt-4 pb-2 opacity-40">
+                    <LunaLogo size={16} />
+                </div>
             </div>
         </>
     );

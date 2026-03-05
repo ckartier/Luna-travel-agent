@@ -98,8 +98,7 @@ export default function PricingPage() {
             {/* Navbar */}
             <nav className="flex items-center justify-between px-6 md:px-12 py-5 max-w-7xl mx-auto">
                 <Link href="/" className="flex items-center gap-3">
-                    <LunaLogo size={32} />
-                    <span className="font-serif text-xl font-semibold text-luna-charcoal">Luna</span>
+                    <LunaLogo size={28} />
                 </Link>
                 <div className="flex items-center gap-6">
                     <Link href="/cgv" className="text-sm text-luna-text-muted hover:text-luna-charcoal transition-colors font-medium">CGV</Link>
