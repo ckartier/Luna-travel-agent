@@ -308,9 +308,13 @@ function DashboardPage() {
 
   return (
     <div ref={containerRef} className="relative w-full min-h-screen flex flex-col overflow-hidden">
-      {/* Background — Capsule animation: blue (idle/done), orange (processing) */}
+      {/* Background — Capsule anim idle, clean #F7F8FA during processing */}
       <div className="absolute inset-0 z-0">
-        <CapsuleBackground colorScheme={isProcessing ? 'orange' : 'blue'} />
+        {isProcessing ? (
+          <div className="absolute inset-0" style={{ backgroundColor: '#F7F8FA' }} />
+        ) : (
+          <CapsuleBackground colorScheme="blue" />
+        )}
       </div>
 
       {/* Weather Widgets (real API) */}
@@ -325,51 +329,56 @@ function DashboardPage() {
 
 
 
-      {/* ═══ WIRE LINES ═══ */}
+      {/* ═══ PROCESSING: HORIZONTAL AGENT LINE — Apple/OpenAI Style ═══ */}
       {isProcessing && (
         <>
           <style>{`
-            @keyframes floatAgent { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-            @keyframes capsuleLoad {
-              0% { transform: translateY(100%); }
-              100% { transform: translateY(0%); }
+            @keyframes agentFloat {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-8px); }
             }
-            @keyframes capsulePulse {
-              0%,100% { opacity: 0.4; }
-              50% { opacity: 0.8; }
+            @keyframes superFloat {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-5px); }
+            }
+            @keyframes linePulse {
+              0%, 100% { opacity: 0.2; }
+              50% { opacity: 0.35; }
             }
           `}</style>
 
-          {/* SVG wire paths — 1px lines */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none z-14" viewBox="0 0 100 100" preserveAspectRatio="none">
-            {(['transport', 'accommodation', 'client', 'itinerary'] as AgentKey[]).map((agent, i) => {
-              const isActive = activeAgents.includes(agent);
-              const isValidated = validatedAgents.includes(agent);
-              if (!isActive) return null;
-
-              const wireColor = isValidated ? '#10b981' : '#0ea5e9';
-
-              // 2 left, 2 right layout
-              const curvePaths = [
-                'M 50 50 C 36 38, 22 32, 14 35',  // top-left
-                'M 50 50 C 36 62, 22 68, 14 65',  // bottom-left
-                'M 50 50 C 64 38, 78 32, 86 35',  // top-right
-                'M 50 50 C 64 62, 78 68, 86 65',  // bottom-right
-              ];
-              const pathD = curvePaths[i];
-
-              return (
-                <motion.path
-                  key={agent}
-                  d={pathD} fill="none" stroke={wireColor}
-                  strokeWidth="0.12" strokeLinecap="round"
-                  initial={{ opacity: 0, pathLength: 0 }}
-                  animate={{ opacity: isValidated ? 0.7 : 0.9, pathLength: 1 }}
-                  transition={{ duration: 0.8, delay: 0.8 + i * 0.15, ease: 'easeOut' }}
-                />
-              );
-            })}
-          </svg>
+          {/* Horizontal connection line — runs behind agents */}
+          <div className="absolute top-[50%] left-0 right-0 z-10 pointer-events-none" style={{ transform: 'translateY(-50%)' }}>
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 1.2, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="mx-auto"
+              style={{
+                width: '80%',
+                height: '1px',
+                background: 'rgba(47,128,237,0.25)',
+                transformOrigin: 'center',
+                animation: 'linePulse 6s ease-in-out infinite',
+              }}
+            />
+            {/* Connection nodes (dots) at each agent position */}
+            {[10, 27.5, 50, 72.5, 90].map((pct, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6 + i * 0.1, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute rounded-full"
+                style={{
+                  width: '6px', height: '6px',
+                  backgroundColor: 'rgba(47,128,237,0.3)',
+                  top: '50%', left: `${pct}%`,
+                  transform: 'translate(-50%,-50%)',
+                }}
+              />
+            ))}
+          </div>
         </>
       )}
 
@@ -615,56 +624,151 @@ function DashboardPage() {
               </motion.div>
             )}
 
-            {/* ═══ PROCESSING: SUPER AGENT — VERTICAL CAPSULE ═══ */}
+            {/* ═══ PROCESSING: HORIZONTAL NODE ROW — Apple/OpenAI ═══ */}
             {isProcessing && (
               <motion.div
                 key="processing"
-                initial={{ opacity: 0, scale: 0.6, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.6, y: 20 }}
-                transition={{ type: 'spring', stiffness: 160, damping: 20 }}
-                className="relative z-30"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 30 }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                className="flex items-center justify-center gap-6 md:gap-8 relative z-20"
               >
-                <div
-                  className="relative flex flex-col items-center justify-center"
-                  style={{
-                    width: '220px',
-                    minHeight: '300px',
-                    borderRadius: '110px',
-                    background: '#d5eaf3',
-                    border: '1.5px solid #8bbdd4',
-                    boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
-                    padding: '40px 30px',
-                  }}
-                >
-                  <div className="flex flex-col items-center text-center">
-                    <div className="w-14 h-14 rounded-full bg-[#0ea5e9] flex items-center justify-center mb-5 shadow-md">
-                      <Sparkles size={24} className="text-white" />
-                    </div>
+                {/* We render all 5 nodes in order: Transport, Accommodation, SuperAgent, Itinerary, Client */}
+                {(['transport', 'accommodation', 'super', 'itinerary', 'client'] as const).map((nodeKey, i) => {
+                  const isSuper = nodeKey === 'super';
 
-                    <h3 className="text-xl font-extrabold text-gray-900 tracking-tight leading-tight">Super Agent</h3>
-                    <p className="text-xs text-gray-600 font-bold mt-1.5 mb-5 uppercase tracking-[0.2em]">Orchestration IA</p>
+                  if (isSuper) {
+                    // ── SUPER AGENT (hero) ──
+                    return (
+                      <motion.div
+                        key="super-agent"
+                        initial={{ opacity: 0, scale: 0.7 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.15, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                        style={{ animation: 'superFloat 12s cubic-bezier(0.22,1,0.36,1) infinite' }}
+                      >
+                        <div
+                          className="relative flex flex-col items-center justify-center text-center"
+                          style={{
+                            width: '200px',
+                            minHeight: '240px',
+                            borderRadius: '28px',
+                            background: '#FFFFFF',
+                            border: '1px solid rgba(47,128,237,0.20)',
+                            boxShadow: '0 0 0 6px rgba(47,128,237,0.10), 0 10px 30px rgba(16,24,40,0.06)',
+                            padding: '28px 20px',
+                          }}
+                        >
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center mb-4" style={{ background: '#F2F4F7' }}>
+                            <Sparkles size={20} strokeWidth={1.75} style={{ color: '#2F80ED' }} />
+                          </div>
 
-                    <div className="flex items-center gap-2 mb-5">
-                      <span className="relative flex h-2.5 w-2.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 bg-[#0ea5e9]"></span>
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#0ea5e9]"></span>
-                      </span>
-                      <span className="text-[13px] text-gray-800 font-bold">
-                        {workflowState === 'ANALYSING' && 'Analyse en cours...'}
-                        {workflowState === 'DISTRIBUTING' && 'Distribution...'}
-                        {workflowState === 'AGENTS_WORKING' && 'Recherche parallèle...'}
-                        {workflowState === 'VALIDATION' && `${validatedAgents.length}/4 validés`}
-                        {workflowState === 'GENERATING_PROPOSALS' && 'Finalisation...'}
-                      </span>
-                    </div>
+                          <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#0B1220', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+                            Super Agent
+                          </h3>
+                          <p style={{ fontSize: '12px', fontWeight: 500, color: '#667085', marginTop: '4px' }}>
+                            Orchestration IA
+                          </p>
 
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-full bg-white text-[11px] font-bold text-sky-700 uppercase tracking-wider">4 Agents</span>
-                      <span className="px-3 py-1 rounded-full bg-white text-[11px] font-bold text-sky-700 uppercase tracking-wider">{activeAgents.length} Actifs</span>
-                    </div>
-                  </div>
-                </div>
+                          <div className="flex items-center gap-2 mt-4">
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-50" style={{ background: '#2F80ED' }} />
+                              <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#2F80ED' }} />
+                            </span>
+                            <span style={{ fontSize: '12px', fontWeight: 500, color: '#0B1220' }}>
+                              {workflowState === 'ANALYSING' && 'Analyse en cours…'}
+                              {workflowState === 'DISTRIBUTING' && 'Distribution…'}
+                              {workflowState === 'AGENTS_WORKING' && 'Recherche parallèle…'}
+                              {workflowState === 'VALIDATION' && `${validatedAgents.length}/4 validés`}
+                              {workflowState === 'GENERATING_PROPOSALS' && 'Finalisation…'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 mt-4">
+                            <span style={{ fontSize: '11px', fontWeight: 600, color: '#2F80ED', background: 'rgba(47,128,237,0.08)', padding: '3px 10px', borderRadius: '12px' }}>
+                              4 Agents
+                            </span>
+                            <span style={{ fontSize: '11px', fontWeight: 600, color: '#2F80ED', background: 'rgba(47,128,237,0.08)', padding: '3px 10px', borderRadius: '12px' }}>
+                              {activeAgents.length} Actifs
+                            </span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  }
+
+                  // ── SATELLITE AGENT ──
+                  const agentKey = nodeKey as AgentKey;
+                  const meta = agentMeta[agentKey];
+                  const Icon = meta.icon;
+                  const isActive = activeAgents.includes(agentKey);
+                  const isValidated = validatedAgents.includes(agentKey);
+                  const canValidate = workflowState === 'VALIDATION' && !isValidated && agentResults;
+                  const floatDur = 8 + Math.random() * 6; // 8-14s
+
+                  return (
+                    <motion.div
+                      key={agentKey}
+                      initial={{ opacity: 0, scale: 0.6, y: 20 }}
+                      animate={{ opacity: isActive ? 1 : 0.3, scale: isActive ? 1 : 0.9, y: 0 }}
+                      transition={{ delay: 0.3 + i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                      className={`${canValidate ? 'cursor-pointer' : ''}`}
+                      onClick={() => canValidate && setSelectedAgent(agentKey)}
+                      style={{ animation: isActive && !isValidated ? `agentFloat ${floatDur}s cubic-bezier(0.22,1,0.36,1) infinite` : undefined }}
+                    >
+                      <div
+                        className="relative flex flex-col items-center justify-center text-center transition-shadow duration-300"
+                        style={{
+                          width: '160px',
+                          minHeight: '195px',
+                          borderRadius: '28px',
+                          background: '#FFFFFF',
+                          border: isValidated ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(16,24,40,0.08)',
+                          boxShadow: isValidated
+                            ? '0 0 0 4px rgba(16,185,129,0.10), 0 10px 30px rgba(16,185,129,0.08)'
+                            : '0 10px 30px rgba(16,24,40,0.06)',
+                          padding: '22px 16px',
+                        }}
+                      >
+                        {/* Status badge */}
+                        <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-10">
+                          {isValidated ? (
+                            <motion.div
+                              initial={{ scale: 0 }} animate={{ scale: 1 }}
+                              transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                              className="rounded-full p-0.5" style={{ background: '#FFFFFF', boxShadow: '0 2px 8px rgba(16,185,129,0.2)' }}
+                            >
+                              <CheckCircle2 size={16} style={{ color: '#10b981' }} />
+                            </motion.div>
+                          ) : canValidate ? (
+                            <div className="w-3 h-3 rounded-full animate-pulse" style={{ background: '#F59E0B', boxShadow: '0 0 8px rgba(245,158,11,0.4)' }} />
+                          ) : isActive ? (
+                            <Loader2 size={14} className="animate-spin" style={{ color: '#667085' }} />
+                          ) : null}
+                        </div>
+
+                        {/* Icon badge */}
+                        <div
+                          className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mb-3"
+                          style={{ background: '#F2F4F7' }}
+                        >
+                          <Icon size={18} strokeWidth={1.75} style={{ color: isValidated ? '#10b981' : '#2F80ED' }} />
+                        </div>
+
+                        <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#0B1220', letterSpacing: '-0.02em', lineHeight: 1.3 }}>
+                          {meta.title}
+                        </h3>
+                        <p style={{ fontSize: '12px', fontWeight: 500, color: '#667085', marginTop: '2px' }}>
+                          {meta.subtitle}
+                        </p>
+                        <p style={{ fontSize: '12px', color: '#667085', opacity: 0.7, marginTop: '8px', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>
+                          {meta.desc}
+                        </p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </motion.div>
             )}
 
@@ -726,150 +830,6 @@ function DashboardPage() {
             )}
           </AnimatePresence>
         </div>
-
-        {/* ═══ SATELLITE AGENTS — EMERGE FROM SUPER AGENT, 2 LEFT + 2 RIGHT ═══ */}
-        <AnimatePresence>
-          {isProcessing && (['transport', 'accommodation', 'client', 'itinerary'] as AgentKey[]).map((agentKey, i) => {
-            const meta = agentMeta[agentKey];
-            const Icon = meta.icon;
-            const isActive = activeAgents.includes(agentKey);
-            const isValidated = validatedAgents.includes(agentKey);
-            const canValidate = workflowState === 'VALIDATION' && !isValidated && agentResults;
-
-            // 2 left, 2 right positions
-            const finalPositions = [
-              { top: '30%', left: '12%' },   // top-left: Transport
-              { top: '70%', left: '12%' },   // bottom-left: Accommodation
-              { top: '30%', left: '88%' },   // top-right: Client
-              { top: '70%', left: '88%' },   // bottom-right: Itinerary
-            ];
-            const pos = finalPositions[i];
-
-            return (
-              <motion.div
-                key={agentKey}
-                initial={{ opacity: 0, scale: 0.2, top: '50%', left: '50%' }}
-                animate={{
-                  opacity: isActive ? 1 : 0,
-                  scale: isActive ? 1 : 0.2,
-                  top: isActive ? pos.top : '50%',
-                  left: isActive ? pos.left : '50%',
-                }}
-                exit={{ opacity: 0, scale: 0.2, top: '50%', left: '50%' }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 120,
-                  damping: 18,
-                  delay: isActive ? 0.3 + i * 0.12 : 0,
-                }}
-                className="absolute z-20 pointer-events-auto"
-                style={{
-                  transform: 'translate(-50%, -50%)',
-                  animation: isActive && !isValidated ? 'floatAgent 3s ease-in-out infinite' : undefined,
-                }}
-                onClick={() => canValidate && setSelectedAgent(agentKey)}
-              >
-                <motion.div
-                  whileHover={canValidate ? { scale: 1.05, y: -4 } : {}}
-                  className={`relative ${canValidate ? 'cursor-pointer' : ''} transition-all overflow-hidden`}
-                  style={{
-                    width: '160px',
-                    minHeight: '210px',
-                    borderRadius: '80px',
-                    background: isValidated ? '#d4f0e0' : '#d5eaf3',
-                    border: isValidated ? '1.5px solid #10b981' : '1.5px solid #8bbdd4',
-                    boxShadow: isValidated
-                      ? '0 0 25px rgba(16,185,129,0.4), 0 0 60px rgba(16,185,129,0.15), 0 6px 25px rgba(0,0,0,0.06)'
-                      : '0 6px 25px rgba(0,0,0,0.06)',
-                    padding: '24px 18px',
-                    display: 'flex',
-                    flexDirection: 'column' as const,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {/* Internal capsule loading bar */}
-                  {!isValidated && isActive && (
-                    <div
-                      className="absolute bottom-0 left-1/2 -translate-x-1/2 pointer-events-none"
-                      style={{
-                        width: '40px',
-                        height: '80px',
-                        borderRadius: '20px',
-                        background: 'rgba(14,165,233,0.08)',
-                        overflow: 'hidden',
-                        bottom: '20px',
-                      }}
-                    >
-                      <motion.div
-                        style={{
-                          width: '100%',
-                          borderRadius: '20px',
-                          background: 'linear-gradient(180deg, rgba(14,165,233,0.3), rgba(14,165,233,0.1))',
-                        }}
-                        initial={{ height: '0%' }}
-                        animate={{ height: canValidate ? '100%' : '60%' }}
-                        transition={{ duration: canValidate ? 0.5 : 6, ease: 'easeOut' }}
-                        className="absolute bottom-0"
-                      />
-                      <div
-                        className="absolute inset-0"
-                        style={{ animation: 'capsulePulse 2s ease-in-out infinite' }}
-                      />
-                    </div>
-                  )}
-
-                  {/* Validated glow */}
-                  {isValidated && (
-                    <motion.div
-                      className="absolute inset-0 rounded-[80px] pointer-events-none"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: [0, 0.8, 0.3] }}
-                      transition={{ duration: 1.2, ease: 'easeOut' }}
-                      style={{
-                        boxShadow: '0 0 30px rgba(16,185,129,0.5), 0 0 80px rgba(16,185,129,0.2), inset 0 0 20px rgba(16,185,129,0.1)',
-                      }}
-                    />
-                  )}
-
-                  {/* Status indicator */}
-                  <div className="absolute top-4 right-1/2 translate-x-1/2 z-10">
-                    {isValidated ? (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.3 }}
-                      >
-                        <CheckCircle2 size={16} className="text-emerald-600" />
-                      </motion.div>
-                    ) : canValidate ? (
-                      <div className="w-3 h-3 rounded-full bg-orange-400 animate-pulse" />
-                    ) : isActive ? (
-                      <Loader2 size={12} className="text-[#5a9ab5] animate-spin" />
-                    ) : null}
-                  </div>
-
-                  {/* Icon circle */}
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mb-2 mt-1 relative z-10"
-                    style={{
-                      background: isValidated ? '#10b981' : '#fb923c',
-                      boxShadow: isValidated ? '0 3px 12px rgba(16,185,129,0.35)' : '0 3px 8px rgba(0,0,0,0.1)',
-                    }}
-                  >
-                    <Icon size={18} className="text-white" />
-                  </div>
-
-                  <h3 className="font-extrabold text-[13px] text-gray-900 leading-tight text-center relative z-10">{meta.title}</h3>
-                  <p className="text-[10px] font-semibold text-gray-500 mt-0.5 text-center relative z-10">{meta.subtitle}</p>
-                  <p className="text-[9px] text-gray-500 leading-snug mt-2 text-center relative z-10 line-clamp-3">
-                    {meta.desc}
-                  </p>
-                </motion.div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
       </div>
 
       {/* ═══ AGENT VALIDATION MODAL — PREMIUM ═══ */}
