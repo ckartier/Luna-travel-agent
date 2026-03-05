@@ -707,7 +707,7 @@ function DashboardPage() {
                   transition={{ delay: 0.4, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                   className="flex justify-center relative z-10"
                 >
-                  <button type="submit" form="voyage-form" className="btn-primary btn-lg w-[85%] -mt-7 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.28)] text-sm tracking-[0.15em] uppercase group py-4 rounded-2xl">
+                  <button type="submit" form="voyage-form" className="w-[85%] -mt-7 text-sm tracking-[0.15em] uppercase group py-4 rounded-2xl font-semibold text-gray-900 transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97] cursor-pointer inline-flex items-center justify-center gap-2" style={{ background: '#ffffff', border: '3px solid #c6e0f2', boxShadow: '0 8px 30px rgba(0,0,0,0.1)' }}>
                     <span>Créer le Voyage</span>
                     <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                   </button>

@@ -26,9 +26,9 @@ const C1 = '#e4eff7'; // lighter blue
 const C2 = '#c6e0f2'; // darker blue
 const W = 16.8; // 16.666 + slight overlap
 
-function rDur() { return 10 + Math.random() * 14; }  // 30% faster: 10 to 24 seconds
-function rDel() { return Math.random() * -14; }
-function rDist() { return 20 + Math.random() * 33; }  // 30% more distance
+function rDur() { return 5 + Math.random() * 7; }   // 2x faster: 5 to 12 seconds
+function rDel() { return Math.random() * -7; }
+function rDist() { return 40 + Math.random() * 66; }  // 2x more distance
 function rOpac() { return 0.4 + Math.random() * 0.5; }
 
 function createGrid(): Shape[] {
