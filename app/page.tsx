@@ -30,10 +30,10 @@ import { PdfExport } from '@/app/components/PdfExport';
 type WorkflowState = 'IDLE' | 'ANALYSING' | 'DISTRIBUTING' | 'AGENTS_WORKING' | 'VALIDATION' | 'GENERATING_PROPOSALS' | 'PROPOSALS_READY';
 
 const agentMeta = {
-  transport: { title: 'Transport', subtitle: 'Vols & Routings', desc: 'Recherche des meilleurs vols directs et avec escales, analyse tarifaire multi-compagnies', icon: Radio, angle: -90, color: '#e11d48', gradient: 'from-rose-600 to-red-500', pastelBg: 'bg-rose-50', pastelText: 'text-rose-600', pastelBorder: 'border-rose-100', pastelRing: 'ring-rose-200' },
-  accommodation: { title: 'Hébergement', subtitle: 'Hôtels & Resorts', desc: 'Sélection premium des établissements, vérification disponibilités et tarifs négociés', icon: Hotel, angle: 180, color: '#4f46e5', gradient: 'from-indigo-600 to-blue-500', pastelBg: 'bg-indigo-50', pastelText: 'text-indigo-600', pastelBorder: 'border-indigo-100', pastelRing: 'ring-indigo-200' },
-  client: { title: 'Profil Client', subtitle: 'CRM Analyse', desc: 'Analyse du profil voyageur, préférences historiques et recommandations personnalisées', icon: Users, angle: 0, color: '#0d9488', gradient: 'from-teal-600 to-cyan-500', pastelBg: 'bg-teal-50', pastelText: 'text-teal-600', pastelBorder: 'border-teal-100', pastelRing: 'ring-teal-200' },
-  itinerary: { title: 'Itinéraire', subtitle: 'Planning Jour/Jour', desc: 'Construction de l\'itinéraire optimisé, activités et transferts coordonnés', icon: CalendarRange, angle: 90, color: '#ea580c', gradient: 'from-orange-600 to-amber-500', pastelBg: 'bg-orange-50', pastelText: 'text-orange-600', pastelBorder: 'border-orange-100', pastelRing: 'ring-orange-200' },
+  transport: { title: 'Transport', subtitle: 'Vols & Routings', desc: 'Recherche des meilleurs vols directs et avec escales, analyse tarifaire multi-compagnies', icon: Radio, angle: -90, color: '#fb923c', gradient: 'from-orange-400 to-orange-300', pastelBg: 'bg-orange-50', pastelText: 'text-black', pastelBorder: 'border-orange-100', pastelRing: 'ring-orange-200' },
+  accommodation: { title: 'Hébergement', subtitle: 'Hôtels & Resorts', desc: 'Sélection premium des établissements, vérification disponibilités et tarifs négociés', icon: Hotel, angle: 180, color: '#fb923c', gradient: 'from-orange-400 to-orange-300', pastelBg: 'bg-orange-50', pastelText: 'text-black', pastelBorder: 'border-orange-100', pastelRing: 'ring-orange-200' },
+  client: { title: 'Profil Client', subtitle: 'CRM Analyse', desc: 'Analyse du profil voyageur, préférences historiques et recommandations personnalisées', icon: Users, angle: 0, color: '#fb923c', gradient: 'from-orange-400 to-orange-300', pastelBg: 'bg-orange-50', pastelText: 'text-black', pastelBorder: 'border-orange-100', pastelRing: 'ring-orange-200' },
+  itinerary: { title: 'Itinéraire', subtitle: 'Planning Jour/Jour', desc: 'Construction de l\'itinéraire optimisé, activités et transferts coordonnés', icon: CalendarRange, angle: 90, color: '#fb923c', gradient: 'from-orange-400 to-orange-300', pastelBg: 'bg-orange-50', pastelText: 'text-black', pastelBorder: 'border-orange-100', pastelRing: 'ring-orange-200' },
 };
 
 type AgentKey = keyof typeof agentMeta;
@@ -681,41 +681,57 @@ function DashboardPage() {
                 transition={{ type: 'spring', stiffness: 180, damping: 22 }}
                 className="relative z-30"
               >
-                {/* Outer animated gradient ring */}
+                {/* Outer pulsing ring — SKY BLUE */}
                 <motion.div
-                  className="absolute -inset-5 rounded-full opacity-30"
+                  className="absolute -inset-1 rounded-full bg-sky-400 opacity-20 blur-xl"
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                {/* Dashed rotating ring — SKY BLUE */}
+                <motion.div
+                  className="absolute inset-0 rounded-full border border-dashed border-sky-300 opacity-40"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+                />
+                <motion.div
+                  className="absolute inset-2 z-0 rounded-full border-2 border-dashed border-sky-200 opacity-30"
+                  animate={{ rotate: -360 }}
+                  transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                />
+                {/* Thin rotating line — SKY BLUE */}
+                <motion.div
+                  className="absolute -inset-4 z-0 rounded-full border-t outline-none"
                   style={{
-                    background: 'conic-gradient(from 0deg, #0ea5e9, #8b5cf6, #f59e0b, #10b981, #0ea5e9)',
-                    filter: 'blur(18px)',
+                    borderColor: 'rgba(56, 189, 248, 0.4)', // border-sky-400 equivalent
                   }}
                   animate={{ rotate: 360 }}
                   transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
                 />
-                {/* Spinning border ring — GOLD */}
+                {/* Spinning border ring — SKY BLUE */}
                 <motion.div
                   className="absolute -inset-1.5 rounded-full"
                   style={{
-                    background: 'conic-gradient(from 0deg, #f59e0b, #eab308, #d97706, #fbbf24, #f59e0b)',
+                    background: 'conic-gradient(from 0deg, #38bdf8, #7dd3fc, #0284c7, #bae6fd, #38bdf8)', // sky palette
                   }}
                   animate={{ rotate: 360 }}
                   transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
                 />
                 {/* Inner orb — LARGER */}
-                <div className="relative w-56 h-56 rounded-full bg-white/95 backdrop-blur-2xl flex flex-col items-center justify-center shadow-[0_8px_40px_rgba(245,158,11,0.15)] border border-amber-100/50">
-                  {/* Inner glow — warm gold */}
-                  <div className="absolute inset-4 rounded-full bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 opacity-60" />
+                <div className="relative w-56 h-56 rounded-full bg-white/95 backdrop-blur-2xl flex flex-col items-center justify-center shadow-[0_8px_40px_rgba(56,189,248,0.15)] border border-sky-100/50">
+                  {/* Inner glow — gentle sky blue */}
+                  <div className="absolute inset-4 rounded-full bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-50 opacity-60" />
                   <div className="relative z-10 flex flex-col items-center px-4">
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-400 flex items-center justify-center shadow-lg shadow-amber-200/50 mb-3">
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-sky-400 via-blue-500 to-sky-400 flex items-center justify-center shadow-lg shadow-sky-200/50 mb-3">
                       <Sparkles size={24} className="text-white" />
                     </div>
-                    <h3 className="font-serif text-base font-bold text-luna-charcoal tracking-wide">Super Agent</h3>
-                    <p className="text-[10px] text-luna-text-muted font-medium mt-0.5">Orchestration IA</p>
+                    <h3 className="font-serif text-lg font-bold text-black tracking-wide">Super Agent</h3>
+                    <p className="text-xs text-gray-700 font-semibold mt-0.5">Orchestration IA</p>
                     <div className="flex items-center gap-1.5 mt-2">
                       <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 bg-amber-400"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 bg-sky-400"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
                       </span>
-                      <span className="text-[11px] text-luna-text-muted font-semibold tracking-wide">
+                      <span className="text-xs text-black font-bold tracking-wide">
                         {workflowState === 'ANALYSING' && 'Analyse en cours…'}
                         {workflowState === 'DISTRIBUTING' && 'Distribution aux agents…'}
                         {workflowState === 'AGENTS_WORKING' && 'Recherche parallèle…'}
@@ -725,9 +741,9 @@ function DashboardPage() {
                     </div>
                     {/* Agent count info */}
                     <div className="flex items-center gap-3 mt-3">
-                      <span className="text-[9px] font-semibold text-sky-500 uppercase tracking-wider">4 Agents</span>
-                      <span className="h-2.5 w-px bg-luna-warm-gray/30" />
-                      <span className="text-[9px] font-semibold text-amber-500 uppercase tracking-wider">{activeAgents.length} Actifs</span>
+                      <span className="text-[10px] font-bold text-sky-600 uppercase tracking-wider">4 Agents</span>
+                      <span className="h-2.5 w-px border-l border-gray-300" />
+                      <span className="text-[10px] font-bold text-sky-500 uppercase tracking-wider">{activeAgents.length} Actifs</span>
                     </div>
                   </div>
                 </div>

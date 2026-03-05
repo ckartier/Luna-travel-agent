@@ -142,9 +142,9 @@ const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMap({ map
             map.setFog({
                 color: 'rgb(235,232,226)',
                 'high-color': 'rgb(180,190,210)',
-                'horizon-blend': 0.03,
-                'space-color': '#080818' as any,
-                'star-intensity': 0.9,
+                'horizon-blend': 0.05,
+                'space-color': '#e5e7eb' as any, // medium gray background
+                'star-intensity': 0.0,
             });
             try {
                 const labels = map.getStyle().layers?.filter((l: any) => l.type === 'symbol' && l.id.includes('label')) || [];
