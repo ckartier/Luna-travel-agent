@@ -43,7 +43,7 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
                 <header className="absolute top-3 left-3 right-3 md:top-5 md:left-5 md:right-5 z-50 pointer-events-none flex justify-between items-start">
                     <div className="glass-pill px-3 py-1.5 md:px-4 md:py-2 flex items-center gap-3 md:gap-6 pointer-events-auto shadow-glass">
                         <Link href="/" className="flex items-center gap-1.5 md:gap-2">
-                            <LunaLogo size={28} />
+                            <LunaLogo size={34} />
                         </Link>
                         <nav className="flex items-center gap-1">
                             <Link href="/" className="text-luna-charcoal px-2 py-0.5 md:px-2.5 md:py-1 text-[9px] md:text-[10px] font-semibold rounded-full bg-luna-charcoal/5 uppercase tracking-wider">Voyages</Link>

@@ -41,7 +41,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <aside className="w-64 bg-[#16161e] border-r border-white/5 flex flex-col shrink-0">
                 <div className="p-5 border-b border-white/5">
                     <div className="flex items-center gap-3">
-                        <LunaLogo size={30} />
+                        <LunaLogo size={36} />
                         <p className="text-[10px] uppercase tracking-[0.2em] text-violet-400 font-bold">Admin Panel</p>
                     </div>
                 </div>

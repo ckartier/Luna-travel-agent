@@ -1226,7 +1226,7 @@ function DashboardPage() {
 
       {/* Logo bottom-left */}
       <div className="fixed bottom-6 left-6 z-30 opacity-60 hover:opacity-100 transition-opacity">
-        <LunaLogo size={36} />
+        <LunaLogo size={44} />
       </div>
 
       {/* Footer copyright */}
