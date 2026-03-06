@@ -59,8 +59,8 @@ export default function AIAssistantPage() {
         <div className="flex flex-col h-[calc(100vh-64px)] -m-6">
             {messages.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center p-8">
-                    <div className="w-20 h-20 bg-gradient-to-tr from-violet-500 to-fuchsia-500 rounded-3xl flex items-center justify-center mb-6 shadow-lg shadow-violet-200">
-                        <Sparkles className="text-white" size={36} />
+                    <div className="mb-6">
+                        <Sparkles className="text-gray-400" size={40} strokeWidth={1.5} />
                     </div>
                     <h1 className="text-2xl font-semibold text-luna-charcoal mb-2 text-center">Assistant IA Luna</h1>
                     <p className="text-gray-500 text-sm max-w-md text-center mb-8">
@@ -80,27 +80,27 @@ export default function AIAssistantPage() {
                     {messages.map(msg => (
                         <div key={msg.id} className={`flex gap-4 max-w-3xl mx-auto ${msg.role === 'user' ? 'justify-end' : ''}`}>
                             {msg.role === 'assistant' && (
-                                <div className="w-9 h-9 bg-gradient-to-tr from-violet-500 to-fuchsia-500 rounded-xl flex items-center justify-center text-white shadow-sm shrink-0 mt-1">
-                                    <Bot size={18} />
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1">
+                                    <Bot size={20} strokeWidth={1.5} className="text-gray-400" />
                                 </div>
                             )}
-                            <div className={`p-4 rounded-2xl max-w-[85%] shadow-sm ${msg.role === 'user' ? 'bg-luna-charcoal text-white rounded-br-sm' : 'bg-white border border-gray-100 text-gray-800 rounded-bl-sm'}`}>
+                            <div className={`p-4 rounded-2xl max-w-[85%] ${msg.role === 'user' ? 'bg-gray-100 text-gray-800 rounded-br-sm' : 'bg-white border border-gray-100 text-gray-800 rounded-bl-sm'}`}>
                                 <p className="text-sm leading-relaxed whitespace-pre-line">{msg.content}</p>
                             </div>
                             {msg.role === 'user' && (
-                                <div className="w-9 h-9 bg-sky-100 rounded-xl flex items-center justify-center text-sky-700 shadow-sm shrink-0 mt-1">
-                                    <User size={18} />
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1">
+                                    <User size={20} strokeWidth={1.5} className="text-gray-400" />
                                 </div>
                             )}
                         </div>
                     ))}
                     {isLoading && (
                         <div className="flex gap-4 max-w-3xl mx-auto">
-                            <div className="w-9 h-9 bg-gradient-to-tr from-violet-500 to-fuchsia-500 rounded-xl flex items-center justify-center text-white shadow-sm shrink-0 mt-1">
-                                <Bot size={18} />
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1">
+                                <Bot size={20} strokeWidth={1.5} className="text-gray-400" />
                             </div>
                             <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-bl-sm shadow-sm flex items-center gap-3">
-                                <Loader2 size={16} className="animate-spin text-violet-500" />
+                                <Loader2 size={16} className="animate-spin text-gray-400" />
                                 <span className="text-sm text-gray-500 font-medium">Luna réfléchit...</span>
                             </div>
                         </div>
@@ -117,7 +117,7 @@ export default function AIAssistantPage() {
                             placeholder="Décrivez ce que vous recherchez pour votre client..."
                             className="flex-1 max-h-32 min-h-[44px] bg-transparent border-none resize-none focus:ring-0 text-sm py-3 px-2 text-luna-charcoal placeholder-gray-400" rows={1} />
                         <button onClick={handleSend} disabled={!input.trim() || isLoading}
-                            className={`p-3 rounded-xl flex items-center justify-center transition-colors ${input.trim() && !isLoading ? 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white hover:from-violet-600 hover:to-fuchsia-600 shadow-sm' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+                            className={`p-3 rounded-xl flex items-center justify-center transition-colors ${input.trim() && !isLoading ? 'bg-luna-charcoal text-white hover:bg-gray-800' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
                             <Send size={18} />
                         </button>
                     </div>
