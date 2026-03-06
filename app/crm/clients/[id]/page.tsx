@@ -98,7 +98,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
                             <button className="px-4 py-2 bg-white/80 text-gray-500 font-medium rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-2">
                                 <FileText size={16} /> Éditer
                             </button>
-                            <button className="px-4 py-2 bg-gradient-to-r from-luna-charcoal to-gray-800 text-white font-medium rounded-xl shadow-[0_4px_14px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all">
+                            <button className="px-4 py-2 bg-luna-charcoal hover:bg-gray-800 text-white font-medium rounded-xl transition-all">
                                 Nouveau Devis
                             </button>
                         </div>

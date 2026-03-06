@@ -175,11 +175,6 @@ export function CRMSidebar() {
                     <Settings size={16} strokeWidth={1.5} />
                     Paramètres
                 </Link>
-                <Link href="/"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sky-600 hover:bg-sky-50 transition-all text-sm font-medium mt-1">
-                    <ArrowLeft size={16} strokeWidth={1.5} />
-                    Orchestrateur
-                </Link>
                 {/* Luna logo — footer branding */}
                 <div className="flex justify-center pt-4 pb-2 opacity-40">
                     <LunaLogo size={16} />
