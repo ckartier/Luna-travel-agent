@@ -6,7 +6,7 @@ export default function CRMLayout({ children }: { children: ReactNode }) {
         <div className="flex h-screen bg-white overflow-hidden font-sans font-light pt-[50px] md:pt-[60px]">
             <CRMSidebar />
             <main className="flex-1 overflow-y-auto relative">
-                <div className="p-3 pl-12 md:p-6 md:pl-6 max-w-7xl mx-auto relative z-10 w-full">
+                <div className="p-4 md:p-5 w-full relative z-10">
                     {children}
                 </div>
             </main>
