@@ -89,6 +89,8 @@ export default function MailsPage() {
     try {
       const ext = analysis.extracted || {};
       const destinations = (ext.destinations || ['Paris']);
+      const senderEmail = selectedEmail?.sender?.match(/<(.+)>/)?.[1] || selectedEmail?.sender || '';
+      const clientName = ext.clientName || selectedEmail?.sender?.replace(/<.*>/, '').trim() || 'Client';
       const params = new URLSearchParams({
         dest: destinations[0] || 'Paris',
         from: 'Paris',
@@ -98,12 +100,12 @@ export default function MailsPage() {
         pax: ext.pax || '2',
         vibe: ext.vibe || '',
         notes: ext.mustHaves || '',
+        clientName,
+        clientEmail: senderEmail,
         autoStart: 'true',
       });
 
       // Find or create contact
-      const senderEmail = selectedEmail?.sender?.match(/<(.+)>/)?.[1] || selectedEmail?.sender || '';
-      const clientName = ext.clientName || selectedEmail?.sender?.replace(/<.*>/, '').trim() || 'Client';
       let contactId = '';
       try {
         const existing = await findContactByEmail(tenantId!, senderEmail);
