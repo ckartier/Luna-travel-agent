@@ -156,7 +156,7 @@ export default function CRMContacts() {
                             onClick={() => openContactDetail(contact)}
                             className={`flex items-center gap-4 p-4 rounded-2xl border bg-white/80 backdrop-blur-xl shadow-sm cursor-pointer transition-all hover:shadow-md
                                 ${selectedContact?.id === contact.id ? 'ring-2 ring-sky-400/40 border-sky-200' : 'border-luna-warm-gray/10 hover:border-luna-accent/30'}`}>
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-violet-500 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-sm font-semibold shrink-0">
                                 {contact.firstName[0]}{contact.lastName[0]}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -182,7 +182,7 @@ export default function CRMContacts() {
                         <div className="p-5 border-b border-luna-warm-gray/10 bg-gradient-to-b from-sky-50/30 to-white">
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-400 to-violet-500 flex items-center justify-center text-white text-lg font-bold">
+                                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-lg font-semibold">
                                         {selectedContact.firstName[0]}{selectedContact.lastName[0]}
                                     </div>
                                     <div>

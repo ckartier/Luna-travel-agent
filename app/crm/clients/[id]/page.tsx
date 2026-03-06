@@ -73,7 +73,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
             <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 md:p-8 shadow-[0_2px_20px_rgba(0,0,0,0.04)] mb-6 flex flex-col md:flex-row gap-8 items-start relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-50/50 to-purple-50/20 rounded-bl-full -z-10" />
 
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-luna-charcoal to-gray-600 flex items-center justify-center text-white text-3xl font-normal shrink-0 shadow-lg border-4 border-white">
+                <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-3xl font-semibold shrink-0 border-4 border-white">
                     {client.firstName[0]}{client.lastName[0]}
                 </div>
 

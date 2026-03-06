@@ -108,7 +108,7 @@ export default function TeamPage() {
                                 {member.photoURL ? (
                                     <img src={member.photoURL} alt={member.displayName} className="w-12 h-12 rounded-full object-cover shadow-[0_2px_20px_rgba(0,0,0,0.04)]" />
                                 ) : (
-                                    <div className="w-12 h-12 bg-gradient-to-tr from-sky-400 to-violet-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
+                                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 font-semibold text-lg">
                                         {member.displayName?.split(' ').map(w => w[0]).join('').slice(0, 2) || '?'}
                                     </div>
                                 )}

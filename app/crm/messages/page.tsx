@@ -181,7 +181,7 @@ export default function MessagesInboxPage() {
                         </div>
                         <button
                             onClick={() => setShowNewMsg(true)}
-                            className="w-9 h-9 bg-gradient-to-br from-luna-charcoal to-gray-700 text-white rounded-xl flex items-center justify-center hover:shadow-md transition-all hover:scale-105 active:scale-95"
+                            className="w-9 h-9 bg-luna-charcoal text-white rounded-xl flex items-center justify-center hover:bg-gray-800 transition-all"
                         >
                             <Plus size={16} strokeWidth={2.5} />
                         </button>
@@ -219,9 +219,9 @@ export default function MessagesInboxPage() {
                                     }`}
                             >
                                 <div className="flex items-center gap-3.5">
-                                    <div className={`w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm ${conv.channel === 'WHATSAPP'
-                                        ? 'bg-gradient-to-br from-green-400 to-green-600'
-                                        : 'bg-gradient-to-br from-sky-400 to-violet-500'
+                                    <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${conv.channel === 'WHATSAPP'
+                                        ? 'bg-green-50 text-green-600'
+                                        : 'bg-gray-100 text-gray-500'
                                         }`}>
                                         {conv.clientName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                                     </div>
@@ -260,9 +260,9 @@ export default function MessagesInboxPage() {
                         {/* Chat header */}
                         <div className="px-6 py-4 bg-white border-b border-gray-100 flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                                <div className={`w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm ${selectedConvData.channel === 'WHATSAPP'
-                                    ? 'bg-gradient-to-br from-green-400 to-green-600'
-                                    : 'bg-gradient-to-br from-sky-400 to-violet-500'
+                                <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-semibold ${selectedConvData.channel === 'WHATSAPP'
+                                    ? 'bg-green-50 text-green-600'
+                                    : 'bg-gray-100 text-gray-500'
                                     }`}>
                                     {selectedConvData.clientName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                                 </div>
@@ -351,8 +351,8 @@ export default function MessagesInboxPage() {
                                 <button
                                     onClick={handleSend}
                                     disabled={!inputMsg.trim() || sending}
-                                    className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all shadow-sm ${inputMsg.trim()
-                                        ? 'bg-gradient-to-br from-luna-charcoal to-gray-700 text-white hover:shadow-md hover:scale-105 active:scale-95'
+                                    className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${inputMsg.trim()
+                                        ? 'bg-luna-charcoal text-white hover:bg-gray-800'
                                         : 'bg-gray-100 text-gray-300'
                                         }`}
                                 >
@@ -423,7 +423,7 @@ export default function MessagesInboxPage() {
                                 <button
                                     onClick={handleNewWhatsApp}
                                     disabled={!waPhone.trim() || sending}
-                                    className="w-full py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-40 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+                                    className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-40 flex items-center justify-center gap-2"
                                 >
                                     {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={14} />}
                                     Envoyer via WhatsApp
@@ -443,7 +443,7 @@ export default function MessagesInboxPage() {
                                             onClick={() => handleNewConversation(ct)}
                                             className="w-full flex items-center gap-3 p-3.5 rounded-xl hover:bg-gray-50 border border-gray-100 hover:border-gray-200 transition-all text-left"
                                         >
-                                            <div className="w-9 h-9 bg-gradient-to-br from-sky-400 to-violet-500 text-white rounded-full flex items-center justify-center font-bold text-[11px] shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
+                                            <div className="w-9 h-9 bg-gray-100 text-gray-500 rounded-full flex items-center justify-center font-semibold text-[11px]">
                                                 {ct.firstName[0]}{ct.lastName[0]}
                                             </div>
                                             <div className="flex-1 min-w-0">

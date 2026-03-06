@@ -114,7 +114,7 @@ export function CRMSidebar() {
                     {photoURL ? (
                         <img src={photoURL} alt={displayName} className="w-14 h-14 rounded-full object-cover border-[3px] border-white shadow-[0_4px_14px_rgba(0,0,0,0.1)] group-hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] transition-shadow" referrerPolicy="no-referrer" />
                     ) : (
-                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-luna-charcoal to-gray-600 flex items-center justify-center text-white text-lg font-medium border-[3px] border-white shadow-[0_4px_14px_rgba(0,0,0,0.1)]">
+                        <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-lg font-semibold border-[3px] border-white">
                             {getInitials(displayName)}
                         </div>
                     )}
