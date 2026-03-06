@@ -32,7 +32,10 @@ export async function POST(request: Request) {
             });
         }
 
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        const model = genAI.getGenerativeModel({
+            model: 'gemini-2.5-flash',
+            systemInstruction: SYSTEM_PROMPT,
+        });
 
         // Build chat history
         const chatHistory = (history || []).map((msg: any) => ({
@@ -43,12 +46,12 @@ export async function POST(request: Request) {
         const chat = model.startChat({
             history: chatHistory,
             generationConfig: {
-                maxOutputTokens: 2048,
+                maxOutputTokens: 8192,
                 temperature: 0.8,
             },
         });
 
-        const result = await chat.sendMessage(`${SYSTEM_PROMPT}\n\nDemande de l'agent: ${message}`);
+        const result = await chat.sendMessage(message);
         const responseText = result.response.text();
 
         return NextResponse.json({ response: responseText });
