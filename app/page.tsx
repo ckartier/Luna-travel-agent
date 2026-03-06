@@ -266,6 +266,13 @@ function DashboardPage() {
           if (h.url) links.push({ title: `${h.name}`, url: h.url });
         });
       }
+      if (agentResults?.itinerary?.days) {
+        agentResults.itinerary.days.forEach((d: any) => {
+          if (d.morningUrl) links.push({ title: `J${d.day} 🌅 ${d.morning?.slice(0, 50) || 'Matin'}`, url: d.morningUrl });
+          if (d.afternoonUrl) links.push({ title: `J${d.day} 🌤️ ${d.afternoon?.slice(0, 50) || 'Après-midi'}`, url: d.afternoonUrl });
+          if (d.eveningUrl) links.push({ title: `J${d.day} 🌙 ${d.evening?.slice(0, 50) || 'Soir'}`, url: d.eveningUrl });
+        });
+      }
 
       // Create contact first
       const clientName = searchParams?.get('clientName') || 'Nouveau Client';

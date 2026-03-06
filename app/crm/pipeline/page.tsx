@@ -183,6 +183,16 @@ export default function CRMPipeline() {
 
                     {deal.links && deal.links.length > 0 && (() => {
                       const linkId = `links-${deal.id}`;
+                      // Group links by category
+                      const flights = deal.links.filter((l: any) => l.title.includes(' - ') && !l.title.startsWith('J'));
+                      const hotels = deal.links.filter((l: any) => !l.title.includes(' - ') && !l.title.startsWith('J'));
+                      const activities = deal.links.filter((l: any) => l.title.startsWith('J'));
+                      const groups = [
+                        { label: '✈️ Vols', items: flights },
+                        { label: '🏨 Hôtels', items: hotels },
+                        { label: '📍 Activités', items: activities },
+                      ].filter(g => g.items.length > 0);
+
                       return (
                         <div className="mb-3 pt-3 border-t border-gray-50">
                           <button
@@ -200,11 +210,18 @@ export default function CRMPipeline() {
                             </p>
                             <ChevronDown size={12} className="chevron text-gray-300 -rotate-90 transition-transform duration-200" />
                           </button>
-                          <div id={linkId} className="hidden space-y-1">
-                            {deal.links.map((link: any, idx: number) => (
-                              <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="text-xs flex items-center gap-1 text-luna-accent-dark font-semibold hover:underline bg-luna-accent/10 px-2 py-1 flex-wrap rounded-md">
-                                <Globe size={12} /> {link.title}
-                              </a>
+                          <div id={linkId} className="hidden space-y-3 mt-1">
+                            {groups.map((group, gIdx) => (
+                              <div key={gIdx}>
+                                <p className="text-[10px] font-semibold text-gray-400 mb-1">{group.label} <span className="text-gray-300">({group.items.length})</span></p>
+                                <div className="space-y-1">
+                                  {group.items.map((link: any, idx: number) => (
+                                    <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="text-xs flex items-center gap-1 text-luna-accent-dark font-semibold hover:underline bg-luna-accent/10 px-2 py-1 flex-wrap rounded-md">
+                                      <Globe size={12} /> {link.title}
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
                             ))}
                           </div>
                         </div>
