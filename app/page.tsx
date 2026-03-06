@@ -308,13 +308,9 @@ function DashboardPage() {
 
   return (
     <div ref={containerRef} className="relative w-full min-h-screen flex flex-col overflow-hidden">
-      {/* Background — Capsule anim idle, clean #F7F8FA during processing */}
+      {/* Background — Capsule anim: blue idle, cream during processing */}
       <div className="absolute inset-0 z-0">
-        {isProcessing ? (
-          <div className="absolute inset-0" style={{ backgroundColor: '#F7F8FA' }} />
-        ) : (
-          <CapsuleBackground colorScheme="blue" />
-        )}
+        <CapsuleBackground colorScheme={isProcessing ? 'cream' : 'blue'} />
       </div>
 
       {/* Weather Widgets (real API) */}
@@ -345,6 +341,12 @@ function DashboardPage() {
               0%, 100% { opacity: 0.2; }
               50% { opacity: 0.35; }
             }
+            @keyframes travelDot {
+              0% { left: 10%; opacity: 0; }
+              5% { opacity: 1; }
+              95% { opacity: 1; }
+              100% { left: 90%; opacity: 0; }
+            }
           `}</style>
 
           {/* Horizontal connection line — runs behind agents */}
@@ -362,7 +364,7 @@ function DashboardPage() {
                 animation: 'linePulse 6s ease-in-out infinite',
               }}
             />
-            {/* Connection nodes (dots) at each agent position */}
+            {/* Static connection nodes (dots) at each agent position */}
             {[10, 27.5, 50, 72.5, 90].map((pct, i) => (
               <motion.div
                 key={i}
@@ -375,6 +377,20 @@ function DashboardPage() {
                   backgroundColor: 'rgba(47,128,237,0.3)',
                   top: '50%', left: `${pct}%`,
                   transform: 'translate(-50%,-50%)',
+                }}
+              />
+            ))}
+            {/* Traveling dots — animate along the line */}
+            {[0, 1, 2].map(d => (
+              <div
+                key={`travel-${d}`}
+                className="absolute rounded-full"
+                style={{
+                  width: '4px', height: '4px',
+                  backgroundColor: 'rgba(47,128,237,0.5)',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  animation: `travelDot ${3 + d * 0.8}s ease-in-out ${d * 1.2}s infinite`,
                 }}
               />
             ))}
