@@ -169,7 +169,7 @@ export default function LoginPage() {
 
                 {/* Content overlay */}
                 <div className="relative z-10 flex items-center gap-3">
-                    <LunaLogo size={36} />
+                    <LunaLogo size={44} />
                 </div>
 
                 <div className="relative z-10 max-w-md">
@@ -210,7 +210,7 @@ export default function LoginPage() {
                     className="w-full max-w-sm">
 
                     <div className="lg:hidden flex items-center gap-2 mb-10 justify-center">
-                        <LunaLogo size={30} />
+                        <LunaLogo size={38} />
                     </div>
 
                     <h2 className="font-serif text-3xl font-semibold text-luna-charcoal mb-2">Connexion</h2>

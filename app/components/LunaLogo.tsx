@@ -7,7 +7,7 @@ export function LunaLogo({ className = '', size = 40 }: { className?: string; si
     return (
         <div className={`flex items-center ${className}`}>
             <Image
-                src="/luna-logo-new.png"
+                src="/luna-logo-blue.svg"
                 alt="Luna"
                 width={width}
                 height={height}

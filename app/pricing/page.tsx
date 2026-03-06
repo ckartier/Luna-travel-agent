@@ -98,7 +98,7 @@ export default function PricingPage() {
             {/* Navbar */}
             <nav className="flex items-center justify-between px-6 md:px-12 py-5 max-w-7xl mx-auto">
                 <Link href="/" className="flex items-center gap-3">
-                    <LunaLogo size={28} />
+                    <LunaLogo size={36} />
                 </Link>
                 <div className="flex items-center gap-6">
                     <Link href="/cgv" className="text-sm text-luna-text-muted hover:text-luna-charcoal transition-colors font-medium">CGV</Link>
@@ -218,7 +218,7 @@ export default function PricingPage() {
             <footer className="border-t border-luna-warm-gray/10 py-8 px-6">
                 <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <LunaLogo size={24} />
+                        <LunaLogo size={30} />
                         <span className="text-sm text-luna-text-muted">© 2026 Luna — Concierge Voyage. Tous droits réservés.</span>
                     </div>
                     <div className="flex gap-6 text-sm text-luna-text-muted">
