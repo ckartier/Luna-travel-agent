@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CloudRain, Sun, Cloud, ThermometerSun, ChevronDown, ChevronUp, Wind, Droplets, Snowflake, CloudSun, Loader2 } from 'lucide-react';
+import { CloudRain, Sun, Cloud, ThermometerSun, ChevronDown, ChevronUp, Wind, Droplets, Snowflake, CloudSun, Loader2, ExternalLink } from 'lucide-react';
+import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 
 interface WeatherData {
     city: string;
@@ -42,11 +43,13 @@ export function WeatherWidget({ destinations }: WeatherWidgetProps) {
             if (weatherData[key] || loading[key]) return;
 
             setLoading(prev => ({ ...prev, [key]: true }));
-            fetch(`/api/weather?city=${encodeURIComponent(dest.trim())}`)
+            fetchWithAuth(`/api/weather?city=${encodeURIComponent(dest.trim())}`)
                 .then(res => res.json())
                 .then(data => {
                     if (!data.error) {
                         setWeatherData(prev => ({ ...prev, [key]: data }));
+                        // Save weather to Firebase for CRM
+                        saveWeatherToFirebase(dest.trim(), data);
                     }
                 })
                 .catch(err => console.error('Weather fetch error:', err))
@@ -54,6 +57,18 @@ export function WeatherWidget({ destinations }: WeatherWidgetProps) {
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [destinations.join(',')]);
+
+    const saveWeatherToFirebase = async (city: string, data: WeatherData) => {
+        try {
+            await fetchWithAuth('/api/weather/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ city, weather: data }),
+            });
+        } catch (err) {
+            console.error('Failed to save weather to Firebase:', err);
+        }
+    };
 
     const getWeatherIcon = (condition: string, size = "w-5 h-5") => {
         switch (condition) {
@@ -69,6 +84,10 @@ export function WeatherWidget({ destinations }: WeatherWidgetProps) {
     const formatDate = (dateStr: string) => {
         const d = new Date(dateStr);
         return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
+    };
+
+    const openWeatherSite = (cityName: string) => {
+        window.open(`https://www.weather.com/weather/today/l/${encodeURIComponent(cityName)}`, '_blank', 'noopener');
     };
 
     const validDests = destinations.filter(d => d.trim().length >= 2);
@@ -90,10 +109,12 @@ export function WeatherWidget({ destinations }: WeatherWidgetProps) {
                         className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.04)] rounded-2xl overflow-hidden"
                     >
                         <div
-                            onClick={() => setExpanded(isExpanded ? null : key)}
                             className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-white/50 transition-colors"
                         >
-                            <div className="flex items-center gap-3">
+                            <div
+                                className="flex items-center gap-3 flex-1"
+                                onClick={() => setExpanded(isExpanded ? null : key)}
+                            >
                                 <div className="bg-gradient-to-br from-sky-50 to-sky-100/50 p-2 rounded-xl border border-sky-200/30">
                                     {isLoading ? <Loader2 className="w-5 h-5 text-sky-400 animate-spin" /> : data ? getWeatherIcon(data.current.condition, "w-5 h-5") : <Cloud className="w-5 h-5 text-slate-300" />}
                                 </div>
@@ -109,11 +130,24 @@ export function WeatherWidget({ destinations }: WeatherWidgetProps) {
                                     {isLoading && <p className="text-[10px] text-luna-text-muted mt-0.5">Chargement...</p>}
                                 </div>
                             </div>
-                            {data && (
-                                <button className="p-1.5 text-luna-text-muted/50 hover:text-luna-charcoal rounded-full transition-colors">
-                                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                            <div className="flex items-center gap-1">
+                                {/* Clickable link to weather.com */}
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); openWeatherSite(data?.city || dest); }}
+                                    className="p-1.5 text-luna-text-muted/40 hover:text-sky-500 rounded-full transition-colors"
+                                    title="Voir sur Weather.com"
+                                >
+                                    <ExternalLink size={14} />
                                 </button>
-                            )}
+                                {data && (
+                                    <button
+                                        onClick={() => setExpanded(isExpanded ? null : key)}
+                                        className="p-1.5 text-luna-text-muted/50 hover:text-luna-charcoal rounded-full transition-colors"
+                                    >
+                                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         <AnimatePresence>

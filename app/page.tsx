@@ -337,64 +337,56 @@ function DashboardPage() {
               0%, 100% { transform: translateY(0); }
               50% { transform: translateY(-5px); }
             }
-            @keyframes linePulse {
-              0%, 100% { opacity: 0.2; }
-              50% { opacity: 0.35; }
-            }
-            @keyframes travelDot {
-              0% { left: 10%; opacity: 0; }
-              5% { opacity: 1; }
-              95% { opacity: 1; }
-              100% { left: 90%; opacity: 0; }
-            }
           `}</style>
 
-          {/* Horizontal connection line — runs behind agents */}
-          <div className="absolute top-[50%] left-0 right-0 z-10 pointer-events-none" style={{ transform: 'translateY(-50%)' }}>
-            <motion.div
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ duration: 1.2, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="mx-auto"
-              style={{
-                width: '80%',
-                height: '1px',
-                background: 'rgba(47,128,237,0.25)',
-                transformOrigin: 'center',
-                animation: 'linePulse 6s ease-in-out infinite',
-              }}
-            />
-            {/* Static connection nodes (dots) at each agent position */}
-            {[10, 27.5, 50, 72.5, 90].map((pct, i) => (
-              <motion.div
-                key={i}
+          {/* Individual wire paths from each agent to Super Agent — 1px animated */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 100 100" preserveAspectRatio="none">
+            {/* Wire segments: each agent connects to Super Agent (center) */}
+            {[
+              { id: 'w1', d: 'M 10 50 L 50 50' },
+              { id: 'w2', d: 'M 27.5 50 L 50 50' },
+              { id: 'w3', d: 'M 50 50 L 72.5 50' },
+              { id: 'w4', d: 'M 50 50 L 90 50' },
+            ].map((wire, i) => (
+              <motion.path
+                key={wire.id}
+                d={wire.d}
+                fill="none"
+                stroke="rgba(47,128,237,0.35)"
+                strokeWidth="0.15"
+                strokeLinecap="round"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.5 + i * 0.15, ease: [0.22, 1, 0.36, 1] }}
+              />
+            ))}
+
+            {/* Animated traveling dots on each wire */}
+            {[
+              { id: 'td1', x1: 10, x2: 50, dur: '2.5s', delay: '0.8s' },
+              { id: 'td2', x1: 27.5, x2: 50, dur: '1.8s', delay: '1.2s' },
+              { id: 'td3', x1: 50, x2: 72.5, dur: '1.8s', delay: '1s' },
+              { id: 'td4', x1: 50, x2: 90, dur: '2.5s', delay: '1.4s' },
+            ].map(dot => (
+              <circle key={dot.id} r="0.6" fill="rgba(47,128,237,0.6)">
+                <animate attributeName="cx" values={`${dot.x1};${dot.x2};${dot.x1}`} dur={dot.dur} begin={dot.delay} repeatCount="indefinite" />
+                <animate attributeName="cy" values="50;50" dur={dot.dur} repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0;1;1;0" dur={dot.dur} begin={dot.delay} repeatCount="indefinite" />
+              </circle>
+            ))}
+
+            {/* Static nodes at each agent position */}
+            {[10, 27.5, 50, 72.5, 90].map((x, i) => (
+              <motion.circle
+                key={`node-${i}`}
+                cx={x} cy={50} r="0.8"
+                fill="rgba(47,128,237,0.4)"
                 initial={{ opacity: 0, scale: 0 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.6 + i * 0.1, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute rounded-full"
-                style={{
-                  width: '6px', height: '6px',
-                  backgroundColor: 'rgba(47,128,237,0.3)',
-                  top: '50%', left: `${pct}%`,
-                  transform: 'translate(-50%,-50%)',
-                }}
+                transition={{ delay: 0.7 + i * 0.1, duration: 0.4 }}
               />
             ))}
-            {/* Traveling dots — animate along the line */}
-            {[0, 1, 2].map(d => (
-              <div
-                key={`travel-${d}`}
-                className="absolute rounded-full"
-                style={{
-                  width: '4px', height: '4px',
-                  backgroundColor: 'rgba(47,128,237,0.5)',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  animation: `travelDot ${3 + d * 0.8}s ease-in-out ${d * 1.2}s infinite`,
-                }}
-              />
-            ))}
-          </div>
+          </svg>
         </>
       )}
 
