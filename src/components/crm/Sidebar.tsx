@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     LayoutDashboard,
     Users,
@@ -12,7 +12,6 @@ import {
     MessageSquare,
     BarChart3,
     Settings,
-    ArrowLeft,
     Menu,
     X,
     Plane,
@@ -26,6 +25,7 @@ import {
     Bot,
     Mail,
     Sparkles,
+    ChevronDown,
 } from 'lucide-react';
 import { LunaLogo } from '@/app/components/LunaLogo';
 import { useAuth } from '@/src/contexts/AuthContext';
@@ -37,6 +37,7 @@ function getInitials(name: string | null | undefined): string {
 
 interface NavSection {
     label: string;
+    collapsible: boolean;
     links: { name: string; href: string; icon: any }[];
 }
 
@@ -52,6 +53,7 @@ export function CRMSidebar() {
     const sections: NavSection[] = [
         {
             label: '',
+            collapsible: false,
             links: [
                 { name: 'Dashboard', href: '/crm', icon: LayoutDashboard },
                 { name: 'Boîte de Réception', href: '/crm/mails', icon: Mail },
@@ -63,6 +65,7 @@ export function CRMSidebar() {
         },
         {
             label: 'Opérations',
+            collapsible: true,
             links: [
                 { name: 'Réservations', href: '/crm/bookings', icon: Plane },
                 { name: 'Catalogue', href: '/crm/catalog', icon: Hotel },
@@ -70,6 +73,7 @@ export function CRMSidebar() {
         },
         {
             label: 'Finance',
+            collapsible: true,
             links: [
                 { name: 'Factures', href: '/crm/invoices', icon: FileText },
                 { name: 'Paiements', href: '/crm/payments', icon: CreditCard },
@@ -77,6 +81,7 @@ export function CRMSidebar() {
         },
         {
             label: 'Communication',
+            collapsible: true,
             links: [
                 { name: 'Messages', href: '/crm/messages', icon: MessageSquare },
                 { name: 'Documents', href: '/crm/documents', icon: ShieldCheck },
@@ -85,15 +90,48 @@ export function CRMSidebar() {
         },
         {
             label: 'Gestion',
+            collapsible: true,
             links: [
                 { name: 'Tâches', href: '/crm/tasks', icon: ListChecks },
                 { name: 'Équipe', href: '/crm/team', icon: UsersRound },
                 { name: 'Analytics', href: '/crm/analytics', icon: BarChart3 },
-                { name: 'Agent Super Luna', href: '/crm/ai', icon: Bot },
+                { name: 'Assistant IA', href: '/crm/ai', icon: Bot },
                 { name: 'Intégrations', href: '/crm/integrations', icon: Plane },
             ],
         },
     ];
+
+    // Auto-open sections that contain the active link
+    const getInitialOpenSections = () => {
+        const open: Record<string, boolean> = {};
+        sections.forEach(section => {
+            if (!section.collapsible) return;
+            const hasActive = section.links.some(link =>
+                pathname === link.href || (pathname.startsWith(link.href) && link.href !== '/crm')
+            );
+            open[section.label] = hasActive;
+        });
+        return open;
+    };
+
+    const [openSections, setOpenSections] = useState<Record<string, boolean>>(getInitialOpenSections);
+
+    // Update open sections when pathname changes
+    useEffect(() => {
+        sections.forEach(section => {
+            if (!section.collapsible) return;
+            const hasActive = section.links.some(link =>
+                pathname === link.href || (pathname.startsWith(link.href) && link.href !== '/crm')
+            );
+            if (hasActive) {
+                setOpenSections(prev => ({ ...prev, [section.label]: true }));
+            }
+        });
+    }, [pathname]);
+
+    const toggleSection = (label: string) => {
+        setOpenSections(prev => ({ ...prev, [label]: !prev[label] }));
+    };
 
     const sidebarContent = (
         <>
@@ -124,7 +162,7 @@ export function CRMSidebar() {
                     </div>
                 </Link>
 
-                {/* Voyages CTA — prominent link back to main agent */}
+                {/* Voyages CTA */}
                 <Link
                     href="/"
                     onClick={() => setMobileOpen(false)}
@@ -136,32 +174,53 @@ export function CRMSidebar() {
 
                 {/* Nav */}
                 <nav className="flex flex-col gap-0.5 px-3">
-                    {sections.map((section, sIdx) => (
-                        <div key={sIdx}>
-                            {section.label && (
-                                <p className="text-[11px] font-semibold text-gray-400 tracking-[0.12em] uppercase px-3 pt-5 pb-2">{section.label}</p>
-                            )}
-                            {section.links.map((link) => {
-                                const Icon = link.icon;
-                                const isActive = pathname === link.href || (pathname.startsWith(link.href) && link.href !== '/crm');
+                    {sections.map((section, sIdx) => {
+                        const isOpen = !section.collapsible || openSections[section.label];
 
-                                return (
-                                    <Link
-                                        key={link.name}
-                                        href={link.href}
-                                        onClick={() => setMobileOpen(false)}
-                                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm ${isActive
-                                            ? 'bg-luna-charcoal text-white font-medium shadow-[0_4px_14px_rgba(0,0,0,0.1)]'
-                                            : 'text-gray-500 hover:bg-white/60 hover:text-luna-charcoal font-normal'
-                                            }`}
+                        return (
+                            <div key={sIdx}>
+                                {section.label && (
+                                    <button
+                                        onClick={() => section.collapsible && toggleSection(section.label)}
+                                        className={`w-full flex items-center justify-between px-3 pt-5 pb-2 group ${section.collapsible ? 'cursor-pointer' : ''}`}
                                     >
-                                        <Icon size={16} strokeWidth={isActive ? 2 : 1.5} />
-                                        {link.name}
-                                    </Link>
-                                );
-                            })}
-                        </div>
-                    ))}
+                                        <span className="text-[11px] font-semibold text-gray-400 tracking-[0.12em] uppercase">
+                                            {section.label}
+                                        </span>
+                                        {section.collapsible && (
+                                            <ChevronDown
+                                                size={14}
+                                                className={`text-gray-300 group-hover:text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-0' : '-rotate-90'}`}
+                                            />
+                                        )}
+                                    </button>
+                                )}
+                                <div
+                                    className={`overflow-hidden transition-all duration-200 ease-in-out ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
+                                >
+                                    {section.links.map((link) => {
+                                        const Icon = link.icon;
+                                        const isActive = pathname === link.href || (pathname.startsWith(link.href) && link.href !== '/crm');
+
+                                        return (
+                                            <Link
+                                                key={link.name}
+                                                href={link.href}
+                                                onClick={() => setMobileOpen(false)}
+                                                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm ${isActive
+                                                    ? 'bg-luna-charcoal text-white font-medium shadow-[0_4px_14px_rgba(0,0,0,0.1)]'
+                                                    : 'text-gray-500 hover:bg-white/60 hover:text-luna-charcoal font-normal'
+                                                    }`}
+                                            >
+                                                <Icon size={16} strokeWidth={isActive ? 2 : 1.5} />
+                                                {link.name}
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })}
                 </nav>
             </div>
 

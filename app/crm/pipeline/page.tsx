@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, MoreHorizontal, MessageSquare, Clock, Globe, RefreshCcw, X, CheckCircle2, Calendar, Plane } from 'lucide-react';
+import { Plus, MoreHorizontal, MessageSquare, Clock, Globe, RefreshCcw, X, CheckCircle2, Calendar, Plane, ChevronDown } from 'lucide-react';
 import { getLeads, createLead, updateLeadStatus, createTrip, createActivity, CRMLead } from '@/src/lib/firebase/crm';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/src/contexts/AuthContext';
@@ -181,16 +181,35 @@ export default function CRMPipeline() {
                     <h4 className="font-semibold text-luna-charcoal mb-1">{deal.client}</h4>
                     <p className="text-emerald-600 font-bold mb-3">{deal.budget}</p>
 
-                    {deal.links && deal.links.length > 0 && (
-                      <div className="mb-3 pt-3 border-t border-gray-50">
-                        <p className="text-[11px] text-gray-400 font-bold uppercase mb-2">Résultats Web IA</p>
-                        {deal.links.map((link: any, idx: number) => (
-                          <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="text-xs flex items-center gap-1 text-luna-accent-dark font-semibold hover:underline bg-luna-accent/10 px-2 py-1 flex-wrap rounded-md">
-                            <Globe size={12} /> {link.title}
-                          </a>
-                        ))}
-                      </div>
-                    )}
+                    {deal.links && deal.links.length > 0 && (() => {
+                      const linkId = `links-${deal.id}`;
+                      return (
+                        <div className="mb-3 pt-3 border-t border-gray-50">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const el = document.getElementById(linkId);
+                              if (el) el.classList.toggle('hidden');
+                              (e.currentTarget.querySelector('.chevron') as HTMLElement)?.classList.toggle('rotate-0');
+                            }}
+                            className="flex items-center justify-between w-full text-left mb-1"
+                          >
+                            <p className="text-[11px] text-gray-400 font-bold uppercase flex items-center gap-2">
+                              Résultats Web IA
+                              <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-semibold normal-case">{deal.links.length}</span>
+                            </p>
+                            <ChevronDown size={12} className="chevron text-gray-300 -rotate-90 transition-transform duration-200" />
+                          </button>
+                          <div id={linkId} className="hidden space-y-1">
+                            {deal.links.map((link: any, idx: number) => (
+                              <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="text-xs flex items-center gap-1 text-luna-accent-dark font-semibold hover:underline bg-luna-accent/10 px-2 py-1 flex-wrap rounded-md">
+                                <Globe size={12} /> {link.title}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {/* Stage move buttons */}
                     <div className="flex items-center justify-between border-t border-gray-50 pt-3">
