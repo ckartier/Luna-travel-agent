@@ -243,7 +243,7 @@ export default function MailsPage() {
         <div className="h-full flex flex-col pt-4">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="font-serif text-xl md:text-2xl font-serif font-light text-luna-charcoal tracking-tight flex items-center gap-2 md:gap-3">
+                    <h1 className="text-2xl font-semibold text-luna-charcoal tracking-tight flex items-center gap-2 md:gap-3">
                         Boîte de Réception <span className="bg-luna-accent/10 text-luna-accent-dark text-xs py-0.5 px-2.5 rounded-full font-sans font-semibold">{emails.length}</span>
                     </h1>
                     <p className="text-luna-text-muted text-xs md:text-sm mt-0.5 hidden sm:block">Analysez les demandes avec Luna AI et dispatchez aux agents.</p>

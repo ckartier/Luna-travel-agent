@@ -38,7 +38,7 @@ export default function IntegrationsPage() {
         <div className="min-h-screen">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-2xl font-serif font-light text-luna-charcoal mb-1">Intégrations & Marketplace</h1>
+                    <h1 className="text-2xl font-semibold text-luna-charcoal mb-1">Intégrations & Marketplace</h1>
                     <p className="text-sm text-luna-text-muted">Connectez vos outils externes pour automatiser votre agence.</p>
                 </div>
             </div>

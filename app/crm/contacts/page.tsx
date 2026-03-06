@@ -126,7 +126,7 @@ export default function CRMContacts() {
             <div className={`flex-1 flex flex-col ${selectedContact ? 'hidden md:flex' : ''}`}>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 md:mb-6 gap-3">
                     <div>
-                        <h1 className="font-serif text-xl md:text-3xl font-semibold text-luna-charcoal tracking-tight">Contacts</h1>
+                        <h1 className="text-2xl font-semibold text-luna-charcoal tracking-tight">Contacts</h1>
                         <p className="text-luna-text-muted font-normal text-sm mt-1 hidden sm:block">{contacts.length} contact{contacts.length > 1 ? 's' : ''} enregistré{contacts.length > 1 ? 's' : ''}</p>
                     </div>
                     <div className="flex gap-2 flex-wrap">

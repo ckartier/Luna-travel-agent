@@ -62,7 +62,7 @@ export default function AIAssistantPage() {
                     <div className="w-20 h-20 bg-gradient-to-tr from-violet-500 to-fuchsia-500 rounded-3xl flex items-center justify-center mb-6 shadow-lg shadow-violet-200">
                         <Sparkles className="text-white" size={36} />
                     </div>
-                    <h1 className="text-3xl font-semibold text-luna-charcoal mb-2 text-center">Assistant IA Luna</h1>
+                    <h1 className="text-2xl font-semibold text-luna-charcoal mb-2 text-center">Assistant IA Luna</h1>
                     <p className="text-gray-500 text-sm max-w-md text-center mb-8">
                         Décrivez le voyage de votre client en langage naturel. Je crée l'itinéraire, trouve les vols et les hôtels pour vous.
                     </p>

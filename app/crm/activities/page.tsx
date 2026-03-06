@@ -91,7 +91,7 @@ export default function CRMActivities() {
         <div className="space-y-6">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="font-serif text-3xl font-semibold text-luna-charcoal tracking-tight">Activités & Tâches</h1>
+                    <h1 className="text-2xl font-semibold text-luna-charcoal tracking-tight">Activités & Tâches</h1>
                     <p className="text-luna-text-muted font-normal mt-1">Votre ligne du temps pour ne rater aucune opportunité.</p>
                 </div>
                 <div className="flex gap-3">

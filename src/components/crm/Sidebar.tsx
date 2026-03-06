@@ -119,8 +119,8 @@ export function CRMSidebar() {
                         </div>
                     )}
                     <div className="text-center min-w-0 w-full">
-                        <p className="text-sm font-medium text-luna-charcoal truncate leading-tight">{displayName}</p>
-                        <p className="text-[11px] text-luna-text-muted truncate leading-tight mt-0.5">{email}</p>
+                        <p className="text-base font-medium text-luna-charcoal truncate leading-tight">{displayName}</p>
+                        <p className="text-xs text-luna-text-muted truncate leading-tight mt-0.5">{email}</p>
                     </div>
                 </Link>
 
@@ -139,7 +139,7 @@ export function CRMSidebar() {
                     {sections.map((section, sIdx) => (
                         <div key={sIdx}>
                             {section.label && (
-                                <p className="text-[10px] font-medium text-gray-400 tracking-[0.15em] px-3 pt-5 pb-2">{section.label}</p>
+                                <p className="text-[11px] font-semibold text-gray-400 tracking-[0.12em] uppercase px-3 pt-5 pb-2">{section.label}</p>
                             )}
                             {section.links.map((link) => {
                                 const Icon = link.icon;
@@ -150,9 +150,9 @@ export function CRMSidebar() {
                                         key={link.name}
                                         href={link.href}
                                         onClick={() => setMobileOpen(false)}
-                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-[13px] ${isActive
+                                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm ${isActive
                                             ? 'bg-luna-charcoal text-white font-medium shadow-[0_4px_14px_rgba(0,0,0,0.1)]'
-                                            : 'text-gray-400 hover:bg-white/60 hover:text-luna-charcoal font-light'
+                                            : 'text-gray-500 hover:bg-white/60 hover:text-luna-charcoal font-normal'
                                             }`}
                                     >
                                         <Icon size={16} strokeWidth={isActive ? 2 : 1.5} />
@@ -168,15 +168,15 @@ export function CRMSidebar() {
             <div className="px-3 flex flex-col gap-1">
                 <Link href="/crm/settings"
                     onClick={() => setMobileOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-[13px] ${pathname === '/crm/settings'
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm ${pathname === '/crm/settings'
                         ? 'bg-luna-charcoal text-white font-medium shadow-[0_4px_14px_rgba(0,0,0,0.1)]'
-                        : 'text-gray-400 hover:bg-white/60 hover:text-luna-charcoal font-light'
+                        : 'text-gray-500 hover:bg-white/60 hover:text-luna-charcoal font-normal'
                         }`}>
                     <Settings size={16} strokeWidth={1.5} />
                     Paramètres
                 </Link>
                 <Link href="/"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sky-600 hover:bg-sky-50 transition-all text-[13px] font-medium mt-1">
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sky-600 hover:bg-sky-50 transition-all text-sm font-medium mt-1">
                     <ArrowLeft size={16} strokeWidth={1.5} />
                     Orchestrateur
                 </Link>

@@ -62,7 +62,7 @@ export default function TeamPage() {
         <div className="min-h-screen">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-2xl font-serif font-light text-luna-charcoal mb-1">Gestion d'Équipe</h1>
+                    <h1 className="text-2xl font-semibold text-luna-charcoal mb-1">Gestion d'Équipe</h1>
                     <p className="text-sm text-luna-text-muted">{members.length} membre(s) dans votre agence.</p>
                 </div>
             </div>

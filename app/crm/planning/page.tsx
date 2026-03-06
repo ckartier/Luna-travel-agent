@@ -177,7 +177,7 @@ export default function PlanningPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="font-serif text-2xl font-serif font-light text-luna-charcoal">Planning</h1>
+                    <h1 className="text-2xl font-semibold text-luna-charcoal">Planning</h1>
                     <p className="text-luna-text-muted text-sm mt-0.5">Calendrier des voyages et suivi des paiements</p>
                 </div>
                 <button onClick={() => openNewTrip()}

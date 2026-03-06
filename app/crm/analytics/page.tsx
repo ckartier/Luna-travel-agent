@@ -23,7 +23,7 @@ function StatCard({ icon: Icon, label, value, sub, color, delay }: { icon: any; 
                 </div>
                 <span className="text-[10px] font-semibold text-luna-text-muted uppercase tracking-wider">{label}</span>
             </div>
-            <p className="font-serif text-2xl font-bold text-luna-charcoal">{value}</p>
+            <p className="text-2xl font-semibold text-luna-charcoal">{value}</p>
             {sub && <p className="text-[11px] text-luna-text-muted mt-1">{sub}</p>}
         </motion.div>
     );
@@ -121,7 +121,7 @@ export default function AnalyticsPage() {
             {/* Header */}
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
                 <div>
-                    <h1 className="font-serif text-2xl font-bold text-luna-charcoal">Analytics</h1>
+                    <h1 className="text-2xl font-semibold text-luna-charcoal">Analytics</h1>
                     <p className="text-sm text-luna-text-muted mt-0.5">Vue d'ensemble de votre activité CRM</p>
                 </div>
                 <div className="flex items-center gap-2 text-[10px] text-luna-text-muted font-semibold uppercase tracking-wider bg-white/80 backdrop-blur-xl px-3 py-1.5 rounded-full border border-luna-warm-gray/10">

@@ -246,7 +246,7 @@ export default function SettingsPage() {
             <div className="relative z-10 py-4 md:py-8">
                 {/* Page header */}
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8 md:mb-10">
-                    <h1 className="font-serif text-3xl md:text-4xl font-semibold text-luna-charcoal tracking-tight">Mon Profil</h1>
+                    <h1 className="text-2xl font-semibold text-luna-charcoal tracking-tight">Mon Profil</h1>
                     <p className="text-luna-text-muted text-base font-light mt-2">Gérez votre identité et vos paramètres de compte</p>
                 </motion.div>
 

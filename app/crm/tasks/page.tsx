@@ -74,7 +74,7 @@ export default function TasksPage() {
         <div className="min-h-screen">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-2xl font-serif font-light text-luna-charcoal mb-1">Tâches & Rappels</h1>
+                    <h1 className="text-2xl font-semibold text-luna-charcoal mb-1">Tâches & Rappels</h1>
                     <p className="text-sm text-luna-text-muted">Organisez le travail de votre équipe en colonnes Kanban.</p>
                 </div>
                 <button onClick={() => setShowModal(true)} className="bg-gradient-to-r from-luna-charcoal to-gray-800 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all flex items-center gap-2 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">

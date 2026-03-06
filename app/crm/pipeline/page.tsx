@@ -129,7 +129,7 @@ export default function CRMPipeline() {
         <div className="h-full flex flex-col relative">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 md:mb-8 relative z-10 gap-3">
                 <div>
-                    <h1 className="font-serif text-xl md:text-3xl font-semibold text-luna-charcoal tracking-tight">Pipeline des Ventes</h1>
+                    <h1 className="text-2xl font-semibold text-luna-charcoal tracking-tight">Pipeline des Ventes</h1>
                     <p className="text-luna-text-muted font-normal text-sm mt-1 hidden sm:block">Gérez vos demandes et devis en cours.</p>
                 </div>
                 <div className="flex gap-2 md:gap-3">

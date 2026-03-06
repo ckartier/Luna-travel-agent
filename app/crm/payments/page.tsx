@@ -55,7 +55,7 @@ export default function PaymentsPage() {
         <div className="min-h-screen">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-2xl font-serif font-light text-luna-charcoal mb-1">Paiements</h1>
+                    <h1 className="text-2xl font-semibold text-luna-charcoal mb-1">Paiements</h1>
                     <p className="text-sm text-gray-400 font-light">{payments.length} paiements — Total encaissé: <span className="font-medium text-emerald-500">{totalReceived.toLocaleString('fr-FR')} €</span></p>
                 </div>
                 <button onClick={() => setShowModal(true)} className="btn-primary">
