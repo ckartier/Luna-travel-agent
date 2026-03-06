@@ -17,7 +17,7 @@ interface Props {
     onClose: () => void;
 }
 
-const COLORS = ['#0ea5e9', '#f59e0b', '#22c55e', '#8b5cf6'];
+const COLORS = ['#0ea5e9', '#6366f1', '#22c55e', '#8b5cf6'];
 
 function getStats(dest: DestinationData) {
     const flights = dest.transport?.flights || [];
@@ -79,7 +79,7 @@ export function Comparator({ destinations, onClose }: Props) {
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="px-8 py-5 border-b border-luna-warm-gray/10 flex justify-between items-center bg-gradient-to-r from-sky-50/50 via-white to-amber-50/50 flex-shrink-0">
+                <div className="px-8 py-5 border-b border-luna-warm-gray/10 flex justify-between items-center bg-gradient-to-r from-sky-50/50 via-white to-sky-50/30 flex-shrink-0">
                     <div>
                         <h2 className="font-serif text-xl font-bold text-luna-charcoal">Comparateur</h2>
                         <p className="text-[10px] text-luna-text-muted uppercase tracking-widest font-semibold mt-0.5">{destinations.length} destinations</p>

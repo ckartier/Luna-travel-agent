@@ -23,7 +23,6 @@ interface Shape {
 
 const PALETTES = {
     blue: { light: '#e4eff7', dark: '#c6e0f2', bg: '#f9fafb' },
-    orange: { light: '#fde8d0', dark: '#f9c98c', bg: '#fefaf6' },
     cream: { light: '#f0f0f0', dark: '#e8e8e8', bg: '#F7F8FA' },
 };
 
@@ -59,7 +58,7 @@ function createGrid(): Shape[] {
 }
 
 interface CapsuleBackgroundProps {
-    colorScheme?: 'blue' | 'orange' | 'cream';
+    colorScheme?: 'blue' | 'cream';
 }
 
 export function CapsuleBackground({ colorScheme = 'blue' }: CapsuleBackgroundProps) {
