@@ -339,54 +339,7 @@ function DashboardPage() {
             }
           `}</style>
 
-          {/* Individual wire paths from each agent to Super Agent — 1px animated */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 100 100" preserveAspectRatio="none">
-            {/* Wire segments: each agent connects to Super Agent (center) */}
-            {[
-              { id: 'w1', d: 'M 10 50 L 50 50' },
-              { id: 'w2', d: 'M 27.5 50 L 50 50' },
-              { id: 'w3', d: 'M 50 50 L 72.5 50' },
-              { id: 'w4', d: 'M 50 50 L 90 50' },
-            ].map((wire, i) => (
-              <motion.path
-                key={wire.id}
-                d={wire.d}
-                fill="none"
-                stroke="rgba(47,128,237,0.35)"
-                strokeWidth="0.15"
-                strokeLinecap="round"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.5 + i * 0.15, ease: [0.22, 1, 0.36, 1] }}
-              />
-            ))}
 
-            {/* Animated traveling dots on each wire */}
-            {[
-              { id: 'td1', x1: 10, x2: 50, dur: '2.5s', delay: '0.8s' },
-              { id: 'td2', x1: 27.5, x2: 50, dur: '1.8s', delay: '1.2s' },
-              { id: 'td3', x1: 50, x2: 72.5, dur: '1.8s', delay: '1s' },
-              { id: 'td4', x1: 50, x2: 90, dur: '2.5s', delay: '1.4s' },
-            ].map(dot => (
-              <circle key={dot.id} r="0.6" fill="rgba(47,128,237,0.6)">
-                <animate attributeName="cx" values={`${dot.x1};${dot.x2};${dot.x1}`} dur={dot.dur} begin={dot.delay} repeatCount="indefinite" />
-                <animate attributeName="cy" values="50;50" dur={dot.dur} repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0;1;1;0" dur={dot.dur} begin={dot.delay} repeatCount="indefinite" />
-              </circle>
-            ))}
-
-            {/* Static nodes at each agent position */}
-            {[10, 27.5, 50, 72.5, 90].map((x, i) => (
-              <motion.circle
-                key={`node-${i}`}
-                cx={x} cy={50} r="0.8"
-                fill="rgba(47,128,237,0.4)"
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.7 + i * 0.1, duration: 0.4 }}
-              />
-            ))}
-          </svg>
         </>
       )}
 
@@ -421,7 +374,9 @@ function DashboardPage() {
                 {/* Glass card — below the avatar */}
                 <div className="glass-card max-h-[75vh] overflow-y-auto p-6 pt-20 pb-10 md:p-10 md:pt-24 md:pb-12 shadow-luxury relative">
                   <div className="flex flex-col items-center mb-6">
-                    <p className="text-gray-600 text-sm font-medium tracking-wide">Votre Concierge Voyage</p>
+                    <p style={{ fontSize: '18px', fontWeight: 600, color: '#0B1220', letterSpacing: '-0.01em', textAlign: 'center' }}>
+                      Bonjour, on part où aujourd'hui{userDisplayName ? ` ${userDisplayName.split(' ')[0]}` : ''} ?
+                    </p>
                   </div>
 
                   <form id="voyage-form" onSubmit={handleStartAnalysis} className="flex flex-col gap-5">
@@ -642,6 +597,24 @@ function DashboardPage() {
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                 className="flex items-center justify-center gap-6 md:gap-8 relative z-20"
               >
+                {/* n8n-style 2px connection line — behind cards */}
+                <motion.div
+                  initial={{ scaleX: 0, opacity: 0 }}
+                  animate={{ scaleX: 1, opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                  className="absolute pointer-events-none"
+                  style={{
+                    top: '50%',
+                    left: '-4%',
+                    right: '-4%',
+                    height: '2px',
+                    background: 'rgba(47,128,237,0.3)',
+                    transformOrigin: 'left',
+                    borderRadius: '1px',
+                    zIndex: 0,
+                    transform: 'translateY(-50%)',
+                  }}
+                />
                 {/* We render all 5 nodes in order: Transport, Accommodation, SuperAgent, Itinerary, Client */}
                 {(['transport', 'accommodation', 'super', 'itinerary', 'client'] as const).map((nodeKey, i) => {
                   const isSuper = nodeKey === 'super';
@@ -654,7 +627,7 @@ function DashboardPage() {
                         initial={{ opacity: 0, scale: 0.7 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.15, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                        style={{ animation: 'superFloat 12s cubic-bezier(0.22,1,0.36,1) infinite' }}
+                        style={{ animation: 'superFloat 12s cubic-bezier(0.22,1,0.36,1) infinite', position: 'relative', zIndex: 1 }}
                       >
                         <div
                           className="relative flex flex-col items-center justify-center text-center"
@@ -723,7 +696,7 @@ function DashboardPage() {
                       transition={{ delay: 0.3 + i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                       className={`${canValidate ? 'cursor-pointer' : ''}`}
                       onClick={() => canValidate && setSelectedAgent(agentKey)}
-                      style={{ animation: isActive && !isValidated ? `agentFloat ${floatDur}s cubic-bezier(0.22,1,0.36,1) infinite` : undefined }}
+                      style={{ animation: isActive && !isValidated ? `agentFloat ${floatDur}s cubic-bezier(0.22,1,0.36,1) infinite` : undefined, position: 'relative', zIndex: 1 }}
                     >
                       <div
                         className="relative flex flex-col items-center justify-center text-center transition-shadow duration-300"
