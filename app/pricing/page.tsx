@@ -219,7 +219,7 @@ export default function PricingPage() {
                 <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <LunaLogo size={24} />
-                        <span className="text-sm text-luna-text-muted">© {new Date().getFullYear()} Luna Travel SaaS. Tous droits réservés.</span>
+                        <span className="text-sm text-luna-text-muted">© 2026 Luna — Concierge Voyage. Tous droits réservés.</span>
                     </div>
                     <div className="flex gap-6 text-sm text-luna-text-muted">
                         <Link href="/cgv" className="hover:text-luna-charcoal transition-colors">CGV</Link>

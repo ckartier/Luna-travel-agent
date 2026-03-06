@@ -313,7 +313,7 @@ export default function LandingPage() {
                         </div>
                     </div>
                     <div className="border-t border-luna-warm-gray/10 pt-6 text-center">
-                        <p className="text-xs text-luna-text-muted">© {new Date().getFullYear()} Luna Travel SaaS. Tous droits réservés.</p>
+                        <p className="text-xs text-luna-text-muted">© 2026 Luna — Concierge Voyage. Tous droits réservés.</p>
                     </div>
                 </div>
             </footer>

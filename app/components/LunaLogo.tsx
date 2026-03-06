@@ -1,14 +1,13 @@
 import Image from 'next/image';
 
-export function LunaLogo({ className = '', size = 40 }: { className?: string; size?: number; variant?: 'dark' | 'light' }) {
-    // Maintain aspect ratio: logo is wider than tall (~3:1)
+export function LunaLogo({ className = '', size = 40 }: { className?: string; size?: number }) {
     const height = size;
-    const width = Math.round(size * 3);
+    const width = Math.round(size * 3.25);
 
     return (
         <div className={`flex items-center ${className}`}>
             <Image
-                src="/luna-logo.png"
+                src="/luna-logo-blue.svg"
                 alt="Luna"
                 width={width}
                 height={height}

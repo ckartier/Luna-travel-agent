@@ -302,6 +302,8 @@ export default function LoginPage() {
                     <p className="text-center text-[10px] text-luna-text-muted mt-4">
                         En vous inscrivant, vous acceptez nos <Link href="/cgv" className="text-sky-500 hover:underline">Conditions Générales de Vente</Link>
                     </p>
+
+                    <p className="text-center text-[10px] text-gray-400 mt-6">© 2026 Luna — Concierge Voyage</p>
                 </motion.div>
             </div>
         </div>

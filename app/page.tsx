@@ -1223,6 +1223,16 @@ function DashboardPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Logo bottom-left */}
+      <div className="fixed bottom-6 left-6 z-30 opacity-60 hover:opacity-100 transition-opacity">
+        <LunaLogo size={28} />
+      </div>
+
+      {/* Footer copyright */}
+      <footer className="absolute bottom-0 left-0 right-0 z-20 text-center py-3">
+        <p className="text-[11px] text-gray-400 tracking-wider">© 2026 Luna — Concierge Voyage</p>
+      </footer>
     </div>
   );
 }

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" fill="none">
+  <!-- L -->
+  <path d="M40 20 L40 130 Q40 140 50 140 L100 140" stroke="#3B82F6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- U -->
+  <path d="M120 20 L120 110 Q120 140 150 140 Q180 140 180 110 L180 20" stroke="#3B82F6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- N -->
+  <path d="M210 140 L210 20 Q260 140 310 140 L310 20" stroke="#3B82F6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- A with circle -->
+  <path d="M340 140 L390 20 L440 140" stroke="#3B82F6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="390" cy="120" r="18" stroke="#3B82F6" stroke-width="5" fill="none"/>
+</svg>
