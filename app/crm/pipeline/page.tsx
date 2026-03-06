@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, MoreHorizontal, MessageSquare, Clock, Globe, RefreshCcw, X, CheckCircle2, Calendar, Plane, ChevronDown } from 'lucide-react';
 import { getLeads, createLead, updateLeadStatus, createTrip, createActivity, CRMLead } from '@/src/lib/firebase/crm';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/src/contexts/AuthContext';
 
 const STAGES = ['NOUVEAU', 'IA EN COURS', 'DEVIS ENVOYÉ', 'GAGNÉ'] as const;
@@ -178,15 +179,22 @@ export default function CRMPipeline() {
                       <span className="bg-luna-accent/10 text-luna-accent-dark text-[11px] font-semibold uppercase px-2 py-1 rounded-md">{deal.destination}</span>
                       <span className="text-gray-400 text-xs font-semibold flex items-center gap-1"><Clock size={12} /> {deal.days}j</span>
                     </div>
-                    <h4 className="font-semibold text-luna-charcoal mb-1">{deal.client}</h4>
+                    {deal.clientId ? (
+                      <Link href={`/crm/clients/${deal.clientId}`} className="font-semibold text-sky-600 hover:text-sky-700 hover:underline mb-1 block text-sm" onClick={e => e.stopPropagation()}>
+                        {deal.client}
+                      </Link>
+                    ) : (
+                      <h4 className="font-semibold text-luna-charcoal mb-1">{deal.client}</h4>
+                    )}
                     <p className="text-emerald-600 font-bold mb-3">{deal.budget}</p>
 
                     {deal.links && deal.links.length > 0 && (() => {
                       const linkId = `links-${deal.id}`;
-                      // Group links by category
-                      const flights = deal.links.filter((l: any) => l.title.includes(' - ') && !l.title.startsWith('J'));
-                      const hotels = deal.links.filter((l: any) => !l.title.includes(' - ') && !l.title.startsWith('J'));
-                      const activities = deal.links.filter((l: any) => l.title.startsWith('J'));
+                      // Group links by category — activities start with "J" + digit (J1, J2...)
+                      const isActivity = (t: string) => /^J\d+\s/.test(t);
+                      const flights = deal.links.filter((l: any) => l.title.includes(' - ') && !isActivity(l.title));
+                      const hotels = deal.links.filter((l: any) => !l.title.includes(' - ') && !isActivity(l.title));
+                      const activities = deal.links.filter((l: any) => isActivity(l.title));
                       const groups = [
                         { label: '✈️ Vols', items: flights },
                         { label: '🏨 Hôtels', items: hotels },
