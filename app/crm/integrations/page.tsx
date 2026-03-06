@@ -35,7 +35,7 @@ export default function IntegrationsPage() {
     const available = filteredIntegrations.filter(i => !i.connected);
 
     return (
-        <div className="p-8 max-w-5xl mx-auto min-h-screen">
+        <div className="min-h-screen">
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <h1 className="text-2xl font-serif font-light text-luna-charcoal mb-1">Intégrations & Marketplace</h1>

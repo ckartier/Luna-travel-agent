@@ -243,7 +243,7 @@ export default function SettingsPage() {
             </div>
 
             {/* ═══ MAIN CONTENT ═══ */}
-            <div className="relative z-10 max-w-4xl mx-auto py-8 md:py-12 px-4">
+            <div className="relative z-10 py-4 md:py-8">
                 {/* Page header */}
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8 md:mb-10">
                     <h1 className="font-serif text-3xl md:text-4xl font-semibold text-luna-charcoal tracking-tight">Mon Profil</h1>

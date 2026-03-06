@@ -45,7 +45,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
     if (loading) return <div className="p-8 flex justify-center"><p className="text-gray-400 animate-pulse">Chargement profil 360°...</p></div>;
 
     if (!client) return (
-        <div className="p-8 max-w-7xl mx-auto text-center mt-20">
+        <div className="text-center mt-20">
             <h1 className="text-2xl font-bold text-gray-800 mb-4">Client introuvable</h1>
             <button onClick={() => router.back()} className="text-sky-500 hover:underline">Retour</button>
         </div>
@@ -64,7 +64,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
     };
 
     return (
-        <div className="max-w-7xl mx-auto p-4 md:p-8">
+        <div className="w-full">
             <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-gray-400 hover:text-black mb-6 transition-colors">
                 <ArrowLeft size={16} /> Retour
             </button>

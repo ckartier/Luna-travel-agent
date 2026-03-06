@@ -113,7 +113,7 @@ export default function ItineraryBuilderPage({ params }: { params: { id: string 
     }
 
     return (
-        <div className="p-8 max-w-5xl mx-auto min-h-screen pb-32">
+        <div className="min-h-screen pb-32">
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
                     <button onClick={() => router.back()} className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-black transition-colors">

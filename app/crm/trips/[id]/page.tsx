@@ -42,7 +42,7 @@ export default function TripDetailPage({ params }: { params: { id: string } }) {
 
     if (!trip) {
         return (
-            <div className="p-8 max-w-7xl mx-auto text-center mt-20">
+            <div className="text-center mt-20">
                 <h1 className="text-2xl font-bold text-gray-800 mb-4">Voyage introuvable</h1>
                 <button onClick={() => router.back()} className="text-sky-500 hover:underline">Retour</button>
             </div>
@@ -55,7 +55,7 @@ export default function TripDetailPage({ params }: { params: { id: string } }) {
     const marginPercent = totalPrice > 0 ? Math.round((margin / totalPrice) * 100) : 0;
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen">
+        <div className="min-h-screen">
             <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-gray-400 hover:text-black mb-6 transition-colors">
                 <ArrowLeft size={16} /> Retour
             </button>

@@ -71,7 +71,7 @@ export default function TasksPage() {
     if (loading) return <div className="flex items-center justify-center h-96"><Loader2 className="animate-spin text-gray-400" size={32} /></div>;
 
     return (
-        <div className="p-8 max-w-full mx-auto min-h-screen">
+        <div className="min-h-screen">
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <h1 className="text-2xl font-serif font-light text-luna-charcoal mb-1">Tâches & Rappels</h1>
