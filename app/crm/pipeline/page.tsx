@@ -127,7 +127,6 @@ export default function CRMPipeline() {
 
     return (
         <div className="h-full flex flex-col relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-luna-bg to-luna-cream/30 pointer-events-none" />
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 md:mb-8 relative z-10 gap-3">
                 <div>
                     <h1 className="font-serif text-xl md:text-3xl font-semibold text-luna-charcoal tracking-tight">Pipeline des Ventes</h1>
@@ -147,11 +146,11 @@ export default function CRMPipeline() {
                 {STAGES.map((stage) => {
                     const stageDeals = deals.filter(d => d.stage === stage);
 
-                    let columnColor = "bg-luna-cream/50 border-luna-warm-gray/20";
-                    if (stage === 'NOUVEAU') columnColor = "bg-luna-accent/5 border-luna-accent/15";
-                    if (stage === 'IA EN COURS') columnColor = "bg-purple-50/50 border-purple-100/40";
-                    if (stage === 'DEVIS ENVOYÉ') columnColor = "bg-amber-50/50 border-amber-100/40";
-                    if (stage === 'GAGNÉ') columnColor = "bg-emerald-50/50 border-emerald-100/40";
+                    let columnColor = "bg-white border-gray-100";
+                    if (stage === 'NOUVEAU') columnColor = "bg-white border-gray-100";
+                    if (stage === 'IA EN COURS') columnColor = "bg-white border-gray-100";
+                    if (stage === 'DEVIS ENVOYÉ') columnColor = "bg-white border-gray-100";
+                    if (stage === 'GAGNÉ') columnColor = "bg-white border-gray-100";
 
                     return (
                         <div key={stage}
