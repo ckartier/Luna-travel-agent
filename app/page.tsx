@@ -606,35 +606,40 @@ function DashboardPage() {
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                 className="flex items-center justify-center gap-4 md:gap-6 relative z-20"
               >
-                {/* n8n-style SVG bezier curves — static, no animation */}
-                <svg
-                  className="absolute pointer-events-none"
-                  style={{ zIndex: 0, top: 0, left: 0, width: '100%', height: '100%', overflow: 'visible' }}
-                  viewBox="0 0 100 100"
-                  preserveAspectRatio="none"
-                >
-                  {[
-                    { id: 'st', x1: 40, y1: 50, x2: 8, y2: 50, cy: -8 },
-                    { id: 'sh', x1: 40, y1: 50, x2: 26, y2: 50, cy: 6 },
-                    { id: 'si', x1: 60, y1: 50, x2: 74, y2: 50, cy: 6 },
-                    { id: 'sp', x1: 60, y1: 50, x2: 92, y2: 50, cy: -8 },
-                  ].map(w => {
-                    const midX = (w.x1 + w.x2) / 2;
-                    const d = `M ${w.x1} ${w.y1} C ${midX} ${w.y1 + w.cy}, ${midX} ${w.y2 + w.cy}, ${w.x2} ${w.y2}`;
-                    return (
-                      <path
-                        key={w.id}
-                        d={d}
-                        fill="none"
-                        stroke="rgba(47,128,237,0.22)"
-                        strokeWidth="0.25"
-                        strokeLinecap="round"
-                        vectorEffect="non-scaling-stroke"
-                        style={{ strokeWidth: '2px' }}
-                      />
-                    );
-                  })}
-                </svg>
+                {/* n8n bezier curves — appear only when ALL agents are loaded (VALIDATION+) */}
+                {(workflowState === 'VALIDATION' || workflowState === 'GENERATING_PROPOSALS') && (
+                  <svg
+                    className="absolute pointer-events-none"
+                    style={{ zIndex: 0, top: 0, left: 0, width: '100%', height: '100%', overflow: 'visible' }}
+                    viewBox="0 0 100 100"
+                    preserveAspectRatio="none"
+                  >
+                    {[
+                      { id: 'st', x1: 40, y1: 50, x2: 8, y2: 50, cy: -8, delay: 0 },
+                      { id: 'sh', x1: 40, y1: 50, x2: 26, y2: 50, cy: 6, delay: 0.1 },
+                      { id: 'si', x1: 60, y1: 50, x2: 74, y2: 50, cy: 6, delay: 0.1 },
+                      { id: 'sp', x1: 60, y1: 50, x2: 92, y2: 50, cy: -8, delay: 0 },
+                    ].map(w => {
+                      const midX = (w.x1 + w.x2) / 2;
+                      const d = `M ${w.x1} ${w.y1} C ${midX} ${w.y1 + w.cy}, ${midX} ${w.y2 + w.cy}, ${w.x2} ${w.y2}`;
+                      return (
+                        <motion.path
+                          key={w.id}
+                          d={d}
+                          fill="none"
+                          stroke="rgba(47,128,237,0.28)"
+                          strokeWidth="0.25"
+                          strokeLinecap="round"
+                          vectorEffect="non-scaling-stroke"
+                          initial={{ pathLength: 0, opacity: 0 }}
+                          animate={{ pathLength: 1, opacity: 1 }}
+                          transition={{ duration: 0.5, delay: w.delay, ease: [0.22, 1, 0.36, 1] }}
+                          style={{ strokeWidth: '2px' }}
+                        />
+                      );
+                    })}
+                  </svg>
+                )}
                 {/* We render all 5 nodes in order: Transport, Accommodation, SuperAgent, Itinerary, Client */}
                 {(['transport', 'accommodation', 'super', 'itinerary', 'client'] as const).map((nodeKey, i) => {
                   const isSuper = nodeKey === 'super';
