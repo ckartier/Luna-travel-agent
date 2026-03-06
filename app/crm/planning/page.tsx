@@ -197,7 +197,7 @@ export default function PlanningPage() {
                     <div key={i} className="bg-white/80 backdrop-blur-xl rounded-2xl border border-luna-warm-gray/10 p-4 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
                         <div className="flex items-center gap-2 mb-2">
                             <stat.icon size={14} className={stat.color} />
-                            <span className="text-[10px] uppercase tracking-[0.15em] text-luna-text-muted font-semibold">{stat.label}</span>
+                            <span className="text-xs uppercase tracking-[0.15em] text-luna-text-muted font-semibold">{stat.label}</span>
                         </div>
                         <p className="text-2xl font-bold text-luna-charcoal">{stat.value}</p>
                     </div>
@@ -230,7 +230,7 @@ export default function PlanningPage() {
                 {/* Day headers */}
                 <div className="grid grid-cols-7 border-b border-luna-warm-gray/10">
                     {DAYS.map(d => (
-                        <div key={d} className="py-3 text-center text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted">{d}</div>
+                        <div key={d} className="py-3 text-center text-xs uppercase tracking-[0.15em] font-semibold text-luna-text-muted">{d}</div>
                     ))}
                 </div>
 
@@ -269,13 +269,13 @@ export default function PlanningPage() {
                                 <div className="flex flex-col gap-0.5">
                                     {dayTrips.slice(0, 3).map(trip => (
                                         <button key={trip.id} onClick={(e) => { e.stopPropagation(); openEditTrip(trip); }}
-                                            className="w-full text-left px-1.5 py-0.5 rounded text-[10px] font-medium truncate transition-all hover:opacity-80"
+                                            className="w-full text-left px-1.5 py-0.5 rounded text-[11px] font-medium truncate transition-all hover:opacity-80"
                                             style={{ backgroundColor: trip.color + '20', color: trip.color, borderLeft: `2px solid ${trip.color}` }}>
                                             {trip.title}
                                         </button>
                                     ))}
                                     {dayTrips.length > 3 && (
-                                        <span className="text-[9px] text-luna-text-muted pl-1.5">+{dayTrips.length - 3} autres</span>
+                                        <span className="text-[11px] text-luna-text-muted pl-1.5">+{dayTrips.length - 3} autres</span>
                                     )}
                                 </div>
                             </div>
@@ -301,7 +301,7 @@ export default function PlanningPage() {
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
                                             <h4 className="font-semibold text-sm text-luna-charcoal truncate">{trip.title}</h4>
-                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${sc.color} ${sc.bg}`}>
+                                            <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${sc.color} ${sc.bg}`}>
                                                 <StatusIcon size={10} className="inline mr-0.5 -mt-0.5" />{sc.label}
                                             </span>
                                         </div>
@@ -313,7 +313,7 @@ export default function PlanningPage() {
                                     </div>
                                     <div className="text-right shrink-0">
                                         <p className="font-bold text-luna-charcoal">{trip.amount.toLocaleString('fr-FR')}€</p>
-                                        <p className={`text-[10px] font-semibold ${pc.color}`}>{pc.label}</p>
+                                        <p className={`text-[11px] font-semibold ${pc.color}`}>{pc.label}</p>
                                     </div>
                                     <div className="flex gap-1 shrink-0">
                                         <button onClick={(e) => { e.stopPropagation(); exportToGoogleCalendar(trip); }}
@@ -360,7 +360,7 @@ export default function PlanningPage() {
                             <form onSubmit={handleSave} className="p-5 flex flex-col gap-4">
                                 {/* Title */}
                                 <div>
-                                    <label className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Titre du voyage</label>
+                                    <label className="text-xs uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Titre du voyage</label>
                                     <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required
                                         placeholder="ex: Séjour Maldives famille Dupont"
                                         className="w-full py-2.5 px-3 bg-luna-cream/30 rounded-xl border border-luna-warm-gray/15 text-sm focus:outline-none focus:ring-2 focus:ring-sky-100 focus:border-sky-300" />
@@ -369,13 +369,13 @@ export default function PlanningPage() {
                                 {/* Destination + Client */}
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Destination</label>
+                                        <label className="text-xs uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Destination</label>
                                         <input value={form.destination} onChange={e => setForm(f => ({ ...f, destination: e.target.value }))} required
                                             placeholder="Maldives"
                                             className="w-full py-2.5 px-3 bg-luna-cream/30 rounded-xl border border-luna-warm-gray/15 text-sm focus:outline-none focus:ring-2 focus:ring-sky-100 focus:border-sky-300" />
                                     </div>
                                     <div>
-                                        <label className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Client</label>
+                                        <label className="text-xs uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Client</label>
                                         <input value={form.clientName} onChange={e => setForm(f => ({ ...f, clientName: e.target.value }))} required
                                             placeholder="M. Dupont"
                                             className="w-full py-2.5 px-3 bg-luna-cream/30 rounded-xl border border-luna-warm-gray/15 text-sm focus:outline-none focus:ring-2 focus:ring-sky-100 focus:border-sky-300" />
@@ -385,12 +385,12 @@ export default function PlanningPage() {
                                 {/* Dates */}
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Date départ</label>
+                                        <label className="text-xs uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Date départ</label>
                                         <input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
                                             className="w-full py-2.5 px-3 bg-luna-cream/30 rounded-xl border border-luna-warm-gray/15 text-sm focus:outline-none focus:ring-2 focus:ring-sky-100 focus:border-sky-300" />
                                     </div>
                                     <div>
-                                        <label className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Date retour</label>
+                                        <label className="text-xs uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Date retour</label>
                                         <input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
                                             className="w-full py-2.5 px-3 bg-luna-cream/30 rounded-xl border border-luna-warm-gray/15 text-sm focus:outline-none focus:ring-2 focus:ring-sky-100 focus:border-sky-300" />
                                     </div>
@@ -399,7 +399,7 @@ export default function PlanningPage() {
                                 {/* Status + Payment */}
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Statut</label>
+                                        <label className="text-xs uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Statut</label>
                                         <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as CRMTrip['status'] }))}
                                             className="w-full py-2.5 px-3 bg-luna-cream/30 rounded-xl border border-luna-warm-gray/15 text-sm focus:outline-none focus:ring-2 focus:ring-sky-100 focus:border-sky-300">
                                             {Object.entries(STATUS_CONFIG).map(([k, v]) => (
@@ -408,7 +408,7 @@ export default function PlanningPage() {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Paiement</label>
+                                        <label className="text-xs uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Paiement</label>
                                         <select value={form.paymentStatus} onChange={e => setForm(f => ({ ...f, paymentStatus: e.target.value as CRMTrip['paymentStatus'] }))}
                                             className="w-full py-2.5 px-3 bg-luna-cream/30 rounded-xl border border-luna-warm-gray/15 text-sm focus:outline-none focus:ring-2 focus:ring-sky-100 focus:border-sky-300">
                                             {Object.entries(PAYMENT_CONFIG).map(([k, v]) => (
@@ -420,7 +420,7 @@ export default function PlanningPage() {
 
                                 {/* Amount */}
                                 <div>
-                                    <label className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Montant (€)</label>
+                                    <label className="text-xs uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Montant (€)</label>
                                     <input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: parseFloat(e.target.value) || 0 }))}
                                         placeholder="5000"
                                         className="w-full py-2.5 px-3 bg-luna-cream/30 rounded-xl border border-luna-warm-gray/15 text-sm focus:outline-none focus:ring-2 focus:ring-sky-100 focus:border-sky-300" />
@@ -428,7 +428,7 @@ export default function PlanningPage() {
 
                                 {/* Color */}
                                 <div>
-                                    <label className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Couleur</label>
+                                    <label className="text-xs uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Couleur</label>
                                     <div className="flex gap-2">
                                         {TRIP_COLORS.map(c => (
                                             <button key={c} type="button" onClick={() => setForm(f => ({ ...f, color: c }))}
@@ -440,7 +440,7 @@ export default function PlanningPage() {
 
                                 {/* Notes */}
                                 <div>
-                                    <label className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Notes</label>
+                                    <label className="text-xs uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-1.5">Notes</label>
                                     <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                                         rows={3} placeholder="Détails supplémentaires..."
                                         className="w-full py-2.5 px-3 bg-luna-cream/30 rounded-xl border border-luna-warm-gray/15 text-sm focus:outline-none focus:ring-2 focus:ring-sky-100 focus:border-sky-300 resize-none" />

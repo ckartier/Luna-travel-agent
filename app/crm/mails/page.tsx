@@ -287,12 +287,12 @@ export default function MailsPage() {
                                         className={`w-full text-left p-4 hover:bg-sky-50/50 transition-colors ${selectedEmail?.id === email.id ? 'bg-sky-50 border-l-2 border-l-sky-400' : 'border-l-2 border-l-transparent'}`}>
                                         <div className="flex justify-between items-start mb-1.5">
                                             <span className="font-medium text-luna-charcoal truncate pr-3 text-xs">{email.sender.replace(/<.*>/, '')}</span>
-                                            <span className="text-[10px] text-luna-text-muted whitespace-nowrap">
+                                            <span className="text-[11px] text-luna-text-muted whitespace-nowrap">
                                                 {new Date(email.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                                             </span>
                                         </div>
                                         <h4 className={`text-xs mb-0.5 truncate ${selectedEmail?.id === email.id ? 'font-semibold text-sky-600' : 'font-medium text-luna-charcoal'}`}>{email.subject}</h4>
-                                        <p className="text-[10px] text-luna-text-muted truncate">{email.snippet?.replace(/&#39;/g, "'")}</p>
+                                        <p className="text-[11px] text-luna-text-muted truncate">{email.snippet?.replace(/&#39;/g, "'")}</p>
                                     </button>
                                 ))}
                             </div>
@@ -315,7 +315,7 @@ export default function MailsPage() {
                                         </div>
                                         <div>
                                             <p className="font-medium text-luna-charcoal text-sm">{selectedEmail.sender}</p>
-                                            <p className="text-[10px] text-luna-text-muted flex items-center gap-1">
+                                            <p className="text-[11px] text-luna-text-muted flex items-center gap-1">
                                                 <CalendarClock size={10} />
                                                 {new Date(selectedEmail.date).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })}
                                             </p>
@@ -356,7 +356,7 @@ export default function MailsPage() {
                                                         <Sparkles size={14} className="text-sky-500" />
                                                         <h3 className="font-semibold text-sm text-luna-charcoal">Analyse Luna AI</h3>
                                                     </div>
-                                                    <span className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${priorityColors[analysis.priority] || priorityColors.MEDIUM}`}>
+                                                    <span className={`text-[11px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${priorityColors[analysis.priority] || priorityColors.MEDIUM}`}>
                                                         {analysis.priority || 'MEDIUM'}
                                                     </span>
                                                 </div>
@@ -369,7 +369,7 @@ export default function MailsPage() {
                                                 {/* Extracted data */}
                                                 {analysis.extracted && (
                                                     <div className="space-y-2.5 mb-4">
-                                                        <h4 className="text-[10px] uppercase tracking-wider font-semibold text-luna-text-muted">Données extraites</h4>
+                                                        <h4 className="text-xs uppercase tracking-wider font-semibold text-luna-text-muted">Données extraites</h4>
                                                         {[
                                                             { label: 'Client', value: analysis.extracted.clientName },
                                                             { label: 'Destinations', value: analysis.extracted.destinations?.join(', ') },
@@ -381,7 +381,7 @@ export default function MailsPage() {
                                                             { label: 'Spécial', value: analysis.extracted.specialRequests },
                                                         ].filter(item => item.value).map((item, i) => (
                                                             <div key={i} className="flex justify-between items-start bg-white rounded-lg p-2.5 border border-luna-warm-gray/10">
-                                                                <span className="text-[10px] font-semibold text-luna-text-muted uppercase tracking-wider">{item.label}</span>
+                                                                <span className="text-[11px] font-semibold text-luna-text-muted uppercase tracking-wider">{item.label}</span>
                                                                 <span className="text-xs font-medium text-luna-charcoal text-right max-w-[160px]">{item.value}</span>
                                                             </div>
                                                         ))}
@@ -390,12 +390,12 @@ export default function MailsPage() {
 
                                                 {/* Agent Dispatch */}
                                                 <div className="mb-4">
-                                                    <h4 className="text-[10px] uppercase tracking-wider font-semibold text-luna-text-muted mb-2">Agents à dispatcher</h4>
+                                                    <h4 className="text-xs uppercase tracking-wider font-semibold text-luna-text-muted mb-2">Agents à dispatcher</h4>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         {agentIcons.map((agent, i) => (
                                                             <div key={i} className={`bg-white rounded-lg p-2.5 border border-luna-warm-gray/10 flex items-center gap-2 ${dispatched ? 'border-emerald-200 bg-emerald-50/30' : ''}`}>
                                                                 <agent.icon size={14} className={dispatched ? 'text-emerald-500' : agent.color} />
-                                                                <span className="text-[10px] font-medium text-luna-charcoal">{agent.name}</span>
+                                                                <span className="text-[11px] font-medium text-luna-charcoal">{agent.name}</span>
                                                                 {dispatched && <CheckCircle2 size={10} className="text-emerald-500 ml-auto" />}
                                                             </div>
                                                         ))}

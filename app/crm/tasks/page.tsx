@@ -95,13 +95,13 @@ export default function TasksPage() {
                             {tasksByStatus(col.id).map(task => (
                                 <div key={task.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow group">
                                     <div className="flex justify-between items-start mb-2">
-                                        <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${getPriorityStyle(task.priority)}`}>
+                                        <span className={`text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${getPriorityStyle(task.priority)}`}>
                                             {task.priority}
                                         </span>
                                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             {col.id !== 'DONE' && (
                                                 <button onClick={() => handleStatusChange(task.id!, COLUMNS[COLUMNS.findIndex(c => c.id === col.id) + 1]?.id || 'DONE')}
-                                                    className="text-[10px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-bold hover:bg-emerald-100">→</button>
+                                                    className="text-[11px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-bold hover:bg-emerald-100">→</button>
                                             )}
                                             <button onClick={() => handleDelete(task.id!)} className="text-gray-400 hover:text-red-500"><X size={12} /></button>
                                         </div>
@@ -109,7 +109,7 @@ export default function TasksPage() {
                                     <h3 className="text-sm font-bold text-luna-charcoal leading-snug mb-3">{task.title}</h3>
                                     <div className="flex flex-wrap gap-1 mb-3">
                                         {(task.tags || []).map((tag, i) => (
-                                            <span key={i} className="text-[9px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded uppercase tracking-wider">{tag}</span>
+                                            <span key={i} className="text-[11px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded uppercase tracking-wider">{tag}</span>
                                         ))}
                                     </div>
                                     <div className="flex justify-between items-center pt-2 border-t border-gray-100 text-xs text-gray-500">
@@ -131,7 +131,7 @@ export default function TasksPage() {
             {showModal && (
                 <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
                     <div className="bg-white/95 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-md shadow-[0_25px_60px_rgba(0,0,0,0.12)] border border-white/50" onClick={e => e.stopPropagation()}>
-                        <h2 className="text-lg font-serif font-light text-luna-charcoal mb-4">Nouvelle Tâche</h2>
+                        <h2 className="text-lg font-semibold text-luna-charcoal mb-4">Nouvelle Tâche</h2>
                         <input value={newTask.title} onChange={e => setNewTask(p => ({ ...p, title: e.target.value }))}
                             placeholder="Titre de la tâche" className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-3 focus:outline-none focus:border-luna-charcoal" autoFocus />
                         <select value={newTask.priority} onChange={e => setNewTask(p => ({ ...p, priority: e.target.value as any }))}

@@ -155,7 +155,7 @@ export default function DocumentsPage() {
                     {filteredDocs.map(doc => (
                         <div key={doc.id} className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group">
                             <div className="flex items-start justify-between mb-3">
-                                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${getTypeStyle(doc.type)}`}>{doc.type}</span>
+                                <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${getTypeStyle(doc.type)}`}>{doc.type}</span>
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <a href={doc.fileUrl} target="_blank" rel="noopener" className="text-gray-400 hover:text-sky-500"><Download size={14} /></a>
                                     <button onClick={() => handleDelete(doc.id!)} className="text-gray-400 hover:text-red-500"><Trash2 size={14} /></button>
@@ -180,7 +180,7 @@ export default function DocumentsPage() {
             {showUpload && (
                 <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowUpload(false)}>
                     <div className="bg-white/95 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-md shadow-[0_25px_60px_rgba(0,0,0,0.12)] border border-white/50" onClick={e => e.stopPropagation()}>
-                        <h2 className="text-lg font-serif font-light text-luna-charcoal mb-4">Uploader un document</h2>
+                        <h2 className="text-lg font-semibold text-luna-charcoal mb-4">Uploader un document</h2>
                         <select value={newDoc.clientId} onChange={e => setNewDoc(p => ({ ...p, clientId: e.target.value }))}
                             className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-3 focus:outline-none focus:border-luna-charcoal">
                             <option value="">Sélectionner un client</option>

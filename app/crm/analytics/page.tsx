@@ -21,7 +21,7 @@ function StatCard({ icon: Icon, label, value, sub, color, delay }: { icon: any; 
                 <div className="p-2 rounded-xl" style={{ backgroundColor: `${color}15` }}>
                     <Icon size={18} style={{ color }} />
                 </div>
-                <span className="text-[10px] font-semibold text-luna-text-muted uppercase tracking-wider">{label}</span>
+                <span className="text-[11px] font-semibold text-luna-text-muted uppercase tracking-wider">{label}</span>
             </div>
             <p className="text-2xl font-semibold text-luna-charcoal">{value}</p>
             {sub && <p className="text-[11px] text-luna-text-muted mt-1">{sub}</p>}
@@ -124,7 +124,7 @@ export default function AnalyticsPage() {
                     <h1 className="text-2xl font-semibold text-luna-charcoal">Analytics</h1>
                     <p className="text-sm text-luna-text-muted mt-0.5">Vue d'ensemble de votre activité CRM</p>
                 </div>
-                <div className="flex items-center gap-2 text-[10px] text-luna-text-muted font-semibold uppercase tracking-wider bg-white/80 backdrop-blur-xl px-3 py-1.5 rounded-full border border-luna-warm-gray/10">
+                <div className="flex items-center gap-2 text-[11px] text-luna-text-muted font-semibold uppercase tracking-wider bg-white/80 backdrop-blur-xl px-3 py-1.5 rounded-full border border-luna-warm-gray/10">
                     <BarChart3 size={12} />
                     {leads.length} lead{leads.length !== 1 ? 's' : ''} · {trips.length} voyage{trips.length !== 1 ? 's' : ''}
                 </div>
@@ -225,11 +225,11 @@ export default function AnalyticsPage() {
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="border-b border-luna-warm-gray/10">
-                                        <th className="text-[10px] font-semibold text-luna-text-muted uppercase tracking-wider pb-3 pr-4">Client</th>
-                                        <th className="text-[10px] font-semibold text-luna-text-muted uppercase tracking-wider pb-3 pr-4">Destination</th>
-                                        <th className="text-[10px] font-semibold text-luna-text-muted uppercase tracking-wider pb-3 pr-4">Budget</th>
-                                        <th className="text-[10px] font-semibold text-luna-text-muted uppercase tracking-wider pb-3 pr-4">Pax</th>
-                                        <th className="text-[10px] font-semibold text-luna-text-muted uppercase tracking-wider pb-3 text-right">Statut</th>
+                                        <th className="text-[11px] font-semibold text-luna-text-muted uppercase tracking-wider pb-3 pr-4">Client</th>
+                                        <th className="text-[11px] font-semibold text-luna-text-muted uppercase tracking-wider pb-3 pr-4">Destination</th>
+                                        <th className="text-[11px] font-semibold text-luna-text-muted uppercase tracking-wider pb-3 pr-4">Budget</th>
+                                        <th className="text-[11px] font-semibold text-luna-text-muted uppercase tracking-wider pb-3 pr-4">Pax</th>
+                                        <th className="text-[11px] font-semibold text-luna-text-muted uppercase tracking-wider pb-3 text-right">Statut</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -240,7 +240,7 @@ export default function AnalyticsPage() {
                                             <td className="py-2.5 pr-4 text-xs text-luna-text-muted">{lead.budget || '—'}</td>
                                             <td className="py-2.5 pr-4 text-xs text-luna-text-muted">{lead.pax || '—'}</td>
                                             <td className="py-2.5 text-right">
-                                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border
+                                                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border
                                                     ${lead.status === 'WON' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
                                                         lead.status === 'PROPOSAL_READY' ? 'bg-amber-50 text-amber-600 border-amber-200' :
                                                             lead.status === 'ANALYSING' ? 'bg-purple-50 text-purple-600 border-purple-200' :

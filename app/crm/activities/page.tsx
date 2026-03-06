@@ -139,17 +139,17 @@ export default function CRMActivities() {
                                     {(activity.contactName || activity.leadId || activity.tripId) && (
                                         <div className="flex gap-2 mb-3 flex-wrap">
                                             {activity.contactName && (
-                                                <span className="text-[10px] bg-sky-50 text-sky-600 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                                                <span className="text-[11px] bg-sky-50 text-sky-600 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
                                                     <User size={10} /> {activity.contactName}
                                                 </span>
                                             )}
                                             {activity.leadId && (
-                                                <span className="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                                                <span className="text-[11px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
                                                     <Target size={10} /> Lead
                                                 </span>
                                             )}
                                             {activity.tripId && (
-                                                <span className="text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                                                <span className="text-[11px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
                                                     <Plane size={10} /> Trip
                                                 </span>
                                             )}

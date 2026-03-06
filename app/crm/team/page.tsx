@@ -73,7 +73,7 @@ export default function TeamPage() {
                     <div className="w-11 h-11 bg-sky-50 rounded-full flex items-center justify-center text-sky-500 border border-sky-100"><Users size={22} /></div>
                     <div>
                         <p className="text-xs font-medium tracking-wide text-gray-400">Membres Totaux</p>
-                        <p className="text-2xl font-serif font-light text-luna-charcoal">{members.length}</p>
+                        <p className="text-2xl font-semibold text-luna-charcoal">{members.length}</p>
                     </div>
                 </div>
                 <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm flex items-center gap-4">
@@ -87,7 +87,7 @@ export default function TeamPage() {
                     <div className="w-11 h-11 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 border border-emerald-100"><CheckCircle2 size={22} /></div>
                     <div>
                         <p className="text-xs font-medium tracking-wide text-gray-400">Agents</p>
-                        <p className="text-2xl font-serif font-light text-luna-charcoal">{members.filter(m => m.role === 'Agent').length}</p>
+                        <p className="text-2xl font-semibold text-luna-charcoal">{members.filter(m => m.role === 'Agent').length}</p>
                     </div>
                 </div>
             </div>
@@ -121,10 +121,10 @@ export default function TeamPage() {
                         </div>
 
                         <div className="flex items-center justify-between mb-4">
-                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border ${getRoleStyle(member.role)}`}>
+                            <span className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border ${getRoleStyle(member.role)}`}>
                                 <Shield size={10} className="inline mr-1" />{member.role}
                             </span>
-                            {member.agency && <span className="text-[10px] font-medium text-gray-400">{member.agency}</span>}
+                            {member.agency && <span className="text-[11px] font-medium text-gray-400">{member.agency}</span>}
                         </div>
 
                         {member.bio && (

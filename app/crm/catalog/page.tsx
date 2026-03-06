@@ -50,7 +50,7 @@ export default function CatalogPage() {
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <h1 className="text-2xl font-semibold text-luna-charcoal mb-1">Catalogue Produits</h1>
-                    <p className="text-sm text-gray-400 font-light">{items.length} offres — Gérez vos hôtels, vols et activités.</p>
+                    <p className="text-sm text-gray-400 font-normal">{items.length} offres — Gérez vos hôtels, vols et activités.</p>
                 </div>
                 <button onClick={() => setShowModal(true)} className="btn-primary">
                     <Plus size={16} /> Ajouter un Produit
@@ -73,7 +73,7 @@ export default function CatalogPage() {
 
             {/* Grid */}
             {filtered.length === 0 ? (
-                <div className="text-center py-20 text-gray-300"><Hotel size={40} className="mx-auto mb-3 opacity-30" /><p className="text-sm font-light">Aucun produit. Ajoutez votre première offre.</p></div>
+                <div className="text-center py-20 text-gray-300"><Hotel size={40} className="mx-auto mb-3 opacity-30" /><p className="text-sm font-normal">Aucun produit. Ajoutez votre première offre.</p></div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filtered.map(item => (
@@ -86,11 +86,11 @@ export default function CatalogPage() {
                                 <button onClick={() => handleDelete(item.id!)} className="text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14} /></button>
                             </div>
                             <h3 className="text-base font-medium text-luna-charcoal mb-1">{item.name}</h3>
-                            <p className="text-xs text-gray-400 font-light mb-1">{item.supplier} — {item.location}</p>
-                            <p className="text-xs text-gray-300 font-light mb-3 line-clamp-2">{item.description}</p>
+                            <p className="text-xs text-gray-400 font-normal mb-1">{item.supplier} — {item.location}</p>
+                            <p className="text-xs text-gray-300 font-normal mb-3 line-clamp-2">{item.description}</p>
                             <div className="flex items-center justify-between pt-3 border-t border-gray-50">
                                 <span className="text-sm font-medium text-luna-charcoal">{item.netCost.toLocaleString('fr-FR')} €</span>
-                                <span className="text-[10px] font-medium text-emerald-500 bg-emerald-50/60 px-2 py-0.5 rounded-full">+{item.recommendedMarkup}% marge</span>
+                                <span className="text-[11px] font-medium text-emerald-500 bg-emerald-50/60 px-2 py-0.5 rounded-full">+{item.recommendedMarkup}% marge</span>
                             </div>
                         </div>
                     ))}
@@ -101,7 +101,7 @@ export default function CatalogPage() {
             {showModal && (
                 <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
                     <div className="bg-white/95 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-md shadow-[0_25px_60px_rgba(0,0,0,0.12)] border border-white/50" onClick={e => e.stopPropagation()}>
-                        <h2 className="text-lg font-serif font-light text-luna-charcoal mb-6">Nouveau Produit</h2>
+                        <h2 className="text-lg font-semibold text-luna-charcoal mb-6">Nouveau Produit</h2>
                         <select value={newItem.type} onChange={e => setNewItem(p => ({ ...p, type: e.target.value as any }))}
                             className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50/50 text-sm mb-3 focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none">
                             <option value="HOTEL">Hôtel</option><option value="FLIGHT">Vol</option><option value="ACTIVITY">Activité</option><option value="TRANSFER">Transfert</option><option value="OTHER">Autre</option>

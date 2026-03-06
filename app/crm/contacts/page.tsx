@@ -163,7 +163,7 @@ export default function CRMContacts() {
                                 <h4 className="font-semibold text-sm text-luna-charcoal truncate">{contact.firstName} {contact.lastName}</h4>
                                 <p className="text-xs text-luna-text-muted truncate">{contact.email}</p>
                             </div>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${VIP_COLORS[contact.vipLevel]}`}>{contact.vipLevel}</span>
+                            <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${VIP_COLORS[contact.vipLevel]}`}>{contact.vipLevel}</span>
                             <ChevronRight size={16} className="text-luna-text-muted shrink-0" />
                         </motion.div>
                     ))}
@@ -187,7 +187,7 @@ export default function CRMContacts() {
                                     </div>
                                     <div>
                                         <h3 className="font-serif text-lg font-semibold text-luna-charcoal">{selectedContact.firstName} {selectedContact.lastName}</h3>
-                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${VIP_COLORS[selectedContact.vipLevel]}`}>{selectedContact.vipLevel}</span>
+                                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${VIP_COLORS[selectedContact.vipLevel]}`}>{selectedContact.vipLevel}</span>
                                     </div>
                                 </div>
                                 <button onClick={() => setSelectedContact(null)} className="p-1.5 rounded-lg hover:bg-luna-cream transition-all">
@@ -201,7 +201,7 @@ export default function CRMContacts() {
                             {selectedContact.preferences.length > 0 && (
                                 <div className="flex gap-1.5 mt-2 flex-wrap">
                                     {selectedContact.preferences.map((p, i) => (
-                                        <span key={i} className="text-[10px] bg-luna-cream px-2 py-0.5 rounded-full text-luna-text-muted font-medium">{p}</span>
+                                        <span key={i} className="text-[11px] bg-luna-cream px-2 py-0.5 rounded-full text-luna-text-muted font-medium">{p}</span>
                                     ))}
                                 </div>
                             )}
@@ -218,7 +218,7 @@ export default function CRMContacts() {
                                 <>
                                     {/* Leads */}
                                     <div>
-                                        <h4 className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted mb-2 flex items-center gap-1.5">
+                                        <h4 className="text-xs uppercase tracking-[0.15em] font-semibold text-luna-text-muted mb-2 flex items-center gap-1.5">
                                             <Target size={12} /> Pipeline ({contactLeads.length})
                                         </h4>
                                         {contactLeads.length === 0 ? (
@@ -229,7 +229,7 @@ export default function CRMContacts() {
                                                     <Target size={14} className="text-luna-accent shrink-0 group-hover:text-sky-500 transition-colors" />
                                                     <div className="min-w-0">
                                                         <p className="text-sm font-medium text-luna-charcoal truncate">{lead.destination}</p>
-                                                        <p className="text-[10px] text-luna-text-muted">{lead.budget} • {lead.status}</p>
+                                                        <p className="text-[11px] text-luna-text-muted">{lead.budget} • {lead.status}</p>
                                                     </div>
                                                 </div>
                                                 <ExternalLink size={12} className="text-luna-text-muted/40 group-hover:text-sky-400 opacity-0 group-hover:opacity-100 transition-all shrink-0" />
@@ -239,7 +239,7 @@ export default function CRMContacts() {
 
                                     {/* Trips */}
                                     <div>
-                                        <h4 className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted mb-2 flex items-center gap-1.5">
+                                        <h4 className="text-xs uppercase tracking-[0.15em] font-semibold text-luna-text-muted mb-2 flex items-center gap-1.5">
                                             <Plane size={12} /> Voyages ({contactTrips.length})
                                         </h4>
                                         {contactTrips.length === 0 ? (
@@ -250,7 +250,7 @@ export default function CRMContacts() {
                                                     <div className="w-1.5 h-8 rounded-full shrink-0" style={{ backgroundColor: trip.color }} />
                                                     <div className="min-w-0">
                                                         <p className="text-sm font-medium text-luna-charcoal truncate">{trip.title}</p>
-                                                        <p className="text-[10px] text-luna-text-muted">{trip.startDate} → {trip.endDate} • {trip.amount}€</p>
+                                                        <p className="text-[11px] text-luna-text-muted">{trip.startDate} → {trip.endDate} • {trip.amount}€</p>
                                                     </div>
                                                 </div>
                                                 <ExternalLink size={12} className="text-luna-text-muted/40 group-hover:text-sky-400 opacity-0 group-hover:opacity-100 transition-all shrink-0" />
@@ -260,7 +260,7 @@ export default function CRMContacts() {
 
                                     {/* Activities */}
                                     <div>
-                                        <h4 className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted mb-2 flex items-center gap-1.5">
+                                        <h4 className="text-xs uppercase tracking-[0.15em] font-semibold text-luna-text-muted mb-2 flex items-center gap-1.5">
                                             <Calendar size={12} /> Activités ({contactActivities.length})
                                         </h4>
                                         {contactActivities.length === 0 ? (
@@ -271,7 +271,7 @@ export default function CRMContacts() {
                                                     <Clock size={14} className={act.status === 'DONE' ? 'text-emerald-500 shrink-0' : 'text-amber-500 shrink-0'} />
                                                     <div className="min-w-0">
                                                         <p className={`text-sm font-medium truncate ${act.status === 'DONE' ? 'text-gray-400 line-through' : 'text-luna-charcoal'}`}>{act.title}</p>
-                                                        <p className="text-[10px] text-luna-text-muted">{act.time} • {act.status}</p>
+                                                        <p className="text-[11px] text-luna-text-muted">{act.time} • {act.status}</p>
                                                     </div>
                                                 </div>
                                                 <ExternalLink size={12} className="text-luna-text-muted/40 group-hover:text-sky-400 opacity-0 group-hover:opacity-100 transition-all shrink-0" />

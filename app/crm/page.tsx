@@ -49,8 +49,8 @@ export default function CRMDashboard() {
         <div className="space-y-6">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="font-serif text-3xl font-light text-luna-charcoal tracking-tight">Dashboard</h1>
-                    <p className="text-gray-400 font-light mt-1 text-sm">Vue d'ensemble de vos performances et leads.</p>
+                    <h1 className="text-2xl font-semibold text-luna-charcoal tracking-tight">Dashboard</h1>
+                    <p className="text-gray-400 font-normal mt-1 text-sm">Vue d'ensemble de vos performances et leads.</p>
                 </div>
                 <div className="flex items-center gap-4">
                     <span className="bg-emerald-50/80 text-emerald-600 text-xs font-medium px-4 py-2 rounded-full flex items-center gap-2">
@@ -72,7 +72,7 @@ export default function CRMDashboard() {
                 {/* Main Chart */}
                 <div className="md:col-span-2 bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)] h-[400px] flex flex-col">
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="font-serif font-light text-luna-charcoal text-lg">Revenus par Mois</h3>
+                        <h3 className="font-semibold text-luna-charcoal text-lg">Revenus par Mois</h3>
                         <button className="text-gray-300 hover:text-gray-500 transition-colors"><MoreVertical size={18} /></button>
                     </div>
                     <div className="flex-1 w-full relative">
@@ -98,7 +98,7 @@ export default function CRMDashboard() {
                             </ResponsiveContainer>
                         ) : (
                             <div className="flex items-center justify-center h-full text-gray-400">
-                                <p className="text-sm font-light">Ajoutez des voyages pour voir les revenus</p>
+                                <p className="text-sm font-normal">Ajoutez des voyages pour voir les revenus</p>
                             </div>
                         )}
                     </div>
@@ -107,21 +107,21 @@ export default function CRMDashboard() {
                 {/* Task List — real data from activities */}
                 <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)] flex flex-col">
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="font-serif font-light text-luna-charcoal text-lg">À faire</h3>
-                        <span className="text-[10px] bg-amber-50/80 text-amber-500 px-2.5 py-1 rounded-full font-medium">{pendingActivities.length}</span>
+                        <h3 className="font-semibold text-luna-charcoal text-lg">À faire</h3>
+                        <span className="text-xs bg-amber-50/80 text-amber-500 px-2.5 py-1 rounded-full font-medium">{pendingActivities.length}</span>
                     </div>
                     <div className="flex flex-col gap-2 flex-1">
                         {pendingActivities.length === 0 ? (
-                            <p className="text-sm text-gray-400 font-light italic flex-1 flex items-center justify-center">Aucune tâche en attente 🎉</p>
+                            <p className="text-sm text-gray-400 font-normal italic flex-1 flex items-center justify-center">Aucune tâche en attente 🎉</p>
                         ) : pendingActivities.map(activity => (
                             <div key={activity.id} className="flex items-center gap-4 p-3 hover:bg-white/80 rounded-xl cursor-pointer transition-all group">
                                 <div className={`w-2 h-2 rounded-full ${activity.type === 'urgent' ? 'bg-red-400' : activity.type === 'call' ? 'bg-luna-accent' : activity.type === 'email' ? 'bg-blue-400' : 'bg-gray-300'}`} />
                                 <div className="flex-1 min-w-0">
                                     <h4 className="text-sm font-medium text-gray-700 group-hover:text-luna-charcoal transition-colors truncate">{activity.title}</h4>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs text-gray-400 font-light">{activity.time}</span>
+                                        <span className="text-xs text-gray-400 font-normal">{activity.time}</span>
                                         {activity.contactName && (
-                                            <span className="text-[10px] bg-sky-50/80 text-sky-500 px-1.5 py-0.5 rounded font-medium">{activity.contactName}</span>
+                                            <span className="text-xs bg-sky-50/80 text-sky-500 px-1.5 py-0.5 rounded font-medium">{activity.contactName}</span>
                                         )}
                                     </div>
                                 </div>
@@ -153,8 +153,8 @@ function KPICard({ title, value, trend, icon: Icon, color }: any) {
                 </div>
             </div>
             <div>
-                <p className="text-gray-400 font-light text-xs mb-1">{title}</p>
-                <h3 className="text-2xl font-serif font-light text-luna-charcoal">{value}</h3>
+                <p className="text-gray-400 font-normal text-xs mb-1">{title}</p>
+                <h3 className="text-2xl font-semibold text-luna-charcoal">{value}</h3>
             </div>
         </div>
     );

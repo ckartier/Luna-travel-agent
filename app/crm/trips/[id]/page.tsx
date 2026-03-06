@@ -67,7 +67,7 @@ export default function TripDetailPage({ params }: { params: { id: string } }) {
                 <div className="flex justify-between items-start">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <span className="bg-luna-charcoal text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">
+                            <span className="bg-luna-charcoal text-white text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">
                                 {trip.status}
                             </span>
                             <span className="text-sm font-semibold text-gray-400 flex items-center gap-1.5 border border-gray-200 px-3 py-1 rounded-full">
@@ -125,7 +125,7 @@ export default function TripDetailPage({ params }: { params: { id: string } }) {
                                 <span className="text-sm font-bold text-gray-800 uppercase tracking-widest">Marge Nette</span>
                                 <div className="text-right">
                                     <span className="text-lg font-semibold text-emerald-600">{margin} €</span>
-                                    <span className="block text-[10px] font-bold text-emerald-600/60 bg-emerald-50 px-2 py-0.5 rounded-md mt-1">{marginPercent}%</span>
+                                    <span className="block text-[11px] font-bold text-emerald-600/60 bg-emerald-50 px-2 py-0.5 rounded-md mt-1">{marginPercent}%</span>
                                 </div>
                             </div>
                         </div>
@@ -179,7 +179,7 @@ export default function TripDetailPage({ params }: { params: { id: string } }) {
                                         </div>
                                         <div className="text-right">
                                             <p className="font-bold text-sm text-luna-charcoal">{b.clientPrice} €</p>
-                                            <p className="text-[10px] font-semibold text-emerald-500 border border-emerald-100 bg-emerald-50 rounded px-1.5 py-0.5 mt-1 animate-pulse">
+                                            <p className="text-[11px] font-semibold text-emerald-500 border border-emerald-100 bg-emerald-50 rounded px-1.5 py-0.5 mt-1 animate-pulse">
                                                 {b.status}
                                             </p>
                                         </div>

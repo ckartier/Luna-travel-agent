@@ -121,7 +121,7 @@ export default function AIAssistantPage() {
                             <Send size={18} />
                         </button>
                     </div>
-                    <p className="text-[10px] text-gray-400 text-center mt-2 font-medium">Luna AI utilise Gemini pour proposer des suggestions personnalisées.</p>
+                    <p className="text-[11px] text-gray-400 text-center mt-2 font-medium">Luna AI utilise Gemini pour proposer des suggestions personnalisées.</p>
                 </div>
             </div>
         </div>

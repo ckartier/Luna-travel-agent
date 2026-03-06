@@ -247,7 +247,7 @@ export default function SettingsPage() {
                 {/* Page header */}
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8 md:mb-10">
                     <h1 className="text-2xl font-semibold text-luna-charcoal tracking-tight">Mon Profil</h1>
-                    <p className="text-luna-text-muted text-base font-light mt-2">Gérez votre identité et vos paramètres de compte</p>
+                    <p className="text-luna-text-muted text-base font-normal mt-2">Gérez votre identité et vos paramètres de compte</p>
                 </motion.div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -304,14 +304,14 @@ export default function SettingsPage() {
                                     <div className="bg-luna-cream/60 rounded-xl px-4 py-3 border border-luna-warm-gray/8">
                                         <div className="flex items-center gap-1.5 text-luna-text-muted mb-1">
                                             <Clock size={12} />
-                                            <span className="text-[10px] uppercase tracking-wider font-semibold">Membre</span>
+                                            <span className="text-[11px] uppercase tracking-wider font-semibold">Membre</span>
                                         </div>
                                         <p className="text-sm font-semibold text-luna-charcoal">{memberSince}</p>
                                     </div>
                                     <div className="bg-luna-cream/60 rounded-xl px-4 py-3 border border-luna-warm-gray/8">
                                         <div className="flex items-center gap-1.5 text-luna-text-muted mb-1">
                                             <Sparkles size={12} />
-                                            <span className="text-[10px] uppercase tracking-wider font-semibold">Statut</span>
+                                            <span className="text-[11px] uppercase tracking-wider font-semibold">Statut</span>
                                         </div>
                                         <div className="flex items-center gap-1.5">
                                             <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span>
@@ -339,14 +339,14 @@ export default function SettingsPage() {
                                 <div className="bg-gradient-to-br from-violet-50/80 to-sky-50/80 rounded-xl p-4 border border-violet-100/40">
                                     <div className="flex items-center gap-2 mb-3">
                                         <CreditCard size={14} className="text-violet-500" />
-                                        <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-violet-600">Abonnement</span>
+                                        <span className="text-[11px] uppercase tracking-[0.15em] font-bold text-violet-600">Abonnement</span>
                                     </div>
                                     {isActive ? (
                                         <>
                                             <p className="text-sm font-semibold text-luna-charcoal">{planName || 'Actif'}</p>
                                             <div className="flex items-center gap-1.5 mt-1">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                                <span className="text-[10px] text-emerald-600 font-semibold">Actif</span>
+                                                <span className="text-[11px] text-emerald-600 font-semibold">Actif</span>
                                             </div>
                                         </>
                                     ) : (
@@ -355,7 +355,7 @@ export default function SettingsPage() {
 
                                     {/* ── Plan Switcher (dev/test) ── */}
                                     <div className="mt-3 pt-3 border-t border-violet-100/50">
-                                        <p className="text-[9px] uppercase tracking-wider text-violet-400 font-medium mb-2">Changer de plan</p>
+                                        <p className="text-[11px] uppercase tracking-wider text-violet-400 font-medium mb-2">Changer de plan</p>
                                         <div className="grid grid-cols-3 gap-1.5">
                                             {[
                                                 { id: 'starter', name: 'Starter', color: 'from-sky-500 to-blue-600' },
@@ -380,7 +380,7 @@ export default function SettingsPage() {
                                                                 }, { merge: true });
                                                             } catch (e) { console.error('Plan switch error:', e); }
                                                         }}
-                                                        className={`py-1.5 rounded-lg text-[10px] font-semibold transition-all ${isCurrent
+                                                        className={`py-1.5 rounded-lg text-[11px] font-semibold transition-all ${isCurrent
                                                             ? `bg-gradient-to-r ${plan.color} text-white shadow-sm`
                                                             : 'bg-white/80 text-gray-500 hover:bg-white hover:shadow-sm border border-gray-100'
                                                             }`}
@@ -401,7 +401,7 @@ export default function SettingsPage() {
                                                         }, { merge: true });
                                                     } catch (e) { console.error(e); }
                                                 }}
-                                                className="mt-2 w-full py-1.5 text-[10px] text-red-400 hover:text-red-500 hover:bg-red-50/50 rounded-lg transition-all font-medium"
+                                                className="mt-2 w-full py-1.5 text-[11px] text-red-400 hover:text-red-500 hover:bg-red-50/50 rounded-lg transition-all font-medium"
                                             >
                                                 Désactiver l'abonnement
                                             </button>
@@ -462,7 +462,7 @@ export default function SettingsPage() {
                                     <Globe size={16} className="text-luna-charcoal" />
                                 </div>
                                 <h3 className="text-base font-semibold text-luna-charcoal tracking-tight">Informations du compte</h3>
-                                <span className="ml-auto text-[10px] uppercase tracking-wider font-semibold text-luna-text-muted/50 bg-luna-cream px-2.5 py-1 rounded-full">Lecture seule</span>
+                                <span className="ml-auto text-[11px] uppercase tracking-wider font-semibold text-luna-text-muted/50 bg-luna-cream px-2.5 py-1 rounded-full">Lecture seule</span>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">

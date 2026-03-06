@@ -73,7 +73,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
             <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 md:p-8 shadow-[0_2px_20px_rgba(0,0,0,0.04)] mb-6 flex flex-col md:flex-row gap-8 items-start relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-50/50 to-purple-50/20 rounded-bl-full -z-10" />
 
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-luna-charcoal to-gray-600 flex items-center justify-center text-white text-3xl font-light shrink-0 shadow-lg border-4 border-white">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-luna-charcoal to-gray-600 flex items-center justify-center text-white text-3xl font-normal shrink-0 shadow-lg border-4 border-white">
                     {client.firstName[0]}{client.lastName[0]}
                 </div>
 
@@ -81,17 +81,17 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                         <div>
                             <div className="flex items-center gap-3 mb-1">
-                                <h1 className="text-3xl font-serif font-light text-luna-charcoal tracking-tight">{client.firstName} {client.lastName}</h1>
+                                <h1 className="text-3xl font-semibold text-luna-charcoal tracking-tight">{client.firstName} {client.lastName}</h1>
                                 {client.vipLevel === 'VIP' || client.vipLevel === 'Elite' ? (
-                                    <span className="bg-luna-accent text-luna-charcoal px-2.5 py-1 rounded-md text-[10px] font-semibold uppercase tracking-widest shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
+                                    <span className="bg-luna-accent text-luna-charcoal px-2.5 py-1 rounded-md text-[11px] font-semibold uppercase tracking-widest shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
                                         {client.vipLevel}
                                     </span>
                                 ) : null}
-                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wide border shadow-sm ${getTierColor(client.loyaltyTier)}`}>
+                                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium uppercase tracking-wide border shadow-sm ${getTierColor(client.loyaltyTier)}`}>
                                     {client.loyaltyTier || 'Standard'}
                                 </span>
                             </div>
-                            <p className="text-gray-400 font-light text-sm">{client.company ? `${client.company} • ` : ''}Client depuis {client.createdAt instanceof Date ? format(client.createdAt, 'yyyy') : format(client.createdAt?.toDate(), 'yyyy')}</p>
+                            <p className="text-gray-400 font-normal text-sm">{client.company ? `${client.company} • ` : ''}Client depuis {client.createdAt instanceof Date ? format(client.createdAt, 'yyyy') : format(client.createdAt?.toDate(), 'yyyy')}</p>
                         </div>
 
                         <div className="flex items-center gap-3 text-sm">
@@ -129,7 +129,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
 
                         <div className="bg-green-50/50 rounded-xl p-4 border border-green-100">
                             <p className="text-xs font-medium tracking-wide text-green-600 mb-1">Lifetime Value (LTV)</p>
-                            <p className="text-2xl font-serif font-light text-emerald-600">{LTV.toLocaleString('fr-FR')} €</p>
+                            <p className="text-2xl font-semibold text-emerald-600">{LTV.toLocaleString('fr-FR')} €</p>
                         </div>
                     </div>
                 </div>
@@ -166,7 +166,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
                             <div className="flex flex-wrap gap-2">
                                 {client.preferences && client.preferences.length > 0 ? (
                                     client.preferences.map((p, i) => (
-                                        <span key={i} className="bg-gray-100 text-gray-600 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md">
+                                        <span key={i} className="bg-gray-100 text-gray-600 text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded-md">
                                             {p}
                                         </span>
                                     ))
@@ -206,7 +206,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-sky-700 bg-sky-100/50 px-2 py-1 border border-sky-200 rounded-md">
+                                        <span className="text-[11px] font-bold uppercase tracking-widest text-sky-700 bg-sky-100/50 px-2 py-1 border border-sky-200 rounded-md">
                                             {lead.status}
                                         </span>
                                     </div>
@@ -237,7 +237,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">
                                             {trip.status}
                                         </span>
                                     </div>

@@ -56,7 +56,7 @@ export default function PaymentsPage() {
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <h1 className="text-2xl font-semibold text-luna-charcoal mb-1">Paiements</h1>
-                    <p className="text-sm text-gray-400 font-light">{payments.length} paiements — Total encaissé: <span className="font-medium text-emerald-500">{totalReceived.toLocaleString('fr-FR')} €</span></p>
+                    <p className="text-sm text-gray-400 font-normal">{payments.length} paiements — Total encaissé: <span className="font-medium text-emerald-500">{totalReceived.toLocaleString('fr-FR')} €</span></p>
                 </div>
                 <button onClick={() => setShowModal(true)} className="btn-primary">
                     <Plus size={16} /> Nouveau Paiement
@@ -67,15 +67,15 @@ export default function PaymentsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-[0_2px_20px_rgba(0,0,0,0.04)] flex items-center gap-4">
                     <div className="w-11 h-11 bg-emerald-50/80 rounded-full flex items-center justify-center text-emerald-400"><CheckCircle2 size={20} strokeWidth={1.5} /></div>
-                    <div><p className="text-xs font-medium tracking-wide text-gray-400">Encaissé</p><p className="text-xl font-serif font-light text-emerald-600">{totalReceived.toLocaleString('fr-FR')} €</p></div>
+                    <div><p className="text-xs font-medium tracking-wide text-gray-400">Encaissé</p><p className="text-xl font-semibold text-emerald-600">{totalReceived.toLocaleString('fr-FR')} €</p></div>
                 </div>
                 <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-[0_2px_20px_rgba(0,0,0,0.04)] flex items-center gap-4">
                     <div className="w-11 h-11 bg-sky-50/80 rounded-full flex items-center justify-center text-sky-400"><CreditCard size={20} strokeWidth={1.5} /></div>
-                    <div><p className="text-xs font-medium tracking-wide text-gray-400">Paiements</p><p className="text-xl font-serif font-light text-luna-charcoal">{payments.length}</p></div>
+                    <div><p className="text-xs font-medium tracking-wide text-gray-400">Paiements</p><p className="text-xl font-semibold text-luna-charcoal">{payments.length}</p></div>
                 </div>
                 <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-[0_2px_20px_rgba(0,0,0,0.04)] flex items-center gap-4">
                     <div className="w-11 h-11 bg-amber-50/80 rounded-full flex items-center justify-center text-amber-400"><DollarSign size={20} strokeWidth={1.5} /></div>
-                    <div><p className="text-xs font-medium tracking-wide text-gray-400">Moyen</p><p className="text-xl font-serif font-light text-luna-charcoal">{payments.length > 0 ? Math.round(totalReceived / payments.length).toLocaleString('fr-FR') : 0} €</p></div>
+                    <div><p className="text-xs font-medium tracking-wide text-gray-400">Moyen</p><p className="text-xl font-semibold text-luna-charcoal">{payments.length > 0 ? Math.round(totalReceived / payments.length).toLocaleString('fr-FR') : 0} €</p></div>
                 </div>
             </div>
 
@@ -93,11 +93,11 @@ export default function PaymentsPage() {
                             const inv = invoices.find(i => i.id === p.invoiceId);
                             return (
                                 <tr key={p.id} className="border-t border-gray-50 hover:bg-gray-50/80 transition-colors">
-                                    <td className="px-5 py-3.5"><span className="font-mono text-xs text-gray-500">{inv?.invoiceNumber || p.invoiceId.slice(0, 8)}</span><br /><span className="text-xs text-gray-400 font-light">{inv?.clientName}</span></td>
-                                    <td className="px-5 py-3.5 text-gray-400 font-light">{formatDate(p.paymentDate)}</td>
-                                    <td className="px-5 py-3.5 text-gray-600 font-light">{getMethodLabel(p.method)}</td>
+                                    <td className="px-5 py-3.5"><span className="font-mono text-xs text-gray-500">{inv?.invoiceNumber || p.invoiceId.slice(0, 8)}</span><br /><span className="text-xs text-gray-400 font-normal">{inv?.clientName}</span></td>
+                                    <td className="px-5 py-3.5 text-gray-400 font-normal">{formatDate(p.paymentDate)}</td>
+                                    <td className="px-5 py-3.5 text-gray-600 font-normal">{getMethodLabel(p.method)}</td>
                                     <td className="px-5 py-3.5 font-medium text-luna-charcoal">{p.amount.toLocaleString('fr-FR')} €</td>
-                                    <td className="px-5 py-3.5"><span className={`text-[10px] font-medium uppercase px-2.5 py-1 rounded-full ${getStatusStyle(p.status)}`}>{p.status}</span></td>
+                                    <td className="px-5 py-3.5"><span className={`text-[11px] font-medium uppercase px-2.5 py-1 rounded-full ${getStatusStyle(p.status)}`}>{p.status}</span></td>
                                 </tr>
                             );
                         })}
@@ -109,7 +109,7 @@ export default function PaymentsPage() {
             {showModal && (
                 <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
                     <div className="bg-white/95 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-md shadow-[0_25px_60px_rgba(0,0,0,0.12)] border border-white/50" onClick={e => e.stopPropagation()}>
-                        <h2 className="text-lg font-serif font-light text-luna-charcoal mb-6">Nouveau Paiement</h2>
+                        <h2 className="text-lg font-semibold text-luna-charcoal mb-6">Nouveau Paiement</h2>
                         <select value={newPayment.invoiceId} onChange={e => setNewPayment(p => ({ ...p, invoiceId: e.target.value }))}
                             className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50/50 text-sm mb-3 focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none">
                             <option value="">Sélectionner une facture</option>

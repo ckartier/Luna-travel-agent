@@ -64,7 +64,7 @@ export default function MarketingPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm flex items-center gap-4">
                     <div className="w-11 h-11 bg-violet-50 rounded-full flex items-center justify-center text-violet-500 border border-violet-100"><Send size={22} /></div>
-                    <div><p className="text-xs font-medium tracking-wide text-gray-400">Envoyés</p><p className="text-2xl font-serif font-light text-luna-charcoal">{totalSent.toLocaleString('fr-FR')}</p></div>
+                    <div><p className="text-xs font-medium tracking-wide text-gray-400">Envoyés</p><p className="text-2xl font-semibold text-luna-charcoal">{totalSent.toLocaleString('fr-FR')}</p></div>
                 </div>
                 <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm flex items-center gap-4">
                     <div className="w-11 h-11 bg-sky-50 rounded-full flex items-center justify-center text-sky-500 border border-sky-100"><BarChart3 size={22} /></div>
@@ -72,7 +72,7 @@ export default function MarketingPage() {
                 </div>
                 <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm flex items-center gap-4">
                     <div className="w-11 h-11 bg-fuchsia-50 rounded-full flex items-center justify-center text-fuchsia-500 border border-fuchsia-100"><Megaphone size={22} /></div>
-                    <div><p className="text-xs font-medium tracking-wide text-gray-400">Campagnes</p><p className="text-2xl font-serif font-light text-luna-charcoal">{campaigns.length}</p></div>
+                    <div><p className="text-xs font-medium tracking-wide text-gray-400">Campagnes</p><p className="text-2xl font-semibold text-luna-charcoal">{campaigns.length}</p></div>
                 </div>
             </div>
 
@@ -106,7 +106,7 @@ export default function MarketingPage() {
                                     <td className="px-4 py-3 font-mono text-gray-600">{c.sentCount}</td>
                                     <td className="px-4 py-3 font-mono text-gray-600">{c.openCount} <span className="text-gray-400">({c.sentCount > 0 ? Math.round((c.openCount / c.sentCount) * 100) : 0}%)</span></td>
                                     <td className="px-4 py-3 font-mono text-gray-600">{c.clickCount}</td>
-                                    <td className="px-4 py-3"><span className={`text-[10px] font-bold uppercase px-2 py-1 rounded border ${getStatusStyle(c.status)}`}>{c.status}</span></td>
+                                    <td className="px-4 py-3"><span className={`text-[11px] font-bold uppercase px-2 py-1 rounded border ${getStatusStyle(c.status)}`}>{c.status}</span></td>
                                     <td className="px-4 py-3 text-gray-500 text-xs">{formatDate(c.createdAt)}</td>
                                 </tr>
                             ))}
@@ -119,7 +119,7 @@ export default function MarketingPage() {
             {showModal && (
                 <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
                     <div className="bg-white/95 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-md shadow-[0_25px_60px_rgba(0,0,0,0.12)] border border-white/50" onClick={e => e.stopPropagation()}>
-                        <h2 className="text-lg font-serif font-light text-luna-charcoal mb-4">Nouvelle Campagne</h2>
+                        <h2 className="text-lg font-semibold text-luna-charcoal mb-4">Nouvelle Campagne</h2>
                         <input value={newCamp.name} onChange={e => setNewCamp(p => ({ ...p, name: e.target.value }))} placeholder="Nom de la campagne"
                             className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-3" autoFocus />
                         <select value={newCamp.channel} onChange={e => setNewCamp(p => ({ ...p, channel: e.target.value as any }))}

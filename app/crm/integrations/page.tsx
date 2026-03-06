@@ -62,14 +62,14 @@ export default function IntegrationsPage() {
                         {connected.map(integ => (
                             <div key={integ.id} className="bg-white rounded-2xl border border-emerald-200 p-5 shadow-sm relative overflow-hidden">
                                 <div className="absolute top-3 right-3">
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full border border-emerald-200">
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full border border-emerald-200">
                                         <Check size={10} /> Active
                                     </span>
                                 </div>
                                 <div className="text-3xl mb-3">{integ.logo}</div>
                                 <h3 className="text-base font-bold text-luna-charcoal mb-1">{integ.name}</h3>
                                 <p className="text-xs text-gray-500 leading-relaxed mb-3">{integ.description}</p>
-                                <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded uppercase tracking-wider">{integ.category}</span>
+                                <span className="text-[11px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded uppercase tracking-wider">{integ.category}</span>
                             </div>
                         ))}
                     </div>
@@ -86,7 +86,7 @@ export default function IntegrationsPage() {
                             <h3 className="text-base font-bold text-luna-charcoal mb-1">{integ.name}</h3>
                             <p className="text-xs text-gray-500 leading-relaxed mb-4">{integ.description}</p>
                             <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded uppercase tracking-wider">{integ.category}</span>
+                                <span className="text-[11px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded uppercase tracking-wider">{integ.category}</span>
                                 <button className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <Plus size={12} /> Connecter
                                 </button>

@@ -90,7 +90,7 @@ export default function InvoicesPage() {
                 </div>
                 <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
                     <p className="text-xs font-medium tracking-wide text-gray-400 mb-1">Factures</p>
-                    <p className="text-2xl font-serif font-light text-luna-charcoal">{invoices.length}</p>
+                    <p className="text-2xl font-semibold text-luna-charcoal">{invoices.length}</p>
                 </div>
             </div>
 
@@ -122,7 +122,7 @@ export default function InvoicesPage() {
                                 <td className="px-4 py-3 font-bold text-luna-charcoal">{inv.totalAmount.toLocaleString('fr-FR')} €</td>
                                 <td className="px-4 py-3">
                                     <select value={inv.status} onChange={e => handleStatusChange(inv.id!, e.target.value as any)}
-                                        className={`text-[10px] font-bold uppercase px-2 py-1 rounded border cursor-pointer ${getStatusStyle(inv.status)}`}>
+                                        className={`text-[11px] font-bold uppercase px-2 py-1 rounded border cursor-pointer ${getStatusStyle(inv.status)}`}>
                                         {['DRAFT', 'SENT', 'PARTIAL', 'PAID', 'OVERDUE', 'CANCELLED'].map(s => <option key={s} value={s}>{s}</option>)}
                                     </select>
                                 </td>
@@ -136,7 +136,7 @@ export default function InvoicesPage() {
             {showModal && (
                 <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
                     <div className="bg-white/95 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-md shadow-[0_25px_60px_rgba(0,0,0,0.12)] border border-white/50" onClick={e => e.stopPropagation()}>
-                        <h2 className="text-lg font-serif font-light text-luna-charcoal mb-4">Nouvelle Facture</h2>
+                        <h2 className="text-lg font-semibold text-luna-charcoal mb-4">Nouvelle Facture</h2>
                         <select value={newInv.clientId} onChange={e => setNewInv(p => ({ ...p, clientId: e.target.value }))}
                             className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-3">
                             <option value="">Sélectionner un client</option>

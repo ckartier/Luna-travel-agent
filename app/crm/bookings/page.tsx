@@ -113,12 +113,12 @@ export default function BookingsPage() {
                                     <td className="px-4 py-3 text-gray-500">{formatDate(b.checkIn)}{b.checkOut ? ` → ${formatDate(b.checkOut)}` : ''}</td>
                                     <td className="px-4 py-3">
                                         <select value={b.status} onChange={e => handleStatusChange(b.id!, e.target.value as any)}
-                                            className={`text-[10px] font-bold uppercase px-2 py-1 rounded border cursor-pointer ${getStatusStyle(b.status)}`}>
+                                            className={`text-[11px] font-bold uppercase px-2 py-1 rounded border cursor-pointer ${getStatusStyle(b.status)}`}>
                                             {['PENDING', 'CONFIRMED', 'TICKETED', 'CANCELLED', 'REFUNDED'].map(s => <option key={s} value={s}>{s}</option>)}
                                         </select>
                                     </td>
                                     <td className="px-4 py-3 text-right font-bold text-emerald-600">{(b.clientPrice - b.supplierCost).toLocaleString('fr-FR')} €</td>
-                                    <td className="px-4 py-3 text-gray-400">{b.confirmationNumber && <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded font-mono">{b.confirmationNumber}</span>}</td>
+                                    <td className="px-4 py-3 text-gray-400">{b.confirmationNumber && <span className="text-[11px] bg-gray-100 px-2 py-0.5 rounded font-mono">{b.confirmationNumber}</span>}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -130,7 +130,7 @@ export default function BookingsPage() {
             {showModal && (
                 <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
                     <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl" onClick={e => e.stopPropagation()}>
-                        <h2 className="text-lg font-serif font-light text-luna-charcoal mb-4">Nouvelle Réservation</h2>
+                        <h2 className="text-lg font-semibold text-luna-charcoal mb-4">Nouvelle Réservation</h2>
                         <div className="grid grid-cols-2 gap-3 mb-3">
                             <select value={newBooking.clientId} onChange={e => setNewBooking(p => ({ ...p, clientId: e.target.value }))}
                                 className="px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none">

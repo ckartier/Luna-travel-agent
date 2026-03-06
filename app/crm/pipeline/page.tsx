@@ -175,7 +175,7 @@ export default function CRMPipeline() {
                                         onDragStart={e => (e as any).dataTransfer.setData('dealId', deal.id)}
                                         className="bg-white p-5 rounded-2xl shadow-sm border border-luna-warm-gray/20 cursor-grab hover:shadow-md hover:border-luna-accent/30 transition-all group">
                                         <div className="flex justify-between items-start mb-2">
-                                            <span className="bg-luna-accent/10 text-luna-accent-dark text-[10px] font-semibold uppercase px-2 py-1 rounded-md">{deal.destination}</span>
+                                            <span className="bg-luna-accent/10 text-luna-accent-dark text-[11px] font-semibold uppercase px-2 py-1 rounded-md">{deal.destination}</span>
                                             <span className="text-gray-400 text-xs font-semibold flex items-center gap-1"><Clock size={12} /> {deal.days}j</span>
                                         </div>
                                         <h4 className="font-semibold text-luna-charcoal mb-1">{deal.client}</h4>
@@ -183,7 +183,7 @@ export default function CRMPipeline() {
 
                                         {deal.links && deal.links.length > 0 && (
                                             <div className="mb-3 pt-3 border-t border-gray-50">
-                                                <p className="text-[10px] text-gray-400 font-bold uppercase mb-2">Résultats Web IA</p>
+                                                <p className="text-[11px] text-gray-400 font-bold uppercase mb-2">Résultats Web IA</p>
                                                 {deal.links.map((link: any, idx: number) => (
                                                     <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="text-xs flex items-center gap-1 text-luna-accent-dark font-semibold hover:underline bg-luna-accent/10 px-2 py-1 flex-wrap rounded-md">
                                                         <Globe size={12} /> {link.title}
@@ -197,7 +197,7 @@ export default function CRMPipeline() {
                                             <div className="flex gap-1">
                                                 {STAGES.filter(s => s !== deal.stage).map(s => (
                                                     <button key={s} onClick={() => moveToStage(deal.id, s)}
-                                                        className={`text-[9px] px-2 py-1 rounded-md font-semibold transition-all border
+                                                        className={`text-xs px-2 py-1 rounded-md font-semibold transition-all border
                                                             ${s === 'GAGNÉ' ? 'text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100' :
                                                                 s === 'DEVIS ENVOYÉ' ? 'text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100' :
                                                                     'text-gray-500 bg-gray-50 border-gray-200 hover:bg-gray-100'}`}>

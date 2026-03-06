@@ -230,16 +230,16 @@ export default function MessagesInboxPage() {
                                             <span className={`text-[13px] truncate ${isActive ? 'font-bold text-luna-charcoal' : 'font-semibold text-gray-700'}`}>
                                                 {conv.clientName}
                                             </span>
-                                            <span className="text-[10px] text-gray-400 shrink-0">{formatDate(conv.lastDate)}</span>
+                                            <span className="text-[11px] text-gray-400 shrink-0">{formatDate(conv.lastDate)}</span>
                                         </div>
                                         <div className="flex items-center gap-2 mt-0.5">
                                             <p className="text-[12px] text-gray-400 truncate flex-1">{conv.lastMessage}</p>
                                             <div className="flex items-center gap-1.5 shrink-0">
-                                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold ${ch.bg} ${ch.text}`}>
+                                                <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold ${ch.bg} ${ch.text}`}>
                                                     {ch.icon}
                                                 </span>
                                                 {conv.unread > 0 && (
-                                                    <span className="min-w-[18px] h-[18px] bg-green-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center px-1">
+                                                    <span className="min-w-[18px] h-[18px] bg-green-500 text-white rounded-full text-[11px] font-bold flex items-center justify-center px-1">
                                                         {conv.unread}
                                                     </span>
                                                 )}
@@ -272,13 +272,13 @@ export default function MessagesInboxPage() {
                                         {(() => {
                                             const ch = getChannelColor(selectedConvData.channel);
                                             return (
-                                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${ch.bg} ${ch.text} ${ch.border} border`}>
+                                                <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${ch.bg} ${ch.text} ${ch.border} border`}>
                                                     {ch.icon} {ch.label}
                                                 </span>
                                             );
                                         })()}
-                                        <span className="text-[10px] text-gray-300">•</span>
-                                        <span className="text-[10px] text-gray-400">{selectedConvData.messages.length} message{selectedConvData.messages.length !== 1 ? 's' : ''}</span>
+                                        <span className="text-[11px] text-gray-300">•</span>
+                                        <span className="text-[11px] text-gray-400">{selectedConvData.messages.length} message{selectedConvData.messages.length !== 1 ? 's' : ''}</span>
                                     </div>
                                 </div>
                             </div>
@@ -305,7 +305,7 @@ export default function MessagesInboxPage() {
                                         <div key={msg.id}>
                                             {showDate && (
                                                 <div className="flex justify-center my-4">
-                                                    <span className="text-[10px] text-gray-400 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm border border-gray-100 font-medium">
+                                                    <span className="text-[11px] text-gray-400 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm border border-gray-100 font-medium">
                                                         {formatDate(msg.createdAt)}
                                                     </span>
                                                 </div>
@@ -318,7 +318,7 @@ export default function MessagesInboxPage() {
                                                         }`}>
                                                         {msg.content}
                                                         <div className={`flex items-center gap-1 mt-1 ${isOutbound ? 'justify-end' : 'justify-start'}`}>
-                                                            <span className={`text-[9px] ${isOutbound ? 'text-white/50' : 'text-gray-300'}`}>{time}</span>
+                                                            <span className={`text-[11px] ${isOutbound ? 'text-white/50' : 'text-gray-300'}`}>{time}</span>
                                                             {isOutbound && (
                                                                 <CheckCheck size={11} className="text-white/40" />
                                                             )}
@@ -410,7 +410,7 @@ export default function MessagesInboxPage() {
                                         onChange={e => setWaPhone(e.target.value)}
                                         className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:border-green-300 focus:bg-white transition-all"
                                     />
-                                    <p className="text-[10px] text-gray-300 mt-1.5">Indicatif pays + numéro (sans +, espaces ou tirets)</p>
+                                    <p className="text-[11px] text-gray-300 mt-1.5">Indicatif pays + numéro (sans +, espaces ou tirets)</p>
                                 </div>
                                 <div>
                                     <label className="text-[11px] uppercase tracking-wider font-semibold text-gray-400 mb-1.5 block">Premier message</label>
