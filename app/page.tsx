@@ -17,7 +17,12 @@ import {
   X,
   Loader2,
   Sparkles,
-  Radio
+  Radio,
+  Navigation2,
+  Building2,
+  Compass,
+  Fingerprint,
+  Zap
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -31,10 +36,10 @@ import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 type WorkflowState = 'IDLE' | 'ANALYSING' | 'DISTRIBUTING' | 'AGENTS_WORKING' | 'VALIDATION' | 'GENERATING_PROPOSALS' | 'PROPOSALS_READY';
 
 const agentMeta = {
-  transport: { title: 'Transport', subtitle: 'Vols & Routings', desc: 'Recherche des meilleurs vols directs et avec escales, analyse tarifaire multi-compagnies', icon: Radio, angle: -90, color: '#fb923c', gradient: 'from-orange-400 to-orange-300', pastelBg: 'bg-orange-50', pastelText: 'text-black', pastelBorder: 'border-orange-100', pastelRing: 'ring-orange-200' },
-  accommodation: { title: 'Hébergement', subtitle: 'Hôtels & Resorts', desc: 'Sélection premium des établissements, vérification disponibilités et tarifs négociés', icon: Hotel, angle: 180, color: '#fb923c', gradient: 'from-orange-400 to-orange-300', pastelBg: 'bg-orange-50', pastelText: 'text-black', pastelBorder: 'border-orange-100', pastelRing: 'ring-orange-200' },
-  client: { title: 'Profil Client', subtitle: 'CRM Analyse', desc: 'Analyse du profil voyageur, préférences historiques et recommandations personnalisées', icon: Users, angle: 0, color: '#fb923c', gradient: 'from-orange-400 to-orange-300', pastelBg: 'bg-orange-50', pastelText: 'text-black', pastelBorder: 'border-orange-100', pastelRing: 'ring-orange-200' },
-  itinerary: { title: 'Itinéraire', subtitle: 'Planning Jour/Jour', desc: 'Construction de l\'itinéraire optimisé, activités et transferts coordonnés', icon: CalendarRange, angle: 90, color: '#fb923c', gradient: 'from-orange-400 to-orange-300', pastelBg: 'bg-orange-50', pastelText: 'text-black', pastelBorder: 'border-orange-100', pastelRing: 'ring-orange-200' },
+  transport: { title: 'Transport', subtitle: 'Vols & Routings', desc: 'Recherche des meilleurs vols directs et avec escales, analyse tarifaire multi-compagnies', icon: Navigation2, angle: -90, color: '#fb923c', gradient: 'from-orange-400 to-orange-300', pastelBg: 'bg-orange-50', pastelText: 'text-black', pastelBorder: 'border-orange-100', pastelRing: 'ring-orange-200' },
+  accommodation: { title: 'Hébergement', subtitle: 'Hôtels & Resorts', desc: 'Sélection premium des établissements, vérification disponibilités et tarifs négociés', icon: Building2, angle: 180, color: '#fb923c', gradient: 'from-orange-400 to-orange-300', pastelBg: 'bg-orange-50', pastelText: 'text-black', pastelBorder: 'border-orange-100', pastelRing: 'ring-orange-200' },
+  client: { title: 'Profil Client', subtitle: 'CRM Analyse', desc: 'Analyse du profil voyageur, préférences historiques et recommandations personnalisées', icon: Fingerprint, angle: 0, color: '#fb923c', gradient: 'from-orange-400 to-orange-300', pastelBg: 'bg-orange-50', pastelText: 'text-black', pastelBorder: 'border-orange-100', pastelRing: 'ring-orange-200' },
+  itinerary: { title: 'Itinéraire', subtitle: 'Planning Jour/Jour', desc: 'Construction de l\'itinéraire optimisé, activités et transferts coordonnés', icon: Compass, angle: 90, color: '#fb923c', gradient: 'from-orange-400 to-orange-300', pastelBg: 'bg-orange-50', pastelText: 'text-black', pastelBorder: 'border-orange-100', pastelRing: 'ring-orange-200' },
 };
 
 type AgentKey = keyof typeof agentMeta;
@@ -337,6 +342,10 @@ function DashboardPage() {
               0%, 100% { transform: translateY(0); }
               50% { transform: translateY(-5px); }
             }
+            @keyframes shimmerProgress {
+              0% { transform: translateX(-100%); }
+              100% { transform: translateX(350%); }
+            }
           `}</style>
 
 
@@ -595,9 +604,9 @@ function DashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 30 }}
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="flex items-center justify-center gap-6 md:gap-8 relative z-20"
+                className="flex items-center justify-center gap-4 md:gap-6 relative z-20"
               >
-                {/* n8n-style SVG bezier curves — from Super Agent outward */}
+                {/* n8n-style SVG bezier curves — static, no animation */}
                 <svg
                   className="absolute pointer-events-none"
                   style={{ zIndex: 0, top: 0, left: 0, width: '100%', height: '100%', overflow: 'visible' }}
@@ -605,29 +614,22 @@ function DashboardPage() {
                   preserveAspectRatio="none"
                 >
                   {[
-                    // Super center-left → Transport center
-                    { id: 'st', x1: 40, y1: 50, x2: 8, y2: 50, delay: 0.3, cy: -8 },
-                    // Super center-left → Hébergement center
-                    { id: 'sh', x1: 40, y1: 50, x2: 26, y2: 50, delay: 0.4, cy: 6 },
-                    // Super center-right → Itinéraire center
-                    { id: 'si', x1: 60, y1: 50, x2: 74, y2: 50, delay: 0.4, cy: 6 },
-                    // Super center-right → Profil Client center
-                    { id: 'sp', x1: 60, y1: 50, x2: 92, y2: 50, delay: 0.3, cy: -8 },
+                    { id: 'st', x1: 40, y1: 50, x2: 8, y2: 50, cy: -8 },
+                    { id: 'sh', x1: 40, y1: 50, x2: 26, y2: 50, cy: 6 },
+                    { id: 'si', x1: 60, y1: 50, x2: 74, y2: 50, cy: 6 },
+                    { id: 'sp', x1: 60, y1: 50, x2: 92, y2: 50, cy: -8 },
                   ].map(w => {
                     const midX = (w.x1 + w.x2) / 2;
                     const d = `M ${w.x1} ${w.y1} C ${midX} ${w.y1 + w.cy}, ${midX} ${w.y2 + w.cy}, ${w.x2} ${w.y2}`;
                     return (
-                      <motion.path
+                      <path
                         key={w.id}
                         d={d}
                         fill="none"
-                        stroke="rgba(47,128,237,0.28)"
+                        stroke="rgba(47,128,237,0.22)"
                         strokeWidth="0.25"
                         strokeLinecap="round"
                         vectorEffect="non-scaling-stroke"
-                        initial={{ pathLength: 0, opacity: 0 }}
-                        animate={{ pathLength: 1, opacity: 1 }}
-                        transition={{ duration: 0.6, delay: w.delay, ease: [0.22, 1, 0.36, 1] }}
                         style={{ strokeWidth: '2px' }}
                       />
                     );
@@ -650,32 +652,32 @@ function DashboardPage() {
                         <div
                           className="relative flex flex-col items-center justify-center text-center"
                           style={{
-                            width: '200px',
-                            minHeight: '240px',
-                            borderRadius: '28px',
+                            width: '340px',
+                            minHeight: '380px',
+                            borderRadius: '32px',
                             background: '#FFFFFF',
                             border: '1px solid rgba(47,128,237,0.20)',
-                            boxShadow: '0 0 0 6px rgba(47,128,237,0.10), 0 10px 30px rgba(16,24,40,0.06)',
-                            padding: '28px 20px',
+                            boxShadow: '0 0 0 6px rgba(47,128,237,0.10), 0 16px 48px rgba(16,24,40,0.08)',
+                            padding: '36px 28px',
                           }}
                         >
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center mb-4" style={{ background: '#F2F4F7' }}>
-                            <Sparkles size={20} strokeWidth={1.75} style={{ color: '#2F80ED' }} />
+                          <div className="flex items-center justify-center mb-5">
+                            <Zap size={40} strokeWidth={1.5} style={{ color: '#2F80ED' }} />
                           </div>
 
-                          <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#0B1220', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+                          <h3 style={{ fontSize: '22px', fontWeight: 700, color: '#0B1220', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
                             Super Agent
                           </h3>
-                          <p style={{ fontSize: '12px', fontWeight: 500, color: '#667085', marginTop: '4px' }}>
+                          <p style={{ fontSize: '14px', fontWeight: 500, color: '#667085', marginTop: '6px' }}>
                             Orchestration IA
                           </p>
 
-                          <div className="flex items-center gap-2 mt-4">
-                            <span className="relative flex h-2 w-2">
+                          <div className="flex items-center gap-2 mt-6">
+                            <span className="relative flex h-2.5 w-2.5">
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-50" style={{ background: '#2F80ED' }} />
-                              <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#2F80ED' }} />
+                              <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ background: '#2F80ED' }} />
                             </span>
-                            <span style={{ fontSize: '12px', fontWeight: 500, color: '#0B1220' }}>
+                            <span style={{ fontSize: '14px', fontWeight: 500, color: '#0B1220' }}>
                               {workflowState === 'ANALYSING' && 'Analyse en cours…'}
                               {workflowState === 'DISTRIBUTING' && 'Distribution…'}
                               {workflowState === 'AGENTS_WORKING' && 'Recherche parallèle…'}
@@ -684,11 +686,20 @@ function DashboardPage() {
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-2 mt-4">
-                            <span style={{ fontSize: '11px', fontWeight: 600, color: '#2F80ED', background: 'rgba(47,128,237,0.08)', padding: '3px 10px', borderRadius: '12px' }}>
+                          {/* Progress bar */}
+                          <div style={{ width: '80%', height: '4px', background: '#F2F4F7', borderRadius: '2px', marginTop: '20px', overflow: 'hidden' }}>
+                            <div style={{
+                              width: workflowState === 'VALIDATION' ? '100%' : workflowState === 'AGENTS_WORKING' ? '60%' : '30%',
+                              height: '100%', borderRadius: '2px', background: '#2F80ED',
+                              transition: 'width 1s ease',
+                            }} />
+                          </div>
+
+                          <div className="flex items-center gap-2 mt-5">
+                            <span style={{ fontSize: '12px', fontWeight: 600, color: '#2F80ED', background: 'rgba(47,128,237,0.08)', padding: '4px 12px', borderRadius: '14px' }}>
                               4 Agents
                             </span>
-                            <span style={{ fontSize: '11px', fontWeight: 600, color: '#2F80ED', background: 'rgba(47,128,237,0.08)', padding: '3px 10px', borderRadius: '12px' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 600, color: '#2F80ED', background: 'rgba(47,128,237,0.08)', padding: '4px 12px', borderRadius: '14px' }}>
                               {activeAgents.length} Actifs
                             </span>
                           </div>
@@ -719,51 +730,64 @@ function DashboardPage() {
                       <div
                         className="relative flex flex-col items-center justify-center text-center transition-shadow duration-300"
                         style={{
-                          width: '160px',
-                          minHeight: '195px',
-                          borderRadius: '28px',
+                          width: '280px',
+                          minHeight: '300px',
+                          borderRadius: '32px',
                           background: '#FFFFFF',
                           border: isValidated ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(16,24,40,0.08)',
                           boxShadow: isValidated
-                            ? '0 0 0 4px rgba(16,185,129,0.10), 0 10px 30px rgba(16,185,129,0.08)'
-                            : '0 10px 30px rgba(16,24,40,0.06)',
-                          padding: '22px 16px',
+                            ? '0 0 0 4px rgba(16,185,129,0.10), 0 16px 48px rgba(16,185,129,0.08)'
+                            : '0 16px 48px rgba(16,24,40,0.06)',
+                          padding: '32px 24px',
                         }}
                       >
                         {/* Status badge */}
-                        <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-10">
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
                           {isValidated ? (
                             <motion.div
                               initial={{ scale: 0 }} animate={{ scale: 1 }}
                               transition={{ type: 'spring', stiffness: 300, damping: 15 }}
                               className="rounded-full p-0.5" style={{ background: '#FFFFFF', boxShadow: '0 2px 8px rgba(16,185,129,0.2)' }}
                             >
-                              <CheckCircle2 size={16} style={{ color: '#10b981' }} />
+                              <CheckCircle2 size={20} style={{ color: '#10b981' }} />
                             </motion.div>
                           ) : canValidate ? (
-                            <div className="w-3 h-3 rounded-full animate-pulse" style={{ background: '#F59E0B', boxShadow: '0 0 8px rgba(245,158,11,0.4)' }} />
+                            <div className="w-4 h-4 rounded-full animate-pulse" style={{ background: '#F59E0B', boxShadow: '0 0 8px rgba(245,158,11,0.4)' }} />
                           ) : isActive ? (
-                            <Loader2 size={14} className="animate-spin" style={{ color: '#667085' }} />
+                            <Loader2 size={16} className="animate-spin" style={{ color: '#667085' }} />
                           ) : null}
                         </div>
 
-                        {/* Icon badge */}
-                        <div
-                          className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mb-3"
-                          style={{ background: '#F2F4F7' }}
-                        >
-                          <Icon size={18} strokeWidth={1.75} style={{ color: isValidated ? '#10b981' : '#2F80ED' }} />
+                        {/* Icon — no background, bigger, minimal */}
+                        <div className="flex items-center justify-center flex-shrink-0 mb-4">
+                          <Icon size={36} strokeWidth={1.5} style={{ color: isValidated ? '#10b981' : '#2F80ED' }} />
                         </div>
 
-                        <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#0B1220', letterSpacing: '-0.02em', lineHeight: 1.3 }}>
+                        <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0B1220', letterSpacing: '-0.02em', lineHeight: 1.3 }}>
                           {meta.title}
                         </h3>
-                        <p style={{ fontSize: '12px', fontWeight: 500, color: '#667085', marginTop: '2px' }}>
+                        <p style={{ fontSize: '13px', fontWeight: 500, color: '#667085', marginTop: '4px' }}>
                           {meta.subtitle}
                         </p>
-                        <p style={{ fontSize: '12px', color: '#667085', opacity: 0.7, marginTop: '8px', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>
+                        <p style={{ fontSize: '13px', color: '#667085', opacity: 0.7, marginTop: '10px', lineHeight: 1.55, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>
                           {meta.desc}
                         </p>
+
+                        {/* Progress animation — shimmer bar when active */}
+                        {isActive && !isValidated && (
+                          <div style={{ width: '75%', height: '3px', background: '#F2F4F7', borderRadius: '2px', marginTop: '16px', overflow: 'hidden' }}>
+                            <div style={{
+                              width: '40%', height: '100%', borderRadius: '2px',
+                              background: 'linear-gradient(90deg, rgba(47,128,237,0.3), rgba(47,128,237,0.7), rgba(47,128,237,0.3))',
+                              animation: 'shimmerProgress 1.5s ease-in-out infinite',
+                            }} />
+                          </div>
+                        )}
+                        {isValidated && (
+                          <div style={{ width: '75%', height: '3px', background: '#ECFDF5', borderRadius: '2px', marginTop: '16px', overflow: 'hidden' }}>
+                            <div style={{ width: '100%', height: '100%', borderRadius: '2px', background: '#10b981' }} />
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   );
@@ -836,12 +860,22 @@ function DashboardPage() {
         {selectedAgent && agentResults && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-luna-charcoal/30 backdrop-blur-md"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(11,18,32,0.25)', backdropFilter: 'blur(12px)' }}
             onClick={() => setSelectedAgent(null)}
           >
             <motion.div
-              initial={{ scale: 0.92, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }}
-              className="bg-white/98 backdrop-blur-2xl rounded-3xl border border-luna-warm-gray/10 max-w-2xl w-full shadow-[0_32px_80px_rgba(0,0,0,0.12)] max-h-[85vh] overflow-hidden flex flex-col"
+              initial={{ scale: 0.95, opacity: 0, y: 16 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.97, opacity: 0, y: 8 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full max-w-4xl max-h-[88vh] flex flex-col"
+              style={{
+                background: '#FFFFFF',
+                borderRadius: '24px',
+                border: '1px solid rgba(16,24,40,0.08)',
+                boxShadow: '0 24px 80px rgba(16,24,40,0.14), 0 8px 24px rgba(16,24,40,0.06)',
+              }}
               onClick={e => e.stopPropagation()}
             >
               {(() => {
@@ -852,192 +886,320 @@ function DashboardPage() {
 
                 return (
                   <>
-                    {/* Clean premium header */}
-                    <div className="px-8 py-5 border-b border-luna-warm-gray/10 flex-shrink-0">
+                    {/* ── Header ── */}
+                    <div className="flex-shrink-0" style={{ padding: '28px 36px 20px', borderBottom: '1px solid rgba(16,24,40,0.06)' }}>
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg" style={{ backgroundColor: meta.color }}>
-                          <Icon size={22} className="text-white" />
+                        <div
+                          className="flex items-center justify-center flex-shrink-0"
+                          style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#F2F4F7' }}
+                        >
+                          <Icon size={22} strokeWidth={1.75} style={{ color: '#2F80ED' }} />
                         </div>
-                        <div className="flex-1">
-                          <h2 className="font-serif text-xl font-bold text-black">{meta.title}</h2>
-                          <p className="text-gray-500 text-xs uppercase tracking-[0.15em] font-semibold mt-0.5">Résultats de recherche</p>
+                        <div className="flex-1 min-w-0">
+                          <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0B1220', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+                            {meta.title}
+                          </h2>
+                          <p style={{ fontSize: '13px', fontWeight: 500, color: '#667085', marginTop: '2px' }}>
+                            Résultats de recherche
+                          </p>
                         </div>
-                        <button onClick={() => setSelectedAgent(null)} className="p-2 text-luna-text-muted/50 hover:text-luna-charcoal rounded-lg transition-colors">
-                          <X size={16} strokeWidth={1.5} />
+                        <button
+                          onClick={() => setSelectedAgent(null)}
+                          className="flex items-center justify-center transition-colors hover:bg-gray-100"
+                          style={{ width: '36px', height: '36px', borderRadius: '10px', color: '#667085' }}
+                        >
+                          <X size={18} strokeWidth={1.5} />
                         </button>
                       </div>
                     </div>
 
-                    {/* Scrollable content */}
-                    <div className="overflow-y-auto p-8 flex-1">
-                      <div className="bg-luna-cream/60 p-5 rounded-2xl border border-luna-warm-gray/10 mb-6">
-                        <p className="text-black leading-relaxed text-base">{summary}</p>
+                    {/* ── Scrollable content ── */}
+                    <div className="overflow-y-auto flex-1" style={{ padding: '24px 36px' }}>
+
+                      {/* Summary */}
+                      <div style={{ padding: '18px 22px', borderRadius: '16px', background: '#F7F8FA', border: '1px solid rgba(16,24,40,0.05)', marginBottom: '28px' }}>
+                        <p style={{ fontSize: '15px', fontWeight: 400, color: '#344054', lineHeight: 1.7 }}>{summary}</p>
                       </div>
 
-                      {/* Transport: Flights */}
+                      {/* ── Transport: Flights ── */}
                       {selectedAgent === 'transport' && data?.flights?.length > 0 && (
-                        <div className="space-y-2.5 mb-6">
-                          <div className="flex justify-between items-center">
-                            <h4 className="text-sm font-bold text-black uppercase tracking-wider">✈️ Vols ({data.flights.length})</h4>
+                        <div style={{ marginBottom: '28px' }}>
+                          <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#0B1220', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
+                            ✈️ Vols ({data.flights.length})
+                          </h4>
+                          <div className="space-y-3">
+                            {data.flights.map((f: any, i: number) => (
+                              <a key={i} href={f.url || '#'} target="_blank" rel="noopener noreferrer"
+                                className="block group transition-all"
+                                style={{ padding: '18px 22px', borderRadius: '16px', background: '#FFFFFF', border: '1px solid rgba(16,24,40,0.08)' }}
+                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(47,128,237,0.3)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(47,128,237,0.1)'; }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(16,24,40,0.08)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+                              >
+                                <div className="flex justify-between items-start">
+                                  <div className="flex items-center gap-3">
+                                    <span className="flex items-center justify-center flex-shrink-0"
+                                      style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#EBF5FF', fontSize: '13px', fontWeight: 700, color: '#2F80ED' }}>{i + 1}</span>
+                                    <div>
+                                      <span style={{ fontSize: '15px', fontWeight: 600, color: '#0B1220' }}>{f.airline} — {f.class}</span>
+                                      <p style={{ fontSize: '13px', color: '#667085', marginTop: '3px' }}>{f.route} • {f.duration} • {f.stops} escale(s)</p>
+                                    </div>
+                                  </div>
+                                  <span style={{ fontSize: '17px', fontWeight: 700, color: '#0B1220' }}>{f.price}</span>
+                                </div>
+                                <p style={{ fontSize: '12px', fontWeight: 600, color: '#2F80ED', marginTop: '8px', marginLeft: '44px' }}>
+                                  Réserver sur {f.domain || 'Skyscanner'} →
+                                </p>
+                              </a>
+                            ))}
                           </div>
-                          {data.flights.map((f: any, i: number) => (
-                            <a key={i} href={f.url || '#'} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-gray-200 hover:border-sky-300 hover:shadow-md transition-all group cursor-pointer">
-                              <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                  <span className="w-7 h-7 rounded-md bg-sky-50 flex items-center justify-center text-xs font-bold text-sky-600">{i + 1}</span>
-                                  <span className="font-bold text-base text-black group-hover:text-sky-600 transition-colors">{f.airline} — {f.class}</span>
-                                </div>
-                                <span className="font-serif font-bold text-black text-base">{f.price}</span>
-                              </div>
-                              <p className="text-sm text-gray-600 mt-1.5 ml-9">{f.route} • {f.duration} • {f.stops} escale(s)</p>
-                              <p className="text-xs text-sky-500 mt-1.5 ml-9 font-semibold group-hover:underline">Réserver sur {f.domain || 'Skyscanner'} →</p>
-                            </a>
-                          ))}
                         </div>
                       )}
 
-                      {/* Transport: Trains */}
+                      {/* ── Transport: Trains ── */}
                       {selectedAgent === 'transport' && data?.trains?.length > 0 && (
-                        <div className="space-y-2.5 mb-6">
-                          <h4 className="text-sm font-bold text-black uppercase tracking-wider">🚄 Trains ({data.trains.length})</h4>
-                          {data.trains.map((t: any, i: number) => (
-                            <a key={i} href={t.url || '#'} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-gray-200 hover:border-emerald-300 hover:shadow-md transition-all group cursor-pointer">
-                              <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                  <span className="w-7 h-7 rounded-md bg-emerald-50 flex items-center justify-center text-xs font-bold text-emerald-600">🚄</span>
-                                  <span className="font-bold text-base text-black group-hover:text-emerald-600 transition-colors">{t.operator} — {t.class}</span>
+                        <div style={{ marginBottom: '28px' }}>
+                          <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#0B1220', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
+                            🚄 Trains ({data.trains.length})
+                          </h4>
+                          <div className="space-y-3">
+                            {data.trains.map((t: any, i: number) => (
+                              <a key={i} href={t.url || '#'} target="_blank" rel="noopener noreferrer"
+                                className="block transition-all"
+                                style={{ padding: '18px 22px', borderRadius: '16px', background: '#FFFFFF', border: '1px solid rgba(16,24,40,0.08)' }}
+                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(16,185,129,0.3)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(16,185,129,0.1)'; }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(16,24,40,0.08)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+                              >
+                                <div className="flex justify-between items-start">
+                                  <div className="flex items-center gap-3">
+                                    <span className="flex items-center justify-center flex-shrink-0"
+                                      style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#ECFDF5', fontSize: '14px' }}>🚄</span>
+                                    <div>
+                                      <span style={{ fontSize: '15px', fontWeight: 600, color: '#0B1220' }}>{t.operator} — {t.class}</span>
+                                      <p style={{ fontSize: '13px', color: '#667085', marginTop: '3px' }}>{t.route} • {t.duration}{t.frequency ? ` • ${t.frequency}` : ''}</p>
+                                    </div>
+                                  </div>
+                                  <span style={{ fontSize: '17px', fontWeight: 700, color: '#0B1220' }}>{t.price}</span>
                                 </div>
-                                <span className="font-serif font-bold text-black text-base">{t.price}</span>
-                              </div>
-                              <p className="text-sm text-gray-600 mt-1.5 ml-9">{t.route} • {t.duration}{t.frequency ? ` • ${t.frequency}` : ''}</p>
-                              <p className="text-xs text-emerald-500 mt-1.5 ml-9 font-semibold group-hover:underline">Réserver sur {t.domain || 'Trainline'} →</p>
-                            </a>
-                          ))}
+                                <p style={{ fontSize: '12px', fontWeight: 600, color: '#10b981', marginTop: '8px', marginLeft: '44px' }}>
+                                  Réserver sur {t.domain || 'Trainline'} →
+                                </p>
+                              </a>
+                            ))}
+                          </div>
                         </div>
                       )}
 
-                      {/* Transport: Cars */}
+                      {/* ── Transport: Cars ── */}
                       {selectedAgent === 'transport' && data?.cars?.length > 0 && (
-                        <div className="space-y-2.5 mb-6">
-                          <h4 className="text-sm font-bold text-black uppercase tracking-wider">🚗 Voiture ({data.cars.length})</h4>
-                          {data.cars.map((c: any, i: number) => (
-                            <a key={i} href={c.url || '#'} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-gray-200 hover:border-amber-300 hover:shadow-md transition-all group cursor-pointer">
-                              <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                  <span className="w-7 h-7 rounded-md bg-amber-50 flex items-center justify-center text-xs font-bold text-amber-600">🚗</span>
-                                  <span className="font-bold text-base text-black group-hover:text-amber-600 transition-colors">{c.mode}</span>
+                        <div style={{ marginBottom: '28px' }}>
+                          <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#0B1220', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
+                            🚗 Voiture ({data.cars.length})
+                          </h4>
+                          <div className="space-y-3">
+                            {data.cars.map((c: any, i: number) => (
+                              <a key={i} href={c.url || '#'} target="_blank" rel="noopener noreferrer"
+                                className="block transition-all"
+                                style={{ padding: '18px 22px', borderRadius: '16px', background: '#FFFFFF', border: '1px solid rgba(16,24,40,0.08)' }}
+                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(245,158,11,0.3)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(245,158,11,0.1)'; }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(16,24,40,0.08)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+                              >
+                                <div className="flex justify-between items-start">
+                                  <div className="flex items-center gap-3">
+                                    <span className="flex items-center justify-center flex-shrink-0"
+                                      style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#FFFBEB', fontSize: '14px' }}>🚗</span>
+                                    <div>
+                                      <span style={{ fontSize: '15px', fontWeight: 600, color: '#0B1220' }}>{c.mode}</span>
+                                      <p style={{ fontSize: '13px', color: '#667085', marginTop: '3px' }}>{c.route} • {c.distance} • {c.duration}</p>
+                                      {c.details && <p style={{ fontSize: '12px', color: '#98A2B3', marginTop: '2px', fontStyle: 'italic' }}>{c.details}</p>}
+                                    </div>
+                                  </div>
+                                  <span style={{ fontSize: '17px', fontWeight: 700, color: '#0B1220' }}>{c.price}</span>
                                 </div>
-                                <span className="font-serif font-bold text-black text-base">{c.price}</span>
-                              </div>
-                              <p className="text-sm text-gray-600 mt-1.5 ml-9">{c.route} • {c.distance} • {c.duration}</p>
-                              {c.details && <p className="text-xs text-gray-500 mt-1 ml-9 italic">{c.details}</p>}
-                              <p className="text-xs text-amber-500 mt-1.5 ml-9 font-semibold group-hover:underline">Voir sur {c.domain || 'Google Maps'} →</p>
-                            </a>
-                          ))}
+                                <p style={{ fontSize: '12px', fontWeight: 600, color: '#F59E0B', marginTop: '8px', marginLeft: '44px' }}>
+                                  Voir sur {c.domain || 'Google Maps'} →
+                                </p>
+                              </a>
+                            ))}
+                          </div>
                         </div>
                       )}
 
-                      {/* Accommodation: Hotels (show all, with clickable links) */}
+                      {/* ── Accommodation: Hotels ── */}
                       {selectedAgent === 'accommodation' && data?.hotels?.length > 0 && (
-                        <div className="space-y-2.5 mb-6">
-                          <h4 className="text-sm font-bold text-black uppercase tracking-wider">🏨 Hôtels sélectionnés ({data.hotels.length})</h4>
-                          {data.hotels.map((h: any, i: number) => (
-                            <a key={i} href={h.url || '#'} target="_blank" rel="noopener noreferrer" className="block bg-white p-4 rounded-xl border border-gray-200 hover:border-sky-300 hover:shadow-md transition-all group cursor-pointer">
-                              <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                  <span className="w-7 h-7 rounded-md bg-indigo-50 flex items-center justify-center text-xs font-bold text-indigo-600">{i + 1}</span>
-                                  <span className="font-bold text-base text-black group-hover:text-sky-600 transition-colors">{h.name}</span>
+                        <div style={{ marginBottom: '28px' }}>
+                          <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#0B1220', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
+                            🏨 Hôtels sélectionnés ({data.hotels.length})
+                          </h4>
+                          <div className="space-y-3">
+                            {data.hotels.map((h: any, i: number) => (
+                              <a key={i} href={h.url || '#'} target="_blank" rel="noopener noreferrer"
+                                className="block transition-all"
+                                style={{ padding: '18px 22px', borderRadius: '16px', background: '#FFFFFF', border: '1px solid rgba(16,24,40,0.08)' }}
+                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(47,128,237,0.3)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(47,128,237,0.1)'; }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(16,24,40,0.08)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+                              >
+                                <div className="flex justify-between items-start">
+                                  <div className="flex items-center gap-3">
+                                    <span className="flex items-center justify-center flex-shrink-0"
+                                      style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#EEF4FF', fontSize: '13px', fontWeight: 700, color: '#4F46E5' }}>{i + 1}</span>
+                                    <div>
+                                      <span style={{ fontSize: '15px', fontWeight: 600, color: '#0B1220' }}>{h.name}</span>
+                                      <p style={{ fontSize: '13px', color: '#667085', marginTop: '3px' }}>{'★'.repeat(h.stars || 5)} • {h.highlights?.join(', ')}</p>
+                                      {h.recommendation && <p style={{ fontSize: '12px', color: '#98A2B3', marginTop: '3px', fontStyle: 'italic', lineHeight: 1.5 }}>{h.recommendation}</p>}
+                                    </div>
+                                  </div>
+                                  <span style={{ fontSize: '17px', fontWeight: 700, color: '#0B1220', whiteSpace: 'nowrap' }}>{h.pricePerNight}/nuit</span>
                                 </div>
-                                <span className="font-serif font-bold text-black text-base">{h.pricePerNight}/nuit</span>
-                              </div>
-                              <p className="text-sm text-gray-600 mt-1.5 ml-9">{'★'.repeat(h.stars || 5)} • {h.highlights?.join(', ')}</p>
-                              {h.recommendation && <p className="text-xs text-gray-500 mt-1 ml-9 italic leading-snug">{h.recommendation}</p>}
-                              <p className="text-xs text-sky-500 mt-1.5 ml-9 font-semibold group-hover:underline">Réserver sur {h.domain || h.name} →</p>
-                            </a>
-                          ))}
+                                <p style={{ fontSize: '12px', fontWeight: 600, color: '#2F80ED', marginTop: '8px', marginLeft: '44px' }}>
+                                  Réserver sur {h.domain || h.name} →
+                                </p>
+                              </a>
+                            ))}
+                          </div>
                         </div>
                       )}
 
-                      {/* Itinerary: Days with clickable links */}
+                      {/* ── Itinerary: Days ── */}
                       {selectedAgent === 'itinerary' && data?.days?.length > 0 && (
-                        <div className="space-y-2.5 mb-6">
-                          <h4 className="text-sm font-bold text-black uppercase tracking-wider">📅 Planning jour par jour ({data.days.length} jours)</h4>
-                          {data.days.map((d: any, i: number) => (
-                            <div key={i} className="bg-white p-4 rounded-xl border border-gray-200">
-                              <h5 className="font-bold text-base text-black flex items-center gap-2">
-                                <span className="w-7 h-7 rounded-md bg-orange-50 flex items-center justify-center text-xs font-bold text-orange-600">J{d.day}</span>
-                                {d.title}
-                              </h5>
-                              <div className="text-sm text-gray-600 mt-2 ml-9 space-y-1.5">
-                                <p className="flex items-start gap-1">
-                                  <span>🌅</span>
-                                  <span className="flex-1">{d.morning}
-                                    {d.morningUrl && <a href={d.morningUrl} target="_blank" rel="noopener noreferrer" className="ml-1 text-sky-500 hover:text-sky-600 font-medium hover:underline">→ Voir</a>}
+                        <div style={{ marginBottom: '28px' }}>
+                          <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#0B1220', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
+                            📅 Planning jour par jour ({data.days.length} jours)
+                          </h4>
+                          <div className="space-y-4">
+                            {data.days.map((d: any, i: number) => (
+                              <div key={i} style={{ padding: '22px 24px', borderRadius: '16px', background: '#FFFFFF', border: '1px solid rgba(16,24,40,0.08)' }}>
+                                <div className="flex items-center gap-3" style={{ marginBottom: '16px' }}>
+                                  <span className="flex items-center justify-center flex-shrink-0"
+                                    style={{ width: '36px', height: '36px', borderRadius: '12px', background: '#FFF7ED', fontSize: '14px', fontWeight: 800, color: '#EA580C' }}>
+                                    J{d.day}
                                   </span>
-                                </p>
-                                <p className="flex items-start gap-1">
-                                  <span>🌤️</span>
-                                  <span className="flex-1">{d.afternoon}
-                                    {d.afternoonUrl && <a href={d.afternoonUrl} target="_blank" rel="noopener noreferrer" className="ml-1 text-sky-500 hover:text-sky-600 font-medium hover:underline">→ Voir</a>}
-                                  </span>
-                                </p>
-                                <p className="flex items-start gap-1">
-                                  <span>🌙</span>
-                                  <span className="flex-1">{d.evening}
-                                    {d.eveningUrl && <a href={d.eveningUrl} target="_blank" rel="noopener noreferrer" className="ml-1 text-sky-500 hover:text-sky-600 font-medium hover:underline">→ Voir</a>}
-                                  </span>
-                                </p>
-                              </div>
-                              {d.highlight && <p className="text-[10px] text-emerald-600 font-semibold mt-1.5 ml-8 bg-emerald-50 inline-block px-2 py-0.5 rounded-full">{d.highlight}</p>}
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                                  <h5 style={{ fontSize: '16px', fontWeight: 700, color: '#0B1220' }}>{d.title}</h5>
+                                </div>
 
-                      {/* Client: Recommendations with clickable links */}
-                      {selectedAgent === 'client' && data?.recommendations?.length > 0 && (
-                        <div className="space-y-2 mb-6">
-                          <h4 className="text-sm font-bold text-black uppercase tracking-wider">💡 Recommandations ({data.recommendations.length})</h4>
-                          {data.recommendations.map((r: any, i: number) => {
-                            const text = typeof r === 'string' ? r : r?.text || r;
-                            const url = typeof r === 'object' ? r?.url : null;
-                            const type = typeof r === 'object' ? r?.type : null;
-                            return (
-                              <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 text-base text-black">
-                                <div className="flex items-start gap-2.5">
-                                  <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" />
-                                  <div className="flex-1">
-                                    <span>{text}</span>
-                                    {url && (
-                                      <a href={url} target="_blank" rel="noopener noreferrer" className="block mt-1 text-xs text-sky-500 hover:text-sky-600 font-medium hover:underline">
-                                        {type ? `Voir ${type}` : 'Voir le lien'} →
-                                      </a>
-                                    )}
+                                <div className="space-y-4" style={{ marginLeft: '48px' }}>
+                                  {/* Matin */}
+                                  <div className="flex items-start gap-3">
+                                    <span style={{ fontSize: '16px', lineHeight: 1.4, flexShrink: 0 }}>🌅</span>
+                                    <div className="flex-1">
+                                      <p style={{ fontSize: '14px', color: '#344054', lineHeight: 1.65 }}>{d.morning}</p>
+                                      {d.morningUrl && (
+                                        <a href={d.morningUrl} target="_blank" rel="noopener noreferrer"
+                                          style={{ fontSize: '12px', fontWeight: 600, color: '#2F80ED', marginTop: '4px', display: 'inline-block' }}>→ Voir</a>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {/* Après-midi */}
+                                  <div className="flex items-start gap-3">
+                                    <span style={{ fontSize: '16px', lineHeight: 1.4, flexShrink: 0 }}>🌤️</span>
+                                    <div className="flex-1">
+                                      <p style={{ fontSize: '14px', color: '#344054', lineHeight: 1.65 }}>{d.afternoon}</p>
+                                      {d.afternoonUrl && (
+                                        <a href={d.afternoonUrl} target="_blank" rel="noopener noreferrer"
+                                          style={{ fontSize: '12px', fontWeight: 600, color: '#2F80ED', marginTop: '4px', display: 'inline-block' }}>→ Voir</a>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {/* Soir */}
+                                  <div className="flex items-start gap-3">
+                                    <span style={{ fontSize: '16px', lineHeight: 1.4, flexShrink: 0 }}>🌙</span>
+                                    <div className="flex-1">
+                                      <p style={{ fontSize: '14px', color: '#344054', lineHeight: 1.65 }}>{d.evening}</p>
+                                      {d.eveningUrl && (
+                                        <a href={d.eveningUrl} target="_blank" rel="noopener noreferrer"
+                                          style={{ fontSize: '12px', fontWeight: 600, color: '#2F80ED', marginTop: '4px', display: 'inline-block' }}>→ Voir</a>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
+
+                                {d.highlight && (
+                                  <div style={{ marginTop: '14px', marginLeft: '48px' }}>
+                                    <span style={{
+                                      fontSize: '12px', fontWeight: 600, color: '#10b981',
+                                      background: '#ECFDF5', padding: '5px 14px', borderRadius: '20px',
+                                      display: 'inline-block', lineHeight: 1.3
+                                    }}>
+                                      ✨ {d.highlight}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
-                            );
-                          })}
+                            ))}
+                          </div>
                         </div>
                       )}
 
-                      <div className="flex flex-col gap-3 sticky bottom-0 bg-white/90 backdrop-blur-md pt-5 border-t border-luna-warm-gray/10 -mx-8 px-8 pb-1 flex-shrink-0">
-                        <div className="flex gap-3">
-                          <button onClick={() => setSelectedAgent(null)} className="flex-1 py-3 bg-white border border-luna-warm-gray/20 hover:bg-luna-cream text-luna-charcoal font-medium text-sm rounded-xl transition-all">Plus tard</button>
-                          <button onClick={handleValidateAgent} className="flex-[2] py-3.5 text-white font-semibold text-sm tracking-wider uppercase rounded-xl transition-all flex justify-center items-center gap-2 shadow-lg" style={{ background: `linear-gradient(135deg, ${meta.color}, ${meta.color}dd)`, boxShadow: `0 8px 24px ${meta.color}30` }}>
-                            Valider <CheckCircle2 size={16} />
-                          </button>
-                        </div>
-                        {agentResults && (
-                          <div className="flex justify-center">
-                            <PdfExport
-                              results={agentResults}
-                              destination={destinations[0]?.city || ''}
-                              departureDate={departureDate}
-                              returnDate={returnDate}
-                            />
+                      {/* ── Client: Recommendations ── */}
+                      {selectedAgent === 'client' && data?.recommendations?.length > 0 && (
+                        <div style={{ marginBottom: '28px' }}>
+                          <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#0B1220', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
+                            💡 Recommandations ({data.recommendations.length})
+                          </h4>
+                          <div className="space-y-3">
+                            {data.recommendations.map((r: any, i: number) => {
+                              const text = typeof r === 'string' ? r : r?.text || r;
+                              const url = typeof r === 'object' ? r?.url : null;
+                              const type = typeof r === 'object' ? r?.type : null;
+                              return (
+                                <div key={i} style={{ padding: '18px 22px', borderRadius: '16px', background: '#FFFFFF', border: '1px solid rgba(16,24,40,0.08)' }}>
+                                  <div className="flex items-start gap-3">
+                                    <CheckCircle2 size={16} style={{ color: '#10b981', flexShrink: 0, marginTop: '2px' }} />
+                                    <div className="flex-1">
+                                      <p style={{ fontSize: '14px', color: '#344054', lineHeight: 1.65 }}>{text}</p>
+                                      {url && (
+                                        <a href={url} target="_blank" rel="noopener noreferrer"
+                                          style={{ fontSize: '12px', fontWeight: 600, color: '#2F80ED', marginTop: '6px', display: 'inline-block' }}>
+                                          {type ? `Voir ${type}` : 'Voir le lien'} →
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                        )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ── Footer — sticky ── */}
+                    <div className="flex-shrink-0" style={{
+                      padding: '20px 36px',
+                      borderTop: '1px solid rgba(16,24,40,0.06)',
+                      background: 'rgba(255,255,255,0.95)',
+                      backdropFilter: 'blur(8px)',
+                      borderRadius: '0 0 24px 24px',
+                    }}>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setSelectedAgent(null)}
+                          style={{
+                            flex: 1, padding: '14px', borderRadius: '14px',
+                            background: '#FFFFFF', border: '1px solid rgba(16,24,40,0.12)',
+                            fontSize: '14px', fontWeight: 600, color: '#344054',
+                            cursor: 'pointer', transition: 'all 0.2s',
+                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F7F8FA'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FFFFFF'; }}
+                        >
+                          Plus tard
+                        </button>
+                        <button
+                          onClick={handleValidateAgent}
+                          style={{
+                            flex: 2, padding: '14px', borderRadius: '14px',
+                            background: '#2F80ED', border: 'none',
+                            fontSize: '14px', fontWeight: 700, color: '#FFFFFF',
+                            cursor: 'pointer', transition: 'all 0.2s',
+                            boxShadow: '0 4px 14px rgba(47,128,237,0.3)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                            letterSpacing: '0.04em', textTransform: 'uppercase',
+                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 20px rgba(47,128,237,0.4)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 14px rgba(47,128,237,0.3)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
+                        >
+                          Valider <CheckCircle2 size={16} />
+                        </button>
                       </div>
                     </div>
                   </>

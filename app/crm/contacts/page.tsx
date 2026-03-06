@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Users, Search, Star, Phone, Mail, RefreshCcw, X, Plus, ChevronRight, Plane, Calendar, Target, Clock, ExternalLink } from 'lucide-react';
+import { Users, Search, Star, Phone, Mail, RefreshCcw, X, Plus, ChevronRight, Plane, Calendar, Target, Clock, ExternalLink, Download, FileSpreadsheet } from 'lucide-react';
 import { getContacts, createContact, getLeadsForContact, getTripsForContact, getActivitiesForContact, CRMContact, CRMLead, CRMTrip, CRMActivity } from '@/src/lib/firebase/crm';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -76,6 +76,50 @@ export default function CRMContacts() {
         return `${c.firstName} ${c.lastName}`.toLowerCase().includes(q) || c.email.toLowerCase().includes(q);
     });
 
+    const exportContactsCSV = () => {
+        const headers = ['Prénom', 'Nom', 'Email', 'Téléphone', 'Niveau VIP', 'Préférences'];
+        const rows = contacts.map(c => [
+            c.firstName, c.lastName, c.email, c.phone || '', c.vipLevel, (c.preferences || []).join('; ')
+        ]);
+        const csv = [headers, ...rows].map(r => r.map(v => `"${(v || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `contacts_luna_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const exportAllDataCSV = async () => {
+        const allRows: string[][] = [];
+        const headers = ['Prénom', 'Nom', 'Email', 'Téléphone', 'VIP', 'Préférences', 'Leads', 'Voyages', 'Activités'];
+        for (const c of contacts) {
+            try {
+                const [leads, trips, activities] = await Promise.all([
+                    getLeadsForContact(tenantId!, c.id!),
+                    getTripsForContact(tenantId!, c.id!),
+                    getActivitiesForContact(tenantId!, c.id!),
+                ]);
+                allRows.push([
+                    c.firstName, c.lastName, c.email, c.phone || '', c.vipLevel,
+                    (c.preferences || []).join('; '),
+                    leads.map(l => `${l.destination} (${l.status})`).join(' | '),
+                    trips.map(t => `${t.title} ${t.startDate}-${t.endDate} ${t.amount}€`).join(' | '),
+                    activities.map(a => `${a.title} (${a.status})`).join(' | '),
+                ]);
+            } catch { allRows.push([c.firstName, c.lastName, c.email, c.phone || '', c.vipLevel, '', '', '', '']); }
+        }
+        const csv = [headers, ...allRows].map(r => r.map(v => `"${(v || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `export_complet_luna_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div className="flex h-full gap-0">
             {/* Main list */}
@@ -85,12 +129,18 @@ export default function CRMContacts() {
                         <h1 className="font-serif text-xl md:text-3xl font-semibold text-luna-charcoal tracking-tight">Contacts</h1>
                         <p className="text-luna-text-muted font-normal text-sm mt-1 hidden sm:block">{contacts.length} contact{contacts.length > 1 ? 's' : ''} enregistré{contacts.length > 1 ? 's' : ''}</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                         <div className="relative">
                             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-luna-text-muted" />
                             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher..."
                                 className="pl-8 pr-4 py-2 bg-white/80 border border-luna-warm-gray/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-100 w-40 md:w-56" />
                         </div>
+                        <button onClick={exportContactsCSV} title="Exporter contacts CSV" className="bg-white border border-luna-warm-gray/30 hover:bg-luna-cream text-luna-charcoal font-medium px-3 py-2 rounded-xl shadow-sm transition-all flex items-center gap-1.5 text-sm">
+                            <Download size={14} /> <span className="hidden md:inline">CSV</span>
+                        </button>
+                        <button onClick={exportAllDataCSV} title="Exporter toutes les données" className="bg-white border border-luna-warm-gray/30 hover:bg-luna-cream text-luna-charcoal font-medium px-3 py-2 rounded-xl shadow-sm transition-all flex items-center gap-1.5 text-sm">
+                            <FileSpreadsheet size={14} /> <span className="hidden md:inline">Tout</span>
+                        </button>
                         <button onClick={loadContacts} className="bg-white border border-luna-warm-gray/30 hover:bg-luna-cream text-luna-charcoal font-medium px-3 py-2 rounded-xl shadow-sm transition-all">
                             <RefreshCcw size={16} className={loading ? "animate-spin text-luna-accent" : "text-luna-text-muted"} />
                         </button>
