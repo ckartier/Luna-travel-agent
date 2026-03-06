@@ -664,13 +664,14 @@ function DashboardPage() {
                             border: '1px solid rgba(47,128,237,0.20)',
                             boxShadow: '0 0 0 6px rgba(47,128,237,0.10), 0 16px 48px rgba(16,24,40,0.08)',
                             padding: '36px 28px',
+                            fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
                           }}
                         >
                           <div className="flex items-center justify-center mb-5">
                             <Zap size={40} strokeWidth={1.5} style={{ color: '#2F80ED' }} />
                           </div>
 
-                          <h3 style={{ fontSize: '22px', fontWeight: 700, color: '#0B1220', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+                          <h3 style={{ fontSize: '24px', fontWeight: 700, color: '#0B1220', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
                             Super Agent
                           </h3>
                           <p style={{ fontSize: '14px', fontWeight: 500, color: '#667085', marginTop: '6px' }}>
@@ -744,6 +745,7 @@ function DashboardPage() {
                             ? '0 0 0 4px rgba(16,185,129,0.10), 0 16px 48px rgba(16,185,129,0.08)'
                             : '0 16px 48px rgba(16,24,40,0.06)',
                           padding: '32px 24px',
+                          fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
                         }}
                       >
                         {/* Status badge */}
@@ -768,13 +770,13 @@ function DashboardPage() {
                           <Icon size={36} strokeWidth={1.5} style={{ color: isValidated ? '#10b981' : '#2F80ED' }} />
                         </div>
 
-                        <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0B1220', letterSpacing: '-0.02em', lineHeight: 1.3 }}>
+                        <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#0B1220', letterSpacing: '-0.02em', lineHeight: 1.3 }}>
                           {meta.title}
                         </h3>
-                        <p style={{ fontSize: '13px', fontWeight: 500, color: '#667085', marginTop: '4px' }}>
+                        <p style={{ fontSize: '14px', fontWeight: 500, color: '#667085', marginTop: '4px' }}>
                           {meta.subtitle}
                         </p>
-                        <p style={{ fontSize: '13px', color: '#667085', opacity: 0.7, marginTop: '10px', lineHeight: 1.55, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>
+                        <p style={{ fontSize: '14px', color: '#667085', opacity: 0.7, marginTop: '10px', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>
                           {meta.desc}
                         </p>
 
