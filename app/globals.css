@@ -1,23 +1,35 @@
 @import "tailwindcss";
 
 @theme {
-  --color-luna-bg: #f5f0eb;
-  --color-luna-glass: rgba(255, 255, 255, 0.88);
-  --color-luna-glass-border: rgba(255, 255, 255, 0.7);
-  --color-luna-accent: #b8956a;
-  --color-luna-accent-dark: #8b6f47;
-  --color-luna-charcoal: #2c2c2c;
-  --color-luna-text: #2c2c2c;
-  --color-luna-text-muted: #8a8680;
-  --color-luna-warm-gray: #c4beb6;
-  --color-luna-cream: #faf8f5;
+  --color-luna-bg: #F9FAFB;
+  --color-luna-glass: rgba(255, 255, 255, 0.92);
+  --color-luna-glass-border: rgba(255, 255, 255, 0.8);
+  --color-luna-accent: #334155;
+  --color-luna-accent-dark: #0F172A;
+  --color-luna-charcoal: #121212;
+  --color-luna-text: #121212;
+  --color-luna-text-muted: #64748B;
+  --color-luna-warm-gray: #E2E8F0;
+  --color-luna-cream: #FFFFFF;
 
-  --font-sans: "Helvetica Neue", "HelveticaNeue", Helvetica, Arial, sans-serif;
-  --font-serif: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Outfit", ui-serif, Georgia, serif;
 
-  --shadow-glass: 0 16px 48px -12px rgba(0, 0, 0, 0.08);
-  --shadow-luxury: 0 24px 64px -16px rgba(44, 44, 44, 0.12);
-  --shadow-glow: 0 0 30px rgba(184, 149, 106, 0.2);
+  --shadow-glass: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+  --shadow-luxury: 0 32px 64px -16px rgba(0, 0, 0, 0.08);
+  --shadow-glow: 0 0 30px rgba(51, 65, 85, 0.1);
+}
+
+@keyframes superFloat {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
 }
 
 @layer base {
@@ -229,4 +241,187 @@
     opacity: 1;
     transform: scale(1.2);
   }
+}
+
+/* ── AGENT VALIDATION ANIMATIONS ─────────────────────── */
+
+@keyframes agentValidated {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+
+  30% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 15px rgba(16, 185, 129, 0.15);
+  }
+
+  60% {
+    transform: scale(0.97);
+    box-shadow: 0 0 0 25px rgba(16, 185, 129, 0);
+  }
+
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes shockwave {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.8;
+    border-width: 3px;
+  }
+
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+@keyframes checkBounce {
+  0% {
+    transform: scale(0) rotate(-45deg);
+    opacity: 0;
+  }
+
+  50% {
+    transform: scale(1.3) rotate(10deg);
+    opacity: 1;
+  }
+
+  70% {
+    transform: scale(0.9) rotate(-5deg);
+  }
+
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes glowPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.4), 0 0 60px rgba(16, 185, 129, 0.1);
+  }
+}
+
+/* Super agent celebration */
+@keyframes superAgentComplete {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+
+  40% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+
+  60% {
+    transform: scale(0.98);
+  }
+
+  80% {
+    transform: scale(1.02);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes celebrationBurst {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+@keyframes confettiFloat {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-120px) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+@keyframes shimmerSuccess {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes goldenGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 30px rgba(184, 149, 106, 0.2), 0 0 60px rgba(184, 149, 106, 0.05);
+    border-color: rgba(184, 149, 106, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 50px rgba(184, 149, 106, 0.35), 0 0 80px rgba(184, 149, 106, 0.1);
+    border-color: rgba(184, 149, 106, 0.5);
+  }
+}
+
+.agent-validated {
+  animation: agentValidated 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.agent-shockwave {
+  animation: shockwave 0.6s ease-out forwards;
+}
+
+.check-bounce {
+  animation: checkBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.glow-pulse {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+.super-complete {
+  animation: superAgentComplete 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.celebration-burst {
+  animation: celebrationBurst 0.8s ease-out forwards;
+}
+
+.shimmer-success {
+  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.15), transparent);
+  background-size: 200% 100%;
+  animation: shimmerSuccess 2s ease-in-out infinite;
+}
+
+.golden-glow {
+  animation: goldenGlow 2s ease-in-out infinite;
 }

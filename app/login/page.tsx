@@ -135,30 +135,7 @@ export default function LoginPage() {
                                             strokeDasharray="6 94"
                                             style={{ animation: `lrp ${4 + i * 0.5}s linear infinite`, animationDelay: `${i * 0.6}s` }}
                                             strokeOpacity="0.6" />
-                                        {/* Departure dot */}
-                                        <circle cx={route.from.x} cy={route.from.y} r="0.5" fill={route.color} opacity="0.5">
-                                            <animate attributeName="r" values="0.35;0.65;0.35" dur={`${3 + i * 0.2}s`} repeatCount="indefinite" />
-                                            <animate attributeName="opacity" values="0.3;0.7;0.3" dur={`${3 + i * 0.2}s`} repeatCount="indefinite" />
-                                        </circle>
-                                        {/* Arrival dot */}
-                                        <circle cx={route.to.x} cy={route.to.y} r="0.35" fill={route.color} opacity="0.3" />
-                                        {/* Flight label */}
-                                        <text x={(route.from.x + route.to.x) / 2} y={(route.from.y + route.to.y) / 2 - 2}
-                                            fill={route.color} fontSize="1.1" fontFamily="system-ui" fontWeight="600" textAnchor="middle" opacity="0.4">
-                                            {route.label}
-                                        </text>
-                                        {/* Moving luminous dot — proper circle, not deformed */}
                                         <path id={pathId} d={path} fill="none" stroke="none" />
-                                        <circle r="0.6" fill={route.color} opacity="0.8" filter="url(#loginGlow)">
-                                            <animateMotion dur={`${6 + i * 0.8}s`} repeatCount="indefinite">
-                                                <mpath href={`#${pathId}`} />
-                                            </animateMotion>
-                                        </circle>
-                                        <circle r="0.25" fill="#fff" opacity="0.95">
-                                            <animateMotion dur={`${6 + i * 0.8}s`} repeatCount="indefinite">
-                                                <mpath href={`#${pathId}`} />
-                                            </animateMotion>
-                                        </circle>
                                     </g>
                                 );
                             })}
@@ -174,11 +151,11 @@ export default function LoginPage() {
 
                 <div className="relative z-10 max-w-md">
                     <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                        className="font-serif text-[3.2rem] font-bold text-[#1a1a2e] leading-[1.15] mb-6" style={{ textShadow: '0 2px 12px rgba(232,228,220,0.9)' }}>
-                        Votre Concierge<br />Voyage <span className="text-sky-500">Intelligent</span>
+                        className="font-serif text-[3.2rem] font-normal tracking-tight text-[#1a1a2e] leading-[1.15] mb-6" style={{ textShadow: '0 2px 12px rgba(232,228,220,0.9)' }}>
+                        Votre Concierge<br />Voyage <span className="text-sky-500 font-normal">Intelligent</span>
                     </motion.h1>
                     <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-                        className="text-[#3a3a4a] text-lg leading-relaxed mb-10 font-medium" style={{ textShadow: '0 1px 6px rgba(232,228,220,0.8)' }}>
+                        className="text-[#3a3a4a] text-lg leading-relaxed mb-10 font-normal tracking-wide" style={{ textShadow: '0 1px 6px rgba(232,228,220,0.8)' }}>
                         Orchestrez vos voyages sur-mesure grâce à nos agents IA spécialisés. Transport, hébergement, itinéraire — tout est automatisé.
                     </motion.p>
 
@@ -193,14 +170,14 @@ export default function LoginPage() {
                                 <div className="w-9 h-9 rounded-xl bg-white/90 border border-luna-warm-gray/15 flex items-center justify-center shadow-sm">
                                     <feature.icon size={16} className="text-sky-500" />
                                 </div>
-                                <span className="text-[#2a2a3a] text-[15px] font-medium" style={{ textShadow: '0 1px 4px rgba(232,228,220,0.8)' }}>{feature.text}</span>
+                                <span className="text-[#2a2a3a] text-[15px] font-normal" style={{ textShadow: '0 1px 4px rgba(232,228,220,0.8)' }}>{feature.text}</span>
                             </div>
                         ))}
                     </motion.div>
                 </div>
 
                 <div className="relative z-10">
-                    <p className="text-[#1a1a2e]/30 text-xs uppercase tracking-wider font-semibold">Luna Travel Platform v2.0</p>
+                    <p className="text-[#1a1a2e]/30 text-xs uppercase tracking-wider font-normal">Luna Travel Platform v2.0</p>
                 </div>
             </div>
 
@@ -213,8 +190,8 @@ export default function LoginPage() {
                         <LunaLogo size={46} />
                     </div>
 
-                    <h2 className="font-serif text-3xl font-semibold text-luna-charcoal mb-2">Connexion</h2>
-                    <p className="text-luna-text-muted text-sm mb-8">Accédez à votre espace concierge voyage</p>
+                    <h2 className="font-serif text-3xl font-normal tracking-wide text-luna-charcoal mb-2">Connexion</h2>
+                    <p className="text-luna-text-muted text-sm mb-8 font-normal tracking-wide">Accédez à votre espace concierge voyage</p>
 
                     {error && (
                         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
@@ -226,15 +203,15 @@ export default function LoginPage() {
 
                     <form onSubmit={handleLogin} className="flex flex-col gap-5">
                         <div>
-                            <label className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-2">Email</label>
+                            <label className="text-[12px] uppercase tracking-[0.15em] font-normal text-luna-text-muted block mb-2">Email</label>
                             <input type="email" placeholder="votre@email.com"
-                                className="w-full py-3 px-4 bg-white rounded-xl border border-luna-warm-gray/20 text-luna-charcoal text-sm focus:outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100 transition-all"
+                                className="w-full py-3 px-4 bg-white rounded-xl border border-luna-warm-gray/20 text-luna-charcoal text-sm font-normal focus:outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100 transition-all cursor-text"
                                 value={email} onChange={e => setEmail(e.target.value)} required />
                         </div>
                         <div>
-                            <label className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted block mb-2">Mot de passe</label>
+                            <label className="text-[12px] uppercase tracking-[0.15em] font-normal text-luna-text-muted block mb-2">Mot de passe</label>
                             <input type="password" placeholder="••••••••"
-                                className="w-full py-3 px-4 bg-white rounded-xl border border-luna-warm-gray/20 text-luna-charcoal text-sm focus:outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100 transition-all"
+                                className="w-full py-3 px-4 bg-white rounded-xl border border-luna-warm-gray/20 text-luna-charcoal text-sm font-normal focus:outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100 transition-all cursor-text font-mono"
                                 value={password} onChange={e => setPassword(e.target.value)} required />
                         </div>
 
@@ -243,13 +220,13 @@ export default function LoginPage() {
                                 <input type="checkbox" className="w-3.5 h-3.5 rounded border-luna-warm-gray/30 accent-sky-500" />
                                 <span className="text-xs text-luna-text-muted">Se souvenir de moi</span>
                             </label>
-                            <button type="button" className="text-xs text-sky-500 hover:text-sky-600 font-medium transition-colors">
+                            <button type="button" className="text-xs text-sky-500 hover:text-sky-600 font-normal transition-colors">
                                 Mot de passe oublié ?
                             </button>
                         </div>
 
                         <button type="submit" disabled={isLoading}
-                            className="w-full py-3.5 btn-primary font-medium text-sm tracking-wider uppercase rounded-xl shadow-lg transition-all hover:shadow-xl active:scale-[0.98] flex justify-center items-center gap-2 disabled:opacity-60">
+                            className="w-full py-3.5 btn-primary font-normal tracking-widest text-sm uppercase rounded-xl shadow-lg transition-all hover:shadow-xl active:scale-[0.98] flex justify-center items-center gap-2 disabled:opacity-60">
                             {isLoading ? (
                                 <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
                                     className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
@@ -262,13 +239,13 @@ export default function LoginPage() {
                     {/* Separator */}
                     <div className="flex items-center gap-3 my-6">
                         <div className="flex-1 h-px bg-luna-warm-gray/20" />
-                        <span className="text-[10px] uppercase tracking-[0.15em] text-luna-text-muted font-semibold">ou continuer avec</span>
+                        <span className="text-[12px] uppercase tracking-[0.15em] text-luna-text-muted font-normal">ou continuer avec</span>
                         <div className="flex-1 h-px bg-luna-warm-gray/20" />
                     </div>
 
                     {/* Google Sign-In */}
                     <button type="button" onClick={handleGoogleLogin} disabled={isLoading}
-                        className="w-full py-3 px-4 bg-white hover:bg-gray-50 border border-luna-warm-gray/20 text-luna-charcoal font-medium text-sm rounded-xl shadow-sm transition-all hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-60">
+                        className="w-full py-3 px-4 bg-white hover:bg-gray-50 border border-luna-warm-gray/20 text-luna-charcoal font-normal text-sm rounded-xl shadow-sm transition-all hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-60">
                         <svg width="18" height="18" viewBox="0 0 24 24">
                             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
                             <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
@@ -280,7 +257,7 @@ export default function LoginPage() {
 
                     {/* Pricing mini summary */}
                     <div className="mt-6 pt-5 border-t border-luna-warm-gray/15">
-                        <p className="text-[10px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted mb-3 text-center">Nos formules B2B</p>
+                        <p className="text-[12px] uppercase tracking-[0.15em] font-normal text-luna-text-muted mb-3 text-center">Nos formules B2B</p>
                         <div className="flex gap-2">
                             {[
                                 { name: 'Starter', price: '99€', color: 'border-sky-200 bg-sky-50/50' },
@@ -289,21 +266,21 @@ export default function LoginPage() {
                             ].map(p => (
                                 <Link key={p.name} href="/pricing"
                                     className={`flex-1 text-center p-2 rounded-xl border ${p.color} hover:shadow-sm transition-all cursor-pointer`}>
-                                    <p className="text-[10px] font-bold text-luna-charcoal">{p.name}</p>
-                                    <p className="text-xs font-semibold text-luna-text-muted">{p.price}<span className="text-[9px]">/mois</span></p>
+                                    <p className="text-[12px] font-normal text-luna-charcoal">{p.name}</p>
+                                    <p className="text-xs font-normal text-luna-text-muted">{p.price}<span className="text-[12px]">/mois</span></p>
                                 </Link>
                             ))}
                         </div>
-                        <Link href="/pricing" className="block text-center text-xs text-sky-500 hover:text-sky-600 font-medium mt-3 transition-colors">
+                        <Link href="/pricing" className="block text-center text-xs text-sky-500 hover:text-sky-600 font-normal mt-3 transition-colors">
                             Voir tous les détails →
                         </Link>
                     </div>
 
-                    <p className="text-center text-[10px] text-luna-text-muted mt-4">
+                    <p className="text-center text-[12px] text-luna-text-muted mt-4">
                         En vous inscrivant, vous acceptez nos <Link href="/cgv" className="text-sky-500 hover:underline">Conditions Générales de Vente</Link>
                     </p>
 
-                    <p className="text-center text-[10px] text-gray-400 mt-6">© 2026 Luna — Concierge Voyage</p>
+                    <p className="text-center text-[12px] text-gray-400 mt-6">© 2026 Luna — Concierge Voyage</p>
                 </motion.div>
             </div>
         </div>

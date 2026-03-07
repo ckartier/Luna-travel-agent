@@ -1,13 +1,19 @@
+'use client';
+
 export default function GlobalLoading() {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-            <div className="text-center">
-                <div className="relative w-12 h-12 mx-auto mb-4">
-                    <div className="absolute inset-0 rounded-full border-2 border-gray-200" />
-                    <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-gray-900 animate-spin" />
-                </div>
-                <p className="text-sm text-gray-500 font-medium">Chargement…</p>
-            </div>
+        <div className="fixed top-0 left-0 right-0 h-[2px] z-[9999] overflow-hidden">
+            <div className="h-full bg-luna-charcoal w-full origin-left animate-loading-bar" />
+            <style jsx>{`
+                @keyframes loading-bar {
+                    0% { transform: translateX(-100%); }
+                    50% { transform: translateX(-20%); }
+                    100% { transform: translateX(0%); }
+                }
+                .animate-loading-bar {
+                    animation: loading-bar 1.5s ease-in-out infinite;
+                }
+            `}</style>
         </div>
     );
 }

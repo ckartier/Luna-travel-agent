@@ -16,8 +16,8 @@ const AMADEUS_TEST_BASE = 'https://test.api.amadeus.com'; // test env
 let cachedToken: { token: string; expires: number } | null = null;
 
 async function getAmadeusToken(): Promise<string | null> {
-    const key = process.env.AMADEUS_API_KEY;
-    const secret = process.env.AMADEUS_API_SECRET;
+    const key = process.env.AMADEUS_CLIENT_ID;
+    const secret = process.env.AMADEUS_CLIENT_SECRET;
     if (!key || !secret) return null;
 
     // Use cached token if still valid
@@ -143,7 +143,7 @@ export async function POST(request: Request) {
         if (!token) {
             return NextResponse.json({
                 available: false,
-                message: 'Amadeus API non configurée. Ajoutez AMADEUS_API_KEY et AMADEUS_API_SECRET dans .env.local',
+                message: 'Amadeus API non configurée. Ajoutez AMADEUS_CLIENT_ID et AMADEUS_CLIENT_SECRET dans .env.local',
             });
         }
 
@@ -163,7 +163,7 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
     const auth = await verifyAuth(request);
     if (auth instanceof Response) return auth;
-    const hasKeys = !!(process.env.AMADEUS_API_KEY && process.env.AMADEUS_API_SECRET);
+    const hasKeys = !!(process.env.AMADEUS_CLIENT_ID && process.env.AMADEUS_CLIENT_SECRET);
     return NextResponse.json({
         available: hasKeys,
         env: process.env.AMADEUS_ENV || 'test',

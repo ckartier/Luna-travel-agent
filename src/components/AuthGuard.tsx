@@ -39,7 +39,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
                         transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
                         className="w-5 h-5 border-2 border-luna-warm-gray/20 border-t-sky-500 rounded-full"
                     />
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-luna-text-muted font-semibold">
+                    <p className="text-[12px] uppercase tracking-[0.2em] text-luna-text-muted font-normal">
                         Chargement...
                     </p>
                 </motion.div>

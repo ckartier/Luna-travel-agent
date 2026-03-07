@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, MoreHorizontal, MessageSquare, Clock, Globe, RefreshCcw, X, CheckCircle2, Calendar, Plane, ChevronDown } from 'lucide-react';
-import { getLeads, createLead, updateLeadStatus, createTrip, createActivity, CRMLead } from '@/src/lib/firebase/crm';
+import { Plus, MoreHorizontal, MessageSquare, Clock, Globe, RefreshCcw, X, CheckCircle2, Calendar, Plane, ChevronDown, Trash2 } from 'lucide-react';
+import { getLeads, createLead, updateLeadStatus, updateLead, deleteLead, createTrip, createActivity, CRMLead } from '@/src/lib/firebase/crm';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { T, useAutoTranslate } from '@/src/components/T';
 
 const STAGES = ['NOUVEAU', 'IA EN COURS', 'DEVIS ENVOYÉ', 'GAGNÉ'] as const;
 
@@ -21,15 +22,27 @@ const mapStatusToStage = (status: string) => {
   switch (status) {
     case 'NEW': return 'NOUVEAU';
     case 'ANALYSING': return 'IA EN COURS';
-    case 'PROPOSAL_READY': return 'DEVIS ENVOYÉ';
+    case 'PROPOSAL_READY': case 'PROPOSAL_SENT': return 'DEVIS ENVOYÉ';
     case 'WON': return 'GAGNÉ';
     default: return 'NOUVEAU';
   }
 };
 
+const formatBudget = (b: string | number | undefined) => {
+  if (!b) return 'À définir';
+  const str = String(b);
+  // Extract numeric part
+  const num = parseInt(str.replace(/[^\d]/g, ''));
+  if (isNaN(num) || num === 0) return str;
+  // Keep text suffix like 'EUR' or '(tout compris)'
+  const suffix = str.replace(/[\d\s.,]/g, '').trim();
+  return `${num.toLocaleString('fr-FR')} ${suffix ? suffix : 'EUR'}`;
+};
+
 export default function CRMPipeline() {
   const router = useRouter();
   const { tenantId } = useAuth();
+  const at = useAutoTranslate();
   const [deals, setDeals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -59,7 +72,8 @@ export default function CRMPipeline() {
         destination: l.destination || 'Non définie', budget: l.budget || 'À définir',
         days: l.days || 7, stage: mapStatusToStage(l.status),
         status: l.status, links: l.links || [], dates: l.dates, pax: l.pax,
-        clientId: l.clientId,
+        clientId: l.clientId, clientName: l.clientName, tripId: l.tripId,
+        agentResults: l.agentResults, vibe: l.vibe, mustHaves: l.mustHaves,
       })));
     } catch (error) { console.error("Failed to load leads:", error); }
     finally { setLoading(false); }
@@ -85,6 +99,14 @@ export default function CRMPipeline() {
     loadLeads();
   };
 
+  const handleDeleteDeal = async (dealId: string, dealName: string) => {
+    if (!confirm(`Supprimer "${dealName}" du pipeline ?`)) return;
+    try {
+      await deleteLead(tenantId!, dealId);
+      loadLeads();
+    } catch (err) { console.error(err); }
+  };
+
   // Auto-create trip + activity when deal is won
   const handleCreateTrip = async () => {
     if (!wonModal) return;
@@ -106,6 +128,9 @@ export default function CRMPipeline() {
         notes: `Depuis pipeline. Pax: ${d.pax || 'N/A'}. Dates: ${d.dates || 'À définir'}`,
         color: '#22c55e',
       });
+
+      // Save tripId back to lead
+      await updateLead(tenantId!, d.id, { tripId: tripId });
 
       // Auto-create follow-up activity
       await createActivity(tenantId!, {
@@ -130,22 +155,27 @@ export default function CRMPipeline() {
     <div className="h-full flex flex-col relative">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 md:mb-8 relative z-10 gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-luna-charcoal tracking-tight">Pipeline des Ventes</h1>
-          <p className="text-luna-text-muted font-normal text-sm mt-1 hidden sm:block">Gérez vos demandes et devis en cours.</p>
+          <h1 className="text-2xl font-normal text-luna-charcoal tracking-tight"><T>Pipeline</T></h1>
+          <p className="text-luna-text-muted font-normal text-sm mt-1 hidden sm:block"><T>Gérez vos leads du premier contact au closing.</T></p>
         </div>
         <div className="flex gap-2 md:gap-3">
-          <button onClick={loadLeads} className="bg-white border border-luna-warm-gray/30 hover:bg-luna-cream text-luna-charcoal font-medium px-3 py-2 md:px-4 md:py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-2">
+          <button onClick={loadLeads} className="bg-white border border-luna-warm-gray/30 hover:bg-luna-cream text-luna-charcoal font-normal px-3 py-2 md:px-4 md:py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-2">
             <RefreshCcw size={16} className={loading ? "animate-spin text-luna-accent" : "text-luna-text-muted"} />
           </button>
-          <button onClick={() => setIsModalOpen(true)} className="bg-luna-charcoal hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2">
-            <Plus size={16} /> <span className="hidden sm:inline">Ajouter Manuel</span><span className="sm:hidden">Ajouter</span>
+          <button onClick={() => setIsModalOpen(true)} className="bg-luna-charcoal hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl text-sm font-normal transition-all flex items-center gap-2">
+            <Plus size={16} /> <span className="hidden sm:inline"><T>Ajouter</T></span><span className="sm:hidden"><T>Ajouter</T></span>
           </button>
         </div>
       </div>
 
       <div className="flex-1 flex gap-6 overflow-x-auto pb-4 relative z-10">
         {STAGES.map((stage) => {
-          const stageDeals = deals.filter(d => d.stage === stage);
+          const stageDeals = deals.filter(d => d.stage === stage)
+            .sort((a, b) => {
+              const dateA = a.createdAt?.seconds ? a.createdAt.seconds : (a.createdAt ? new Date(a.createdAt).getTime() / 1000 : 0);
+              const dateB = b.createdAt?.seconds ? b.createdAt.seconds : (b.createdAt ? new Date(b.createdAt).getTime() / 1000 : 0);
+              return dateB - dateA;
+            });
 
           let columnColor = "bg-white border-gray-100";
           if (stage === 'NOUVEAU') columnColor = "bg-white border-gray-100";
@@ -159,13 +189,13 @@ export default function CRMPipeline() {
               onDrop={e => { e.preventDefault(); const id = e.dataTransfer.getData('dealId'); if (id) moveToStage(id, stage); }}
               className={`flex-1 min-w-[240px] md:min-w-[300px] rounded-3xl p-3 md:p-4 border flex flex-col backdrop-blur-sm shadow-[0_4px_20px_rgb(0,0,0,0.02)] transition-colors ${columnColor}`}>
               <div className="flex justify-between items-center mb-4 px-2">
-                <h3 className="font-semibold text-luna-charcoal text-sm tracking-wider uppercase">{stage} <span className="text-luna-text-muted font-normal ml-2">({stageDeals.length})</span></h3>
+                <h3 className="font-normal text-luna-charcoal text-sm tracking-wider uppercase">{stage} <span className="text-luna-text-muted font-normal ml-2">({stageDeals.length})</span></h3>
                 <button className="text-gray-400 hover:text-gray-600"><MoreHorizontal size={18} /></button>
               </div>
 
               <div className="flex flex-col gap-3 overflow-y-auto flex-1 h-[calc(100vh-320px)] md:h-[calc(100vh-280px)] pr-2 scrollbar-thin scrollbar-thumb-gray-200">
                 {stageDeals.length === 0 && !loading && (
-                  <div className="text-center p-4 border border-dashed border-luna-warm-gray/40 rounded-xl text-luna-text-muted text-sm font-medium mt-2">
+                  <div className="text-center p-4 border border-dashed border-luna-warm-gray/40 rounded-xl text-luna-text-muted text-sm font-normal mt-2">
                     Aucun deal
                   </div>
                 )}
@@ -176,19 +206,72 @@ export default function CRMPipeline() {
                     onDragStart={e => (e as any).dataTransfer.setData('dealId', deal.id)}
                     className="bg-white p-5 rounded-2xl shadow-sm border border-luna-warm-gray/20 cursor-grab hover:shadow-md hover:border-luna-accent/30 transition-all group">
                     <div className="flex justify-between items-start mb-2">
-                      <span className="bg-luna-accent/10 text-luna-accent-dark text-[11px] font-semibold uppercase px-2 py-1 rounded-md">{deal.destination}</span>
-                      <span className="text-gray-400 text-xs font-semibold flex items-center gap-1"><Clock size={12} /> {deal.days}j</span>
+                      <span className="bg-luna-accent/10 text-luna-accent-dark text-[12px] font-normal uppercase px-2 py-1 rounded-md">{deal.destination}</span>
+                      <span className="text-gray-400 text-xs font-normal flex items-center gap-1"><Clock size={12} /> {deal.days}j</span>
                     </div>
                     {deal.clientId ? (
-                      <Link href={`/crm/clients/${deal.clientId}`} className="font-semibold text-sky-600 hover:text-sky-700 hover:underline mb-1 block text-sm" onClick={e => e.stopPropagation()}>
+                      <Link href={`/crm/clients/${deal.clientId}`} className="font-normal text-sky-600 hover:text-sky-700 hover:underline mb-1 block text-sm" onClick={e => e.stopPropagation()}>
                         {deal.client}
                       </Link>
                     ) : (
-                      <h4 className="font-semibold text-luna-charcoal mb-1">{deal.client}</h4>
+                      <h4 className="font-normal text-luna-charcoal mb-1">{deal.client}</h4>
                     )}
-                    <p className="text-emerald-600 font-bold mb-3">{deal.budget}</p>
+                    <p className="text-emerald-600 font-normal mb-1">{formatBudget(deal.budget)}</p>
 
-                    {deal.links && deal.links.length > 0 && (() => {
+                    {/* Dates de voyage */}
+                    {deal.dates && (
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-2 bg-gray-50 px-2 py-1 rounded-md w-fit">
+                        <Calendar size={11} className="text-gray-400" />
+                        <span className="font-normal">{deal.dates}</span>
+                      </div>
+                    )}
+
+                    {/* Pax & Vibe */}
+                    {(deal.pax || deal.vibe) && (
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {deal.pax && (
+                          <span className="text-[11px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-normal">{deal.pax}</span>
+                        )}
+                        {deal.vibe && (
+                          <span className="text-[11px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded font-normal">{deal.vibe}</span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ── Résultats IA (Devis) ── */}
+                    {deal.agentResults && (
+                      <div className="mb-3 pt-2 border-t border-gray-50">
+                        <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1.5">Résultats IA</p>
+                        <div className="space-y-1 mb-2">
+                          {deal.agentResults.transport?.flights?.length > 0 && (
+                            <p className="text-xs text-gray-600 flex items-center gap-1">
+                              <Plane size={11} className="text-sky-500" />
+                              {deal.agentResults.transport.flights.length} vol(s) trouvé(s)
+                            </p>
+                          )}
+                          {deal.agentResults.accommodation?.hotels?.length > 0 && (
+                            <p className="text-xs text-gray-600 flex items-center gap-1">
+                              🏨 {deal.agentResults.accommodation.hotels.length} hôtel(s)
+                            </p>
+                          )}
+                          {deal.agentResults.itinerary?.days?.length > 0 && (
+                            <p className="text-xs text-gray-600 flex items-center gap-1">
+                              🗓 {deal.agentResults.itinerary.days.length} jours d'itinéraire
+                            </p>
+                          )}
+                        </div>
+                        <Link
+                          href={`/crm/leads/${deal.id}/proposal`}
+                          className="block w-full text-center py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs rounded-lg transition-colors font-medium"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          📋 Voir le Devis Complet
+                        </Link>
+                      </div>
+                    )}
+
+                    {/* ── Liens Web IA ── */}
+                    {deal.links && deal.links.length > 0 ? (() => {
                       const linkId = `links-${deal.id}`;
                       // Group links by category — activities start with "J" + digit (J1, J2...)
                       const isActivity = (t: string) => /^J\d+\s/.test(t);
@@ -202,7 +285,7 @@ export default function CRMPipeline() {
                       ].filter(g => g.items.length > 0);
 
                       return (
-                        <div className="mb-3 pt-3 border-t border-gray-50">
+                        <div className="mb-3 pt-2 border-t border-gray-50">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -212,19 +295,19 @@ export default function CRMPipeline() {
                             }}
                             className="flex items-center justify-between w-full text-left mb-1"
                           >
-                            <p className="text-[11px] text-gray-400 font-bold uppercase flex items-center gap-2">
+                            <p className="text-[12px] text-gray-400 font-normal uppercase flex items-center gap-2">
                               Résultats Web IA
-                              <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-semibold normal-case">{deal.links.length}</span>
+                              <span className="text-[12px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-normal normal-case">{deal.links.length}</span>
                             </p>
                             <ChevronDown size={12} className="chevron text-gray-300 -rotate-90 transition-transform duration-200" />
                           </button>
                           <div id={linkId} className="hidden space-y-3 mt-1">
                             {groups.map((group, gIdx) => (
                               <div key={gIdx}>
-                                <p className="text-[10px] font-semibold text-gray-400 mb-1">{group.label} <span className="text-gray-300">({group.items.length})</span></p>
+                                <p className="text-[12px] font-normal text-gray-400 mb-1">{group.label} <span className="text-gray-300">({group.items.length})</span></p>
                                 <div className="space-y-1">
                                   {group.items.map((link: any, idx: number) => (
-                                    <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="text-xs flex items-center gap-1 text-luna-accent-dark font-semibold hover:underline bg-luna-accent/10 px-2 py-1 flex-wrap rounded-md">
+                                    <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="text-xs flex items-center gap-1 text-luna-accent-dark font-normal hover:underline bg-luna-accent/10 px-2 py-1 flex-wrap rounded-md">
                                       <Globe size={12} /> {link.title}
                                     </a>
                                   ))}
@@ -234,14 +317,30 @@ export default function CRMPipeline() {
                           </div>
                         </div>
                       );
-                    })()}
+                    })() : null}
+
+                    {/* Quick access links */}
+                    <div className="mb-3 pt-2 border-t border-gray-50 flex flex-wrap gap-2">
+                      {/* Lancer / Relancer l'Agent IA */}
+                      <Link href={`/?dest=${encodeURIComponent(deal.destination)}&pax=${encodeURIComponent(deal.pax || '2')}&budget=${encodeURIComponent(deal.budget)}&vibe=${encodeURIComponent(deal.vibe || '')}&notes=${encodeURIComponent(deal.mustHaves || '')}&clientName=${encodeURIComponent(deal.clientName || '')}&clientId=${encodeURIComponent(deal.clientId || '')}`} className="flex-1 py-1.5 text-center bg-gray-50 hover:bg-sky-50 text-sky-600 border border-gray-100 hover:border-sky-200 text-xs rounded-lg transition-colors font-normal">
+                        {deal.agentResults ? '🔄 Relancer l\'Agent IA' : 'Lancer l\'Agent IA'}
+                      </Link>
+                      {/* Link to trip if won */}
+                      {deal.tripId && (
+                        <Link href={`/crm/trips/${deal.tripId}/itinerary`}
+                          className="flex-1 py-1.5 text-center bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs rounded-lg transition-colors font-medium"
+                          onClick={e => e.stopPropagation()}>
+                          ✈️ Voir le Voyage
+                        </Link>
+                      )}
+                    </div>
 
                     {/* Stage move buttons */}
                     <div className="flex items-center justify-between border-t border-gray-50 pt-3">
                       <div className="flex gap-1">
                         {STAGES.filter(s => s !== deal.stage).map(s => (
                           <button key={s} onClick={() => moveToStage(deal.id, s)}
-                            className={`text-xs px-2 py-1 rounded-md font-semibold transition-all border
+                            className={`text-xs px-2 py-1 rounded-md font-normal transition-all border
                               ${s === 'GAGNÉ' ? 'text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100' :
                                 s === 'DEVIS ENVOYÉ' ? 'text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100' :
                                   'text-gray-500 bg-gray-50 border-gray-200 hover:bg-gray-100'}`}>
@@ -251,6 +350,10 @@ export default function CRMPipeline() {
                       </div>
                       <button className="text-luna-text-muted hover:text-luna-accent-dark group-hover:bg-luna-accent/10 p-1.5 rounded-lg transition-colors">
                         <MessageSquare size={16} />
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); handleDeleteDeal(deal.id, deal.destination); }}
+                        className="text-gray-300 hover:text-red-500 p-1.5 rounded-lg transition-colors hover:bg-red-50">
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </motion.div>
@@ -266,35 +369,35 @@ export default function CRMPipeline() {
         <div className="fixed inset-0 bg-luna-charcoal/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-lg shadow-luxury overflow-hidden">
             <div className="flex justify-between items-center p-6 border-b border-luna-warm-gray/20 bg-luna-cream">
-              <h2 className="font-serif text-xl font-semibold text-luna-charcoal">Nouvelle Demande</h2>
+              <h2 className="font-serif text-xl font-normal text-luna-charcoal"><T>Nouveau lead</T></h2>
               <button onClick={() => setIsModalOpen(false)} className="text-luna-text-muted hover:text-luna-charcoal p-2"><X size={20} /></button>
             </div>
             <form onSubmit={handleAddDeal} className="p-6 space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Client (Nom complet)</label>
-                <input type="text" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900" value={newDeal.clientName} onChange={e => setNewDeal({ ...newDeal, clientName: e.target.value })} />
+                <label className="text-xs font-normal text-gray-500 uppercase tracking-wider">Client (Nom complet)</label>
+                <input type="text" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-normal text-gray-900" value={newDeal.clientName} onChange={e => setNewDeal({ ...newDeal, clientName: e.target.value })} />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Destination</label>
-                <input type="text" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900" value={newDeal.destination} onChange={e => setNewDeal({ ...newDeal, destination: e.target.value })} />
+                <label className="text-xs font-normal text-gray-500 uppercase tracking-wider">Destination</label>
+                <input type="text" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-normal text-gray-900" value={newDeal.destination} onChange={e => setNewDeal({ ...newDeal, destination: e.target.value })} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Dates Estimées</label>
-                  <input type="text" placeholder="Ex: Été 2025" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900" value={newDeal.dates} onChange={e => setNewDeal({ ...newDeal, dates: e.target.value })} />
+                  <label className="text-xs font-normal text-gray-500 uppercase tracking-wider">Dates Estimées</label>
+                  <input type="text" placeholder="Ex: Été 2025" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-normal text-gray-900" value={newDeal.dates} onChange={e => setNewDeal({ ...newDeal, dates: e.target.value })} />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Budget Global</label>
-                  <input type="text" placeholder="Ex: 15 000 €" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900" value={newDeal.budget} onChange={e => setNewDeal({ ...newDeal, budget: e.target.value })} />
+                  <label className="text-xs font-normal text-gray-500 uppercase tracking-wider">Budget Global</label>
+                  <input type="text" placeholder="Ex: 15 000 €" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-normal text-gray-900" value={newDeal.budget} onChange={e => setNewDeal({ ...newDeal, budget: e.target.value })} />
                 </div>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Nombre Passagers (Pax)</label>
-                <input type="text" placeholder="Ex: 2 Adultes, 1 Enfant" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-medium text-gray-900" value={newDeal.pax} onChange={e => setNewDeal({ ...newDeal, pax: e.target.value })} />
+                <label className="text-xs font-normal text-gray-500 uppercase tracking-wider">Nombre Passagers (Pax)</label>
+                <input type="text" placeholder="Ex: 2 Adultes, 1 Enfant" required className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-luna-accent/30 font-normal text-gray-900" value={newDeal.pax} onChange={e => setNewDeal({ ...newDeal, pax: e.target.value })} />
               </div>
               <div className="pt-4 flex justify-end gap-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 rounded-xl text-luna-charcoal font-medium hover:bg-luna-cream transition-colors">Annuler</button>
-                <button type="submit" className="bg-luna-charcoal hover:bg-gray-800 text-white font-medium px-5 py-2.5 rounded-xl transition-all">Créer le Deal</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 rounded-xl text-luna-charcoal font-normal hover:bg-luna-cream transition-colors"><T>Annuler</T></button>
+                <button type="submit" className="bg-luna-charcoal hover:bg-gray-800 text-white font-normal px-5 py-2.5 rounded-xl transition-all">Créer le Deal</button>
               </div>
             </form>
           </div>
@@ -314,7 +417,7 @@ export default function CRMPipeline() {
                 <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-emerald-500 text-white flex items-center justify-center">
                   <CheckCircle2 size={28} />
                 </div>
-                <h2 className="font-serif text-xl font-semibold text-emerald-800">Deal Gagné ! 🎉</h2>
+                <h2 className="font-serif text-xl font-normal text-emerald-800">Deal {at('GAGNÉ')} ! 🎉</h2>
                 <p className="text-emerald-600 text-sm mt-1">{wonModal.deal.destination} — {wonModal.deal.client}</p>
               </div>
               <div className="p-6">
@@ -331,11 +434,11 @@ export default function CRMPipeline() {
                 </div>
                 <div className="flex gap-3">
                   <button onClick={() => setWonModal(null)}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-luna-charcoal font-medium hover:bg-luna-cream transition-colors border border-luna-warm-gray/20">
+                    className="flex-1 px-4 py-2.5 rounded-xl text-luna-charcoal font-normal hover:bg-luna-cream transition-colors border border-luna-warm-gray/20">
                     Non merci
                   </button>
                   <button onClick={handleCreateTrip}
-                    className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2">
+                    className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-normal rounded-xl transition-all flex items-center justify-center gap-2">
                     <CheckCircle2 size={16} /> Créer tout
                   </button>
                 </div>

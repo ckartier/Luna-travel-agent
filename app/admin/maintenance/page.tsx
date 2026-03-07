@@ -130,14 +130,14 @@ export default function AdminMaintenancePage() {
                 {/* Header */}
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="font-serif text-2xl md:text-3xl font-semibold text-white tracking-tight flex items-center gap-3">
+                        <h1 className="font-serif text-2xl md:text-3xl font-normal text-white tracking-tight flex items-center gap-3">
                             <Shield size={24} className="text-violet-400" />
                             Mode Maintenance
                         </h1>
-                        <p className="text-white/40 text-sm font-light mt-1">Contrôlez l'accès à la plateforme Luna Travel</p>
+                        <p className="text-white/40 text-sm font-normal mt-1">Contrôlez l'accès à la plateforme Luna Travel</p>
                     </div>
                     <motion.button onClick={save} disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                        className="flex items-center gap-2 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white font-semibold px-5 py-2.5 rounded-2xl text-sm transition-all shadow-lg shadow-violet-500/20 disabled:opacity-50">
+                        className="flex items-center gap-2 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white font-normal px-5 py-2.5 rounded-2xl text-sm transition-all shadow-lg shadow-violet-500/20 disabled:opacity-50">
                         {saved ? <><Check size={16} /> Sauvegardé !</> : saving ? 'Sauvegarde...' : 'Sauvegarder'}
                     </motion.button>
                 </motion.div>
@@ -158,8 +158,8 @@ export default function AdminMaintenancePage() {
                                         {enabled ? <WifiOff size={20} className="text-red-400" /> : <Wifi size={20} className="text-emerald-400" />}
                                     </div>
                                     <div>
-                                        <p className="font-semibold text-white text-sm">Maintenance</p>
-                                        <p className="text-[11px] text-white/30 mt-0.5">
+                                        <p className="font-normal text-white text-sm">Maintenance</p>
+                                        <p className="text-[12px] text-white/30 mt-0.5">
                                             {enabled ? 'Plateforme hors ligne' : 'Plateforme en ligne'}
                                         </p>
                                     </div>
@@ -171,7 +171,7 @@ export default function AdminMaintenancePage() {
                             </div>
 
                             {/* Status indicator */}
-                            <div className={`mt-4 flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-medium uppercase tracking-wider transition-all ${enabled
+                            <div className={`mt-4 flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-normal uppercase tracking-wider transition-all ${enabled
                                 ? 'bg-red-500/10 text-red-400 border border-red-500/10'
                                 : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10'
                                 }`}>
@@ -183,7 +183,7 @@ export default function AdminMaintenancePage() {
                         {/* Message card */}
                         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                             className="backdrop-blur-xl bg-white/[0.04] border border-white/[0.06] rounded-3xl p-6 shadow-lg">
-                            <label className="flex items-center gap-2 text-[10px] uppercase tracking-[0.15em] text-white/30 font-bold mb-3">
+                            <label className="flex items-center gap-2 text-[12px] uppercase tracking-[0.15em] text-white/30 font-normal mb-3">
                                 <MessageSquare size={12} /> Message affiché
                             </label>
                             <textarea value={message} onChange={e => setMessage(e.target.value)} rows={3}
@@ -193,7 +193,7 @@ export default function AdminMaintenancePage() {
                         {/* Planned end card */}
                         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
                             className="backdrop-blur-xl bg-white/[0.04] border border-white/[0.06] rounded-3xl p-6 shadow-lg">
-                            <label className="flex items-center gap-2 text-[10px] uppercase tracking-[0.15em] text-white/30 font-bold mb-3">
+                            <label className="flex items-center gap-2 text-[12px] uppercase tracking-[0.15em] text-white/30 font-normal mb-3">
                                 <Clock size={12} /> Retour prévu
                             </label>
                             <input type="datetime-local" value={plannedEnd} onChange={e => setPlannedEnd(e.target.value)}
@@ -212,7 +212,7 @@ export default function AdminMaintenancePage() {
                                 <div className="w-3 h-3 rounded-full bg-amber-500/60" />
                                 <div className="w-3 h-3 rounded-full bg-emerald-500/60" />
                             </div>
-                            <span className="text-[10px] text-white/20 font-mono">luna-travel.web.app</span>
+                            <span className="text-[12px] text-white/20 font-mono">luna-travel.web.app</span>
                         </div>
 
                         {/* Preview body with map */}
@@ -261,12 +261,12 @@ export default function AdminMaintenancePage() {
                                                     <AlertTriangle size={32} className="text-amber-400" />
                                                 </div>
                                             </div>
-                                            <h2 className="text-2xl font-serif font-bold text-white mb-3 tracking-tight">Maintenance en cours</h2>
-                                            <p className="text-white/40 text-sm max-w-sm mx-auto leading-relaxed font-light">{message}</p>
+                                            <h2 className="text-2xl font-serif font-normal text-white mb-3 tracking-tight">Maintenance en cours</h2>
+                                            <p className="text-white/40 text-sm max-w-sm mx-auto leading-relaxed font-normal">{message}</p>
                                             {plannedEnd && (
                                                 <div className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-violet-500/10 border border-violet-500/15">
                                                     <Clock size={13} className="text-violet-400" />
-                                                    <span className="text-[12px] text-violet-300 font-medium">
+                                                    <span className="text-[12px] text-violet-300 font-normal">
                                                         Retour prévu : {new Date(plannedEnd).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
                                                     </span>
                                                 </div>
@@ -280,15 +280,15 @@ export default function AdminMaintenancePage() {
                                                     <Globe size={32} className="text-emerald-400" />
                                                 </div>
                                             </div>
-                                            <h2 className="text-2xl font-serif font-bold text-white mb-3 tracking-tight">Plateforme en ligne</h2>
-                                            <p className="text-white/40 text-sm font-light">Tous les systèmes sont opérationnels</p>
+                                            <h2 className="text-2xl font-serif font-normal text-white mb-3 tracking-tight">Plateforme en ligne</h2>
+                                            <p className="text-white/40 text-sm font-normal">Tous les systèmes sont opérationnels</p>
                                             <div className="mt-5 flex items-center justify-center gap-4">
                                                 {[
                                                     { label: 'API', color: 'emerald' },
                                                     { label: 'Auth', color: 'sky' },
                                                     { label: 'DB', color: 'violet' },
                                                 ].map(s => (
-                                                    <div key={s.label} className={`flex items-center gap-1.5 text-[11px] font-medium text-${s.color}-400`}>
+                                                    <div key={s.label} className={`flex items-center gap-1.5 text-[12px] font-normal text-${s.color}-400`}>
                                                         <div className={`w-1.5 h-1.5 rounded-full bg-${s.color}-400`} />
                                                         {s.label}
                                                     </div>

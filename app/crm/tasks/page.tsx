@@ -74,10 +74,10 @@ export default function TasksPage() {
     <div className="min-h-screen">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-luna-charcoal mb-1">Tâches & Rappels</h1>
+          <h1 className="text-2xl font-normal text-luna-charcoal mb-1">Tâches & Rappels</h1>
           <p className="text-sm text-luna-text-muted">Organisez le travail de votre équipe en colonnes Kanban.</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="bg-luna-charcoal hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ">
+        <button onClick={() => setShowModal(true)} className="bg-luna-charcoal hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl text-sm font-normal transition-all flex items-center gap-2 ">
           <Plus size={16} /> Nouvelle Tâche
         </button>
       </div>
@@ -86,8 +86,8 @@ export default function TasksPage() {
         {COLUMNS.map(col => (
           <div key={col.id} className={`${col.bg} rounded-2xl p-4 min-h-[400px] border-t-4 ${col.color}`}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-sm font-bold text-luna-charcoal uppercase tracking-wider">{col.label}</h2>
-              <span className="text-xs font-bold bg-white text-gray-500 px-2 py-0.5 rounded-full border border-gray-200 ">
+              <h2 className="text-sm font-normal text-luna-charcoal uppercase tracking-wider">{col.label}</h2>
+              <span className="text-xs font-normal bg-white text-gray-500 px-2 py-0.5 rounded-full border border-gray-200 ">
                 {tasksByStatus(col.id).length}
               </span>
             </div>
@@ -95,31 +95,31 @@ export default function TasksPage() {
               {tasksByStatus(col.id).map(task => (
                 <div key={task.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow group">
                   <div className="flex justify-between items-start mb-2">
-                    <span className={`text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${getPriorityStyle(task.priority)}`}>
+                    <span className={`text-[12px] font-normal uppercase tracking-wider px-1.5 py-0.5 rounded border ${getPriorityStyle(task.priority)}`}>
                       {task.priority}
                     </span>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       {col.id !== 'DONE' && (
                         <button onClick={() => handleStatusChange(task.id!, COLUMNS[COLUMNS.findIndex(c => c.id === col.id) + 1]?.id || 'DONE')}
-                          className="text-[11px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-bold hover:bg-emerald-100">→</button>
+                          className="text-[12px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-normal hover:bg-emerald-100">→</button>
                       )}
                       <button onClick={() => handleDelete(task.id!)} className="text-gray-400 hover:text-red-500"><X size={12} /></button>
                     </div>
                   </div>
-                  <h3 className="text-sm font-bold text-luna-charcoal leading-snug mb-3">{task.title}</h3>
+                  <h3 className="text-sm font-normal text-luna-charcoal leading-snug mb-3">{task.title}</h3>
                   <div className="flex flex-wrap gap-1 mb-3">
                     {(task.tags || []).map((tag, i) => (
-                      <span key={i} className="text-[11px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded uppercase tracking-wider">{tag}</span>
+                      <span key={i} className="text-[12px] font-normal bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded uppercase tracking-wider">{tag}</span>
                     ))}
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t border-gray-100 text-xs text-gray-500">
-                    <span className="flex items-center gap-1.5 font-medium"><User size={12} /> {task.assigneeName}</span>
-                    <span className="flex items-center gap-1.5 font-medium"><Calendar size={12} /> {task.dueDate?.slice(5)}</span>
+                    <span className="flex items-center gap-1.5 font-normal"><User size={12} /> {task.assigneeName}</span>
+                    <span className="flex items-center gap-1.5 font-normal"><Calendar size={12} /> {task.dueDate?.slice(5)}</span>
                   </div>
                 </div>
               ))}
               <button onClick={() => { setNewTask(prev => ({ ...prev, title: '' })); setShowModal(true); }}
-                className="w-full flex items-center justify-center gap-2 text-gray-400 hover:text-luna-charcoal hover:bg-white/60 py-3 rounded-xl border border-dashed border-gray-200 hover:border-luna-charcoal transition-colors text-sm font-medium">
+                className="w-full flex items-center justify-center gap-2 text-gray-400 hover:text-luna-charcoal hover:bg-white/60 py-3 rounded-xl border border-dashed border-gray-200 hover:border-luna-charcoal transition-colors text-sm font-normal">
                 <Plus size={16} /> Ajouter
               </button>
             </div>
@@ -131,7 +131,7 @@ export default function TasksPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
           <div className="bg-white/95 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-md shadow-[0_25px_60px_rgba(0,0,0,0.12)] border border-white/50" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-luna-charcoal mb-4">Nouvelle Tâche</h2>
+            <h2 className="text-lg font-normal text-luna-charcoal mb-4">Nouvelle Tâche</h2>
             <input value={newTask.title} onChange={e => setNewTask(p => ({ ...p, title: e.target.value }))}
               placeholder="Titre de la tâche" className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-3 focus:outline-none focus:border-luna-charcoal" autoFocus />
             <select value={newTask.priority} onChange={e => setNewTask(p => ({ ...p, priority: e.target.value as any }))}
@@ -143,8 +143,8 @@ export default function TasksPage() {
             <input value={newTask.tags} onChange={e => setNewTask(p => ({ ...p, tags: e.target.value }))}
               placeholder="Tags (séparés par des virgules)" className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-4 focus:outline-none focus:border-luna-charcoal" />
             <div className="flex gap-3">
-              <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none font-medium text-gray-600 hover:bg-gray-50">Annuler</button>
-              <button onClick={handleCreate} className="flex-1 px-4 py-3 rounded-xl bg-luna-charcoal hover:bg-gray-800 text-white text-sm font-medium  transition-all">Créer</button>
+              <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none font-normal text-gray-600 hover:bg-gray-50">Annuler</button>
+              <button onClick={handleCreate} className="flex-1 px-4 py-3 rounded-xl bg-luna-charcoal hover:bg-gray-800 text-white text-sm font-normal  transition-all">Créer</button>
             </div>
           </div>
         </div>

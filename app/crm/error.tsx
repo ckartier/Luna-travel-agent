@@ -17,10 +17,10 @@ export default function CRMError({ error, reset }: { error: Error & { digest?: s
                         <line x1="12" y1="17" x2="12.01" y2="17" />
                     </svg>
                 </div>
-                <h2 className="text-lg font-serif font-bold text-luna-charcoal mb-2">Erreur dans le CRM</h2>
+                <h2 className="text-lg font-serif font-normal text-luna-charcoal mb-2">Erreur dans le CRM</h2>
                 <p className="text-sm text-gray-500 mb-5">{error.message || 'Un problème est survenu dans cette section.'}</p>
                 <button onClick={() => reset()}
-                    className="px-5 py-2 bg-luna-charcoal text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors">
+                    className="px-5 py-2 bg-luna-charcoal text-white rounded-xl text-sm font-normal hover:bg-gray-800 transition-colors">
                     Réessayer
                 </button>
             </div>

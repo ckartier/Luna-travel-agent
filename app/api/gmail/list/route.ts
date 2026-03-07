@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 import { listEmails, getEmailContent } from '@/src/lib/gmail/api';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
     const auth = await verifyAuth(request);
     if (auth instanceof Response) return auth;

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, Loader2, CreditCard, DollarSign, CheckCircle2 } from 'lucide-react';
 import { CRMPayment, getPayments, createPayment, getInvoices, CRMInvoice } from '@/src/lib/firebase/crm';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { T } from '@/src/components/T';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -15,19 +16,20 @@ export default function PaymentsPage() {
   const [showModal, setShowModal] = useState(false);
   const [newPayment, setNewPayment] = useState({ invoiceId: '', amount: 0, method: 'CREDIT_CARD' as CRMPayment['method'] });
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { if (tenantId) loadData(); }, [tenantId]);
 
   const loadData = async () => {
+    if (!tenantId) return;
     setLoading(true);
     try {
-      const [p, inv] = await Promise.all([getPayments(tenantId!), getInvoices(tenantId!)]);
+      const [p, inv] = await Promise.all([getPayments(tenantId), getInvoices(tenantId)]);
       setPayments(p); setInvoices(inv);
     } catch (e) { console.error(e); }
     setLoading(false);
   };
 
   const handleCreate = async () => {
-    if (!newPayment.invoiceId || !newPayment.amount) return;
+    if (!tenantId || !newPayment.invoiceId || !newPayment.amount) return;
     const inv = invoices.find(i => i.id === newPayment.invoiceId);
     await createPayment(tenantId!, {
       invoiceId: newPayment.invoiceId,
@@ -40,7 +42,7 @@ export default function PaymentsPage() {
     });
     setShowModal(false);
     setNewPayment({ invoiceId: '', amount: 0, method: 'CREDIT_CARD' });
-    loadData();
+    await loadData(); // Reload to reflect invoice status changes (PARTIAL/PAID)
   };
 
   const getMethodLabel = (m: string) => { switch (m) { case 'CREDIT_CARD': return '💳 Carte'; case 'BANK_TRANSFER': return '🏦 Virement'; case 'CASH': return '💵 Espèces'; case 'STRIPE': return '🟣 Stripe'; default: return m; } };
@@ -55,8 +57,8 @@ export default function PaymentsPage() {
     <div className="min-h-screen">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-luna-charcoal mb-1">Paiements</h1>
-          <p className="text-sm text-gray-400 font-normal">{payments.length} paiements — Total encaissé: <span className="font-medium text-emerald-500">{totalReceived.toLocaleString('fr-FR')} €</span></p>
+          <h1 className="text-2xl font-normal text-luna-charcoal mb-1"><T>Paiements</T></h1>
+          <p className="text-sm text-gray-400 font-normal">{payments.length} paiements — Total encaissé: <span className="font-normal text-emerald-500">{totalReceived.toLocaleString('fr-FR')} €</span></p>
         </div>
         <button onClick={() => setShowModal(true)} className="btn-primary">
           <Plus size={16} /> Nouveau Paiement
@@ -67,15 +69,15 @@ export default function PaymentsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 flex items-center gap-4">
           <div className="w-11 h-11 bg-emerald-50/80 rounded-full flex items-center justify-center text-emerald-400"><CheckCircle2 size={20} strokeWidth={1.5} /></div>
-          <div><p className="text-xs font-medium tracking-wide text-gray-400">Encaissé</p><p className="text-xl font-semibold text-emerald-600">{totalReceived.toLocaleString('fr-FR')} €</p></div>
+          <div><p className="text-xs font-normal tracking-wide text-gray-400">Encaissé</p><p className="text-xl font-normal text-emerald-600">{totalReceived.toLocaleString('fr-FR')} €</p></div>
         </div>
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 flex items-center gap-4">
           <div className="w-11 h-11 bg-sky-50/80 rounded-full flex items-center justify-center text-sky-400"><CreditCard size={20} strokeWidth={1.5} /></div>
-          <div><p className="text-xs font-medium tracking-wide text-gray-400">Paiements</p><p className="text-xl font-semibold text-luna-charcoal">{payments.length}</p></div>
+          <div><p className="text-xs font-normal tracking-wide text-gray-400">Paiements</p><p className="text-xl font-normal text-luna-charcoal">{payments.length}</p></div>
         </div>
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 flex items-center gap-4">
           <div className="w-11 h-11 bg-amber-50/80 rounded-full flex items-center justify-center text-amber-400"><DollarSign size={20} strokeWidth={1.5} /></div>
-          <div><p className="text-xs font-medium tracking-wide text-gray-400">Moyen</p><p className="text-xl font-semibold text-luna-charcoal">{payments.length > 0 ? Math.round(totalReceived / payments.length).toLocaleString('fr-FR') : 0} €</p></div>
+          <div><p className="text-xs font-normal tracking-wide text-gray-400">Moyen</p><p className="text-xl font-normal text-luna-charcoal">{payments.length > 0 ? Math.round(totalReceived / payments.length).toLocaleString('fr-FR') : 0} €</p></div>
         </div>
       </div>
 
@@ -83,7 +85,7 @@ export default function PaymentsPage() {
       <div className="bg-white/70 backdrop-blur-sm rounded-2xl overflow-hidden ">
         <table className="w-full text-sm">
           <thead className="bg-gray-50/50">
-            <tr className="text-left text-xs font-medium text-gray-400 tracking-wide">
+            <tr className="text-left text-xs font-normal text-gray-400 tracking-wide">
               <th className="px-5 py-3.5">Facture</th><th className="px-5 py-3.5">Date</th><th className="px-5 py-3.5">Méthode</th>
               <th className="px-5 py-3.5">Montant</th><th className="px-5 py-3.5">Statut</th>
             </tr>
@@ -96,8 +98,8 @@ export default function PaymentsPage() {
                   <td className="px-5 py-3.5"><span className="font-mono text-xs text-gray-500">{inv?.invoiceNumber || p.invoiceId.slice(0, 8)}</span><br /><span className="text-xs text-gray-400 font-normal">{inv?.clientName}</span></td>
                   <td className="px-5 py-3.5 text-gray-400 font-normal">{formatDate(p.paymentDate)}</td>
                   <td className="px-5 py-3.5 text-gray-600 font-normal">{getMethodLabel(p.method)}</td>
-                  <td className="px-5 py-3.5 font-medium text-luna-charcoal">{p.amount.toLocaleString('fr-FR')} €</td>
-                  <td className="px-5 py-3.5"><span className={`text-[11px] font-medium uppercase px-2.5 py-1 rounded-full ${getStatusStyle(p.status)}`}>{p.status}</span></td>
+                  <td className="px-5 py-3.5 font-normal text-luna-charcoal">{p.amount.toLocaleString('fr-FR')} €</td>
+                  <td className="px-5 py-3.5"><span className={`text-[12px] font-normal uppercase px-2.5 py-1 rounded-full ${getStatusStyle(p.status)}`}>{p.status}</span></td>
                 </tr>
               );
             })}
@@ -109,7 +111,7 @@ export default function PaymentsPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
           <div className="bg-white/95 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-md shadow-[0_25px_60px_rgba(0,0,0,0.12)] border border-white/50" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-luna-charcoal mb-6">Nouveau Paiement</h2>
+            <h2 className="text-lg font-normal text-luna-charcoal mb-6">Nouveau Paiement</h2>
             <select value={newPayment.invoiceId} onChange={e => setNewPayment(p => ({ ...p, invoiceId: e.target.value }))}
               className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50/50 text-sm mb-3 focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none">
               <option value="">Sélectionner une facture</option>

@@ -96,17 +96,36 @@ export default function MessagesInboxPage() {
     if (!inputMsg.trim() || !selectedConv || sending) return;
     setSending(true);
     const conv = conversations.find(c => c.clientId === selectedConv);
+    const contact = contacts.find(c => c.id === selectedConv);
     const channel = conv?.channel || 'CHAT';
+
+    // Fallbacks if sending to a direct number
+    const toPhone = contact?.phone || selectedConv;
+    const toEmail = contact?.email;
 
     if (channel === 'WHATSAPP') {
       try {
         const res = await fetchWithAuth('/api/whatsapp/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: selectedConv, message: inputMsg.trim(), clientName: conv?.clientName || 'Client' }),
+          body: JSON.stringify({
+            to: toPhone,
+            message: inputMsg.trim(),
+            clientName: conv?.clientName || 'Client',
+            clientId: selectedConv,
+          }),
         });
         if (!res.ok) console.error('WhatsApp send error:', (await res.json()).error);
       } catch (err) { console.error('WhatsApp send failed:', err); }
+    } else if (channel === 'EMAIL' && toEmail) {
+      try {
+        const res = await fetchWithAuth('/api/gmail/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: toEmail, message: inputMsg.trim(), clientId: selectedConv, clientName: conv?.clientName || 'Client' }),
+        });
+        if (!res.ok) console.error('Email send error:', (await res.json()).error);
+      } catch (err) { console.error('Email send failed:', err); }
     } else {
       await createMessage(tenantId!, {
         clientId: selectedConv,
@@ -124,15 +143,33 @@ export default function MessagesInboxPage() {
   };
 
   const handleNewConversation = async (contact: CRMContact) => {
-    await createMessage(tenantId!, {
-      clientId: contact.id!,
-      clientName: `${contact.firstName} ${contact.lastName}`,
-      channel: 'CHAT',
-      direction: 'OUTBOUND',
-      content: 'Bonjour ! Comment puis-je vous aider ?',
-      senderId: user?.uid || '',
-      isRead: true,
-    });
+    const channel = contact.email ? 'EMAIL' : contact.phone ? 'WHATSAPP' : 'CHAT';
+
+    // Automatically send a welcome email if we go the email route
+    if (channel === 'EMAIL') {
+      await fetchWithAuth('/api/gmail/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: contact.email, message: 'Bonjour ! Comment puis-je vous aider ?', clientId: contact.id, clientName: contact.firstName }),
+      });
+    } else if (channel === 'WHATSAPP' && contact.phone) {
+      await fetchWithAuth('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: contact.phone, message: 'Bonjour ! Comment puis-je vous aider ?', clientName: contact.firstName }),
+      });
+    } else {
+      await createMessage(tenantId!, {
+        clientId: contact.id!,
+        clientName: `${contact.firstName} ${contact.lastName}`,
+        channel,
+        direction: 'OUTBOUND',
+        content: 'Bonjour ! Comment puis-je vous aider ?',
+        senderId: user?.uid || '',
+        isRead: true,
+      });
+    }
+
     setShowNewMsg(false);
     await loadData();
     setSelectedConv(contact.id!);
@@ -163,7 +200,7 @@ export default function MessagesInboxPage() {
     <div className="flex items-center justify-center h-[calc(100vh-64px)]">
       <div className="flex flex-col items-center gap-3">
         <Loader2 className="animate-spin text-luna-charcoal/30" size={28} />
-        <span className="text-xs text-gray-400 font-medium">Chargement des messages...</span>
+        <span className="text-xs text-gray-400 font-normal">Chargement des messages...</span>
       </div>
     </div>
   );
@@ -176,8 +213,8 @@ export default function MessagesInboxPage() {
         <div className="px-5 pt-5 pb-4">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold text-luna-charcoal tracking-tight">Messages</h2>
-              <p className="text-[11px] text-gray-400 font-medium mt-0.5">{conversations.length} conversation{conversations.length !== 1 ? 's' : ''}</p>
+              <h2 className="text-xl font-normal text-luna-charcoal tracking-tight">Messages</h2>
+              <p className="text-[12px] text-gray-400 font-normal mt-0.5">{conversations.length} conversation{conversations.length !== 1 ? 's' : ''}</p>
             </div>
             <button
               onClick={() => setShowNewMsg(true)}
@@ -203,8 +240,8 @@ export default function MessagesInboxPage() {
           {filteredConvs.length === 0 ? (
             <div className="px-5 py-12 text-center">
               <MessageSquare size={32} className="mx-auto mb-3 text-gray-200" />
-              <p className="text-sm text-gray-400 font-medium">Aucune conversation</p>
-              <p className="text-[11px] text-gray-300 mt-1">Cliquez + pour démarrer</p>
+              <p className="text-sm text-gray-400 font-normal">Aucune conversation</p>
+              <p className="text-[12px] text-gray-300 mt-1">Cliquez + pour démarrer</p>
             </div>
           ) : filteredConvs.map(conv => {
             const ch = getChannelColor(conv.channel);
@@ -219,7 +256,7 @@ export default function MessagesInboxPage() {
                   }`}
               >
                 <div className="flex items-center gap-3.5">
-                  <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${conv.channel === 'WHATSAPP'
+                  <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-normal shrink-0 ${conv.channel === 'WHATSAPP'
                     ? 'bg-green-50 text-green-600'
                     : 'bg-gray-100 text-gray-500'
                     }`}>
@@ -227,19 +264,19 @@ export default function MessagesInboxPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <span className={`text-[13px] truncate ${isActive ? 'font-bold text-luna-charcoal' : 'font-semibold text-gray-700'}`}>
+                      <span className={`text-[13px] truncate ${isActive ? 'font-normal text-luna-charcoal' : 'font-normal text-gray-700'}`}>
                         {conv.clientName}
                       </span>
-                      <span className="text-[11px] text-gray-400 shrink-0">{formatDate(conv.lastDate)}</span>
+                      <span className="text-[12px] text-gray-400 shrink-0">{formatDate(conv.lastDate)}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
                       <p className="text-[12px] text-gray-400 truncate flex-1">{conv.lastMessage}</p>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold ${ch.bg} ${ch.text}`}>
+                        <span className={`text-[12px] px-1.5 py-0.5 rounded-full font-normal ${ch.bg} ${ch.text}`}>
                           {ch.icon}
                         </span>
                         {conv.unread > 0 && (
-                          <span className="min-w-[18px] h-[18px] bg-green-500 text-white rounded-full text-[11px] font-bold flex items-center justify-center px-1">
+                          <span className="min-w-[18px] h-[18px] bg-green-500 text-white rounded-full text-[12px] font-normal flex items-center justify-center px-1">
                             {conv.unread}
                           </span>
                         )}
@@ -260,31 +297,31 @@ export default function MessagesInboxPage() {
             {/* Chat header */}
             <div className="px-6 py-4 bg-white border-b border-gray-100 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-semibold ${selectedConvData.channel === 'WHATSAPP'
+                <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-normal ${selectedConvData.channel === 'WHATSAPP'
                   ? 'bg-green-50 text-green-600'
                   : 'bg-gray-100 text-gray-500'
                   }`}>
                   {selectedConvData.clientName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="text-[15px] font-bold text-luna-charcoal leading-tight">{selectedConvData.clientName}</h3>
+                  <h3 className="text-[15px] font-normal text-luna-charcoal leading-tight">{selectedConvData.clientName}</h3>
                   <div className="flex items-center gap-2 mt-0.5">
                     {(() => {
                       const ch = getChannelColor(selectedConvData.channel);
                       return (
-                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${ch.bg} ${ch.text} ${ch.border} border`}>
+                        <span className={`text-[12px] px-2 py-0.5 rounded-full font-normal ${ch.bg} ${ch.text} ${ch.border} border`}>
                           {ch.icon} {ch.label}
                         </span>
                       );
                     })()}
-                    <span className="text-[11px] text-gray-300">•</span>
-                    <span className="text-[11px] text-gray-400">{selectedConvData.messages.length} message{selectedConvData.messages.length !== 1 ? 's' : ''}</span>
+                    <span className="text-[12px] text-gray-300">•</span>
+                    <span className="text-[12px] text-gray-400">{selectedConvData.messages.length} message{selectedConvData.messages.length !== 1 ? 's' : ''}</span>
                   </div>
                 </div>
               </div>
               {selectedConvData.channel === 'WHATSAPP' && (
                 <a href={`https://wa.me/${selectedConvData.clientId}`} target="_blank" rel="noopener"
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-green-600 bg-green-50 hover:bg-green-100 transition-colors border border-green-100">
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-normal text-green-600 bg-green-50 hover:bg-green-100 transition-colors border border-green-100">
                   <Phone size={12} />
                   Ouvrir WhatsApp
                 </a>
@@ -305,7 +342,7 @@ export default function MessagesInboxPage() {
                     <div key={msg.id}>
                       {showDate && (
                         <div className="flex justify-center my-4">
-                          <span className="text-[11px] text-gray-400 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm border border-gray-100 font-medium">
+                          <span className="text-[12px] text-gray-400 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm border border-gray-100 font-normal">
                             {formatDate(msg.createdAt)}
                           </span>
                         </div>
@@ -318,7 +355,7 @@ export default function MessagesInboxPage() {
                             }`}>
                             {msg.content}
                             <div className={`flex items-center gap-1 mt-1 ${isOutbound ? 'justify-end' : 'justify-start'}`}>
-                              <span className={`text-[11px] ${isOutbound ? 'text-white/50' : 'text-gray-300'}`}>{time}</span>
+                              <span className={`text-[12px] ${isOutbound ? 'text-white/50' : 'text-gray-300'}`}>{time}</span>
                               {isOutbound && (
                                 <CheckCheck size={11} className="text-white/40" />
                               )}
@@ -367,8 +404,8 @@ export default function MessagesInboxPage() {
               <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <MessageSquare size={28} className="text-gray-300" />
               </div>
-              <p className="text-sm font-semibold text-gray-400">Sélectionnez une conversation</p>
-              <p className="text-[11px] text-gray-300 mt-1">Ou créez-en une nouvelle avec le bouton +</p>
+              <p className="text-sm font-normal text-gray-400">Sélectionnez une conversation</p>
+              <p className="text-[12px] text-gray-300 mt-1">Ou créez-en une nouvelle avec le bouton +</p>
             </div>
           </div>
         )}
@@ -378,21 +415,21 @@ export default function MessagesInboxPage() {
       {showNewMsg && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={() => setShowNewMsg(false)}>
           <div className="bg-white rounded-3xl p-7 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
-            <h2 className="text-xl font-bold text-luna-charcoal mb-1 tracking-tight">Nouvelle Conversation</h2>
+            <h2 className="text-xl font-normal text-luna-charcoal mb-1 tracking-tight">Nouvelle Conversation</h2>
             <p className="text-[12px] text-gray-400 mb-5">Choisissez un canal pour démarrer</p>
 
             {/* Tabs */}
             <div className="flex gap-1 mb-5 bg-gray-50 rounded-xl p-1 ">
               <button
                 onClick={() => setWaTab('whatsapp')}
-                className={`flex-1 py-2.5 text-[12px] font-semibold rounded-lg transition-all ${waTab === 'whatsapp' ? 'bg-white shadow-sm text-green-600 border border-gray-100' : 'text-gray-400 hover:text-gray-500'
+                className={`flex-1 py-2.5 text-[12px] font-normal rounded-lg transition-all ${waTab === 'whatsapp' ? 'bg-white shadow-sm text-green-600 border border-gray-100' : 'text-gray-400 hover:text-gray-500'
                   }`}
               >
                 💬 WhatsApp
               </button>
               <button
                 onClick={() => setWaTab('contact')}
-                className={`flex-1 py-2.5 text-[12px] font-semibold rounded-lg transition-all ${waTab === 'contact' ? 'bg-white shadow-sm text-luna-charcoal border border-gray-100' : 'text-gray-400 hover:text-gray-500'
+                className={`flex-1 py-2.5 text-[12px] font-normal rounded-lg transition-all ${waTab === 'contact' ? 'bg-white shadow-sm text-luna-charcoal border border-gray-100' : 'text-gray-400 hover:text-gray-500'
                   }`}
               >
                 👤 Contact CRM
@@ -402,7 +439,7 @@ export default function MessagesInboxPage() {
             {waTab === 'whatsapp' ? (
               <div className="space-y-4">
                 <div>
-                  <label className="text-[11px] uppercase tracking-wider font-semibold text-gray-400 mb-1.5 block">Numéro WhatsApp</label>
+                  <label className="text-[12px] uppercase tracking-wider font-normal text-gray-400 mb-1.5 block">Numéro WhatsApp</label>
                   <input
                     type="tel"
                     placeholder="33637930698"
@@ -410,10 +447,10 @@ export default function MessagesInboxPage() {
                     onChange={e => setWaPhone(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:border-green-300 focus:bg-white transition-all"
                   />
-                  <p className="text-[11px] text-gray-300 mt-1.5">Indicatif pays + numéro (sans +, espaces ou tirets)</p>
+                  <p className="text-[12px] text-gray-300 mt-1.5">Indicatif pays + numéro (sans +, espaces ou tirets)</p>
                 </div>
                 <div>
-                  <label className="text-[11px] uppercase tracking-wider font-semibold text-gray-400 mb-1.5 block">Premier message</label>
+                  <label className="text-[12px] uppercase tracking-wider font-normal text-gray-400 mb-1.5 block">Premier message</label>
                   <textarea
                     value={waFirstMsg}
                     onChange={e => setWaFirstMsg(e.target.value)}
@@ -423,7 +460,7 @@ export default function MessagesInboxPage() {
                 <button
                   onClick={handleNewWhatsApp}
                   disabled={!waPhone.trim() || sending}
-                  className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-normal text-sm rounded-xl transition-all disabled:opacity-40 flex items-center justify-center gap-2"
                 >
                   {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={14} />}
                   Envoyer via WhatsApp
@@ -433,7 +470,7 @@ export default function MessagesInboxPage() {
               contacts.length === 0 ? (
                 <div className="py-8 text-center">
                   <p className="text-sm text-gray-400">Aucun contact trouvé</p>
-                  <p className="text-[11px] text-gray-300 mt-1">Ajoutez d&apos;abord un contact dans le CRM</p>
+                  <p className="text-[12px] text-gray-300 mt-1">Ajoutez d&apos;abord un contact dans le CRM</p>
                 </div>
               ) : (
                 <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
@@ -443,12 +480,12 @@ export default function MessagesInboxPage() {
                       onClick={() => handleNewConversation(ct)}
                       className="w-full flex items-center gap-3 p-3.5 rounded-xl hover:bg-gray-50 border border-gray-100 hover:border-gray-200 transition-all text-left"
                     >
-                      <div className="w-9 h-9 bg-gray-100 text-gray-500 rounded-full flex items-center justify-center font-semibold text-[11px]">
+                      <div className="w-9 h-9 bg-gray-100 text-gray-500 rounded-full flex items-center justify-center font-normal text-[12px]">
                         {ct.firstName[0]}{ct.lastName[0]}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-bold text-luna-charcoal truncate">{ct.firstName} {ct.lastName}</p>
-                        <p className="text-[11px] text-gray-400 truncate">{ct.email}</p>
+                        <p className="text-[13px] font-normal text-luna-charcoal truncate">{ct.firstName} {ct.lastName}</p>
+                        <p className="text-[12px] text-gray-400 truncate">{ct.email}</p>
                       </div>
                     </button>
                   ))}

@@ -53,7 +53,7 @@ export default function AdminUsersPage() {
         <div>
             <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold">Gestion des utilisateurs</h1>
+                    <h1 className="text-2xl font-normal">Gestion des utilisateurs</h1>
                     <p className="text-white/40 text-sm mt-1">{users.length} utilisateur(s) enregistré(s)</p>
                 </div>
             </div>
@@ -67,7 +67,7 @@ export default function AdminUsersPage() {
 
             {/* Users table */}
             <div className="bg-[#1a1a24] rounded-2xl border border-white/5 overflow-hidden">
-                <div className="grid grid-cols-[auto_1fr_1fr_auto_auto] gap-4 px-5 py-3 border-b border-white/5 text-[10px] text-white/30 uppercase tracking-[0.15em] font-bold">
+                <div className="grid grid-cols-[auto_1fr_1fr_auto_auto] gap-4 px-5 py-3 border-b border-white/5 text-[12px] text-white/30 uppercase tracking-[0.15em] font-normal">
                     <span>Avatar</span>
                     <span>Nom</span>
                     <span>Email</span>
@@ -87,16 +87,16 @@ export default function AdminUsersPage() {
                                 {u.photoURL ? (
                                     <img src={u.photoURL} alt="" className="w-9 h-9 rounded-full" referrerPolicy="no-referrer" />
                                 ) : (
-                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-sky-500 flex items-center justify-center text-white text-xs font-bold">
+                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-sky-500 flex items-center justify-center text-white text-xs font-normal">
                                         {(u.displayName || 'U')[0]}
                                     </div>
                                 )}
                                 <div>
-                                    <p className="text-sm font-medium">{u.displayName}</p>
-                                    {u.agency && <p className="text-[11px] text-white/20">{u.agency}</p>}
+                                    <p className="text-sm font-normal">{u.displayName}</p>
+                                    {u.agency && <p className="text-[12px] text-white/20">{u.agency}</p>}
                                 </div>
                                 <p className="text-sm text-white/50">{u.email}</p>
-                                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${u.role === 'Admin' ? 'bg-violet-500/20 text-violet-400' :
+                                <span className={`text-[12px] font-normal px-2.5 py-1 rounded-full uppercase tracking-wider ${u.role === 'Admin' ? 'bg-violet-500/20 text-violet-400' :
                                     u.role === 'Manager' ? 'bg-amber-500/20 text-amber-400' :
                                         'bg-sky-500/20 text-sky-400'
                                     }`}>{u.role || 'Agent'}</span>
@@ -104,7 +104,7 @@ export default function AdminUsersPage() {
                                     {['Agent', 'Manager', 'Admin'].map(role => (
                                         <button key={role} disabled={u.role === role || updating === u.uid}
                                             onClick={() => changeRole(u.uid, role)}
-                                            className={`text-[10px] px-2.5 py-1 rounded-lg font-semibold transition-all ${u.role === role ? 'bg-white/10 text-white/30 cursor-default' :
+                                            className={`text-[12px] px-2.5 py-1 rounded-lg font-normal transition-all ${u.role === role ? 'bg-white/10 text-white/30 cursor-default' :
                                                 'bg-white/5 text-white/50 hover:bg-violet-500/20 hover:text-violet-400'
                                                 }`}>
                                             {success === u.uid && u.role === role ? <Check size={10} /> : role}

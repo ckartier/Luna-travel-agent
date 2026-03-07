@@ -23,83 +23,106 @@ import {
     ListChecks,
     UsersRound,
     Bot,
+    FileSignature,
     Mail,
     Sparkles,
+    Star,
     ChevronDown,
 } from 'lucide-react';
 import { LunaLogo } from '@/app/components/LunaLogo';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { useTranslation } from '@/src/hooks/useTranslation';
+
+import { useAccess } from '@/src/hooks/useAccess';
+import type { PlanAccess } from '@/src/hooks/useAccess';
 
 function getInitials(name: string | null | undefined): string {
     if (!name) return 'U';
     return name.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
 }
 
+interface NavLink {
+    name: string;
+    href: string;
+    icon: any;
+    feature?: keyof PlanAccess; // If set, link is gated by plan
+}
+
 interface NavSection {
     label: string;
     collapsible: boolean;
-    links: { name: string; href: string; icon: any }[];
+    links: NavLink[];
 }
 
 export function CRMSidebar() {
     const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
-    const { user, userProfile } = useAuth();
+    const { user, userProfile, isSuperAdmin, role } = useAuth();
+    const { canAccess } = useAccess();
+    const { t } = useTranslation();
 
     const photoURL = userProfile?.photoURL || user?.photoURL;
     const displayName = userProfile?.displayName || user?.displayName || 'Utilisateur';
     const email = userProfile?.email || user?.email || '';
 
-    const sections: NavSection[] = [
+    const [universe, setUniverse] = useState<'CLIENT' | 'PRESTATAIRE'>('CLIENT');
+
+    const allSections: NavSection[] = [
         {
             label: '',
             collapsible: false,
             links: [
-                { name: 'Dashboard', href: '/crm', icon: LayoutDashboard },
-                { name: 'Boîte de Réception', href: '/crm/mails', icon: Mail },
-                { name: 'Pipeline', href: '/crm/pipeline', icon: Trello },
-                { name: 'Planning', href: '/crm/planning', icon: Calendar },
-                { name: 'Contacts', href: '/crm/contacts', icon: Users },
-                { name: 'Activités', href: '/crm/activities', icon: CalendarDays },
+                { name: t('crm.dashboard'), href: '/crm', icon: LayoutDashboard, feature: 'dashboard' as any },
+                { name: t('nav.inbox'), href: '/crm/mails', icon: Mail, feature: 'mails' as any },
+                { name: t('crm.pipeline'), href: '/crm/pipeline', icon: Trello, feature: 'pipeline' as any },
+                { name: t('crm.planning'), href: universe === 'CLIENT' ? '/crm/planning' : '/crm/planning/suppliers', icon: Calendar, feature: 'planning' as any },
+                { name: t('crm.contacts'), href: '/crm/contacts', icon: Users, feature: 'contacts' as any },
+            ].filter(link => {
+                if (universe === 'PRESTATAIRE') {
+                    return [t('crm.dashboard'), t('crm.planning')].includes(link.name);
+                }
+                return true;
+            }),
+        },
+        {
+            label: universe === 'CLIENT' ? t('nav.section.operations_voyage') : t('nav.section.operations_presta'),
+            collapsible: true,
+            links: universe === 'CLIENT' ? [
+                { name: t('nav.bookings'), href: '/crm/bookings', icon: Plane, feature: 'bookings' as any },
+                { name: t('nav.voyage_assistant'), href: '/crm/voyage-agent', icon: Sparkles, feature: 'ai' as any },
+            ] : [
+                { name: t('nav.catalog'), href: '/crm/catalog', icon: Hotel, feature: 'catalog' as any },
+                { name: t('nav.suppliers'), href: '/crm/suppliers', icon: UsersRound, feature: 'suppliers' as any },
+                { name: t('nav.prestation_assistant'), href: '/crm/prestations-agent', icon: Bot, feature: 'ai' as any },
             ],
         },
         {
-            label: 'Opérations',
+            label: t('nav.section.finance'),
             collapsible: true,
-            links: [
-                { name: 'Réservations', href: '/crm/bookings', icon: Plane },
-                { name: 'Catalogue', href: '/crm/catalog', icon: Hotel },
+            links: universe === 'CLIENT' ? [
+                { name: t('nav.quotes'), href: '/crm/quotes', icon: FileSignature, feature: 'quotes' as any },
+                { name: t('nav.invoices'), href: '/crm/invoices', icon: FileText, feature: 'invoices' as any },
+            ] : [
+                { name: t('nav.supplier_invoices'), href: '/crm/invoices', icon: FileText, feature: 'invoices' as any },
+                { name: t('nav.payments'), href: '/crm/payments', icon: CreditCard, feature: 'payments' as any },
             ],
         },
         {
-            label: 'Finance',
+            label: t('nav.section.management'),
             collapsible: true,
             links: [
-                { name: 'Factures', href: '/crm/invoices', icon: FileText },
-                { name: 'Paiements', href: '/crm/payments', icon: CreditCard },
-            ],
-        },
-        {
-            label: 'Communication',
-            collapsible: true,
-            links: [
-                { name: 'Messages', href: '/crm/messages', icon: MessageSquare },
-                { name: 'Documents', href: '/crm/documents', icon: ShieldCheck },
-                { name: 'Marketing', href: '/crm/marketing', icon: Megaphone },
-            ],
-        },
-        {
-            label: 'Gestion',
-            collapsible: true,
-            links: [
-                { name: 'Tâches', href: '/crm/tasks', icon: ListChecks },
-                { name: 'Équipe', href: '/crm/team', icon: UsersRound },
-                { name: 'Analytics', href: '/crm/analytics', icon: BarChart3 },
-                { name: 'Assistant IA', href: '/crm/ai', icon: Bot },
-                { name: 'Intégrations', href: '/crm/integrations', icon: Plane },
+                { name: t('nav.team'), href: '/crm/team', icon: UsersRound, feature: 'team' as any },
+                { name: t('nav.analytics'), href: '/crm/analytics', icon: BarChart3, feature: 'analytics' as any },
+                { name: t('nav.integrations'), href: '/crm/integrations', icon: Plane, feature: 'integrations' as any },
             ],
         },
     ];
+
+    // Filter sections: only show links the user can access
+    const sections = allSections.map(section => ({
+        ...section,
+        links: section.links.filter(link => !link.feature || canAccess(link.feature)),
+    })).filter(section => section.links.length > 0);
 
     // Auto-open sections that contain the active link
     const getInitialOpenSections = () => {
@@ -152,24 +175,55 @@ export function CRMSidebar() {
                     {photoURL ? (
                         <img src={photoURL} alt={displayName} className="w-14 h-14 rounded-full object-cover border-[3px] border-white shadow-[0_4px_14px_rgba(0,0,0,0.1)] group-hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] transition-shadow" referrerPolicy="no-referrer" />
                     ) : (
-                        <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-lg font-semibold border-[3px] border-white">
+                        <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-lg font-normal border-[3px] border-white">
                             {getInitials(displayName)}
                         </div>
                     )}
                     <div className="text-center min-w-0 w-full">
-                        <p className="text-base font-medium text-luna-charcoal truncate leading-tight">{displayName}</p>
+                        <p className="text-base font-normal text-luna-charcoal truncate leading-tight">{displayName}</p>
                         <p className="text-xs text-luna-text-muted truncate leading-tight mt-0.5">{email}</p>
+                        {isSuperAdmin ? (
+                            <span className="inline-flex items-center gap-1 mt-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                                👑 Super Admin
+                            </span>
+                        ) : (
+                            <span className="inline-flex items-center mt-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500 border border-gray-200">
+                                {role}
+                            </span>
+                        )}
                     </div>
                 </Link>
 
-                {/* Voyages CTA */}
+                {/* Universe Switcher */}
+                <div className={`mx-3 mb-6 p-1.5 rounded-2xl flex gap-1 transition-colors duration-500 ${universe === 'PRESTATAIRE' ? 'bg-orange-100/60' : 'bg-gray-100/50'}`}>
+                    <button
+                        onClick={() => setUniverse('CLIENT')}
+                        className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-normal uppercase tracking-wider transition-all ${universe === 'CLIENT'
+                            ? 'bg-white text-luna-charcoal shadow-sm border border-gray-100'
+                            : 'text-gray-400 hover:text-gray-600'
+                            }`}
+                    >
+                        {t('nav.universe.client')}
+                    </button>
+                    <button
+                        onClick={() => setUniverse('PRESTATAIRE')}
+                        className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-normal uppercase tracking-wider transition-all ${universe === 'PRESTATAIRE'
+                            ? 'bg-white text-orange-600 shadow-sm border border-orange-200'
+                            : 'text-gray-400 hover:text-gray-600'
+                            }`}
+                    >
+                        {t('nav.universe.prestataire')}
+                    </button>
+                </div>
+
+                {/* Mission Hub CTA */}
                 <Link
                     href="/"
                     onClick={() => setMobileOpen(false)}
-                    className="btn-primary btn-lg mx-3 mb-4 text-sm tracking-[0.1em] uppercase group"
+                    className="btn-primary btn-lg mx-3 mb-6 text-sm tracking-[0.1em] uppercase group"
                 >
                     <Sparkles size={16} className="opacity-70" />
-                    <span>Voyages</span>
+                    <span>{t('nav.mission_hub')}</span>
                 </Link>
 
                 {/* Nav */}
@@ -184,7 +238,7 @@ export function CRMSidebar() {
                                         onClick={() => section.collapsible && toggleSection(section.label)}
                                         className={`w-full flex items-center justify-between px-3 pt-5 pb-2 group ${section.collapsible ? 'cursor-pointer' : ''}`}
                                     >
-                                        <span className="text-[11px] font-semibold text-gray-400 tracking-[0.12em] uppercase">
+                                        <span className="text-[12px] font-normal text-gray-400 tracking-[0.12em] uppercase">
                                             {section.label}
                                         </span>
                                         {section.collapsible && (
@@ -208,7 +262,7 @@ export function CRMSidebar() {
                                                 href={link.href}
                                                 onClick={() => setMobileOpen(false)}
                                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm ${isActive
-                                                    ? 'bg-luna-charcoal text-white font-medium shadow-[0_4px_14px_rgba(0,0,0,0.1)]'
+                                                    ? 'bg-luna-charcoal text-white font-normal shadow-[0_4px_14px_rgba(0,0,0,0.1)]'
                                                     : 'text-gray-500 hover:bg-white/60 hover:text-luna-charcoal font-normal'
                                                     }`}
                                             >
@@ -228,11 +282,11 @@ export function CRMSidebar() {
                 <Link href="/crm/settings"
                     onClick={() => setMobileOpen(false)}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm ${pathname === '/crm/settings'
-                        ? 'bg-luna-charcoal text-white font-medium shadow-[0_4px_14px_rgba(0,0,0,0.1)]'
+                        ? 'bg-luna-charcoal text-white font-normal shadow-[0_4px_14px_rgba(0,0,0,0.1)]'
                         : 'text-gray-500 hover:bg-white/60 hover:text-luna-charcoal font-normal'
                         }`}>
                     <Settings size={16} strokeWidth={1.5} />
-                    Paramètres
+                    {t('crm.settings')}
                 </Link>
                 {/* Luna logo — footer branding */}
                 <div className="flex justify-center pt-4 pb-2 opacity-40">
@@ -256,7 +310,7 @@ export function CRMSidebar() {
             {mobileOpen && (
                 <div className="md:hidden fixed inset-0 z-50 bg-luna-charcoal/30 backdrop-blur-sm" onClick={() => setMobileOpen(false)}>
                     <div
-                        className="w-64 h-full bg-white/95 backdrop-blur-2xl border-r border-luna-warm-gray/10 flex flex-col justify-between py-5 shadow-xl"
+                        className={`w-64 h-full backdrop-blur-2xl border-r flex flex-col justify-between py-5 shadow-xl transition-colors duration-700 ${universe === 'PRESTATAIRE' ? 'bg-[#fffaf5]/95 border-orange-100' : 'bg-white/95 border-luna-warm-gray/10'}`}
                         onClick={(e) => e.stopPropagation()}
                     >
                         {sidebarContent}
@@ -265,7 +319,7 @@ export function CRMSidebar() {
             )}
 
             {/* Desktop sidebar */}
-            <div className="hidden md:flex w-64 h-[calc(100%-16px)] my-2 ml-2 bg-white/70 backdrop-blur-2xl border border-luna-warm-gray/10 rounded-2xl flex-col justify-between py-6 z-50 shadow-sm overflow-hidden">
+            <div className={`hidden md:flex w-64 h-[calc(100%-16px)] my-2 ml-2 backdrop-blur-2xl border rounded-2xl flex-col justify-between py-6 z-50 shadow-sm overflow-hidden transition-all duration-700 ${universe === 'PRESTATAIRE' ? 'bg-[#fffaf5]/90 border-orange-100/60' : 'bg-white/70 border-luna-warm-gray/10'}`}>
                 {sidebarContent}
             </div>
         </>

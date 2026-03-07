@@ -81,8 +81,8 @@ export function Comparator({ destinations, onClose }: Props) {
                 {/* Header */}
                 <div className="px-8 py-5 border-b border-luna-warm-gray/10 flex justify-between items-center bg-gradient-to-r from-sky-50/50 via-white to-sky-50/30 flex-shrink-0">
                     <div>
-                        <h2 className="font-serif text-xl font-bold text-luna-charcoal">Comparateur</h2>
-                        <p className="text-[10px] text-luna-text-muted uppercase tracking-widest font-semibold mt-0.5">{destinations.length} destinations</p>
+                        <h2 className="font-serif text-xl font-normal text-luna-charcoal">Comparateur</h2>
+                        <p className="text-[12px] text-luna-text-muted uppercase tracking-widest font-normal mt-0.5">{destinations.length} destinations</p>
                     </div>
                     <button onClick={onClose} className="p-2 text-luna-text-muted hover:text-luna-charcoal rounded-xl hover:bg-luna-cream transition-colors"><X size={18} /></button>
                 </div>
@@ -101,36 +101,36 @@ export function Comparator({ destinations, onClose }: Props) {
                                 {/* Top color accent */}
                                 <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
 
-                                <h3 className="font-serif text-lg font-bold text-luna-charcoal mt-1 mb-3 flex items-center gap-2">
+                                <h3 className="font-serif text-lg font-normal text-luna-charcoal mt-1 mb-3 flex items-center gap-2">
                                     <MapPin size={16} style={{ color: COLORS[i % COLORS.length] }} />
                                     {s.city}
                                 </h3>
 
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-semibold text-luna-text-muted uppercase tracking-wider flex items-center gap-1.5"><Plane size={11} /> Vol le moins cher</span>
-                                        <span className="font-bold text-luna-charcoal text-sm">{s.cheapestFlight ? `${s.cheapestFlight.toLocaleString()} €` : '—'}</span>
+                                        <span className="text-[12px] font-normal text-luna-text-muted uppercase tracking-wider flex items-center gap-1.5"><Plane size={11} /> Vol le moins cher</span>
+                                        <span className="font-normal text-luna-charcoal text-sm">{s.cheapestFlight ? `${s.cheapestFlight.toLocaleString()} €` : '—'}</span>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-semibold text-luna-text-muted uppercase tracking-wider flex items-center gap-1.5"><Plane size={11} /> Options de vol</span>
-                                        <span className="font-bold text-luna-charcoal text-sm">{s.flightOptions}</span>
+                                        <span className="text-[12px] font-normal text-luna-text-muted uppercase tracking-wider flex items-center gap-1.5"><Plane size={11} /> Options de vol</span>
+                                        <span className="font-normal text-luna-charcoal text-sm">{s.flightOptions}</span>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-semibold text-luna-text-muted uppercase tracking-wider flex items-center gap-1.5"><Plane size={11} /> Vols directs</span>
-                                        <span className="font-bold text-luna-charcoal text-sm">{s.directFlights}</span>
+                                        <span className="text-[12px] font-normal text-luna-text-muted uppercase tracking-wider flex items-center gap-1.5"><Plane size={11} /> Vols directs</span>
+                                        <span className="font-normal text-luna-charcoal text-sm">{s.directFlights}</span>
                                     </div>
                                     <div className="h-px bg-luna-warm-gray/10" />
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-semibold text-luna-text-muted uppercase tracking-wider flex items-center gap-1.5"><Hotel size={11} /> Hôtel dès</span>
-                                        <span className="font-bold text-luna-charcoal text-sm">{s.cheapestHotel ? `${s.cheapestHotel.toLocaleString()} €/nuit` : '—'}</span>
+                                        <span className="text-[12px] font-normal text-luna-text-muted uppercase tracking-wider flex items-center gap-1.5"><Hotel size={11} /> Hôtel dès</span>
+                                        <span className="font-normal text-luna-charcoal text-sm">{s.cheapestHotel ? `${s.cheapestHotel.toLocaleString()} €/nuit` : '—'}</span>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-semibold text-luna-text-muted uppercase tracking-wider flex items-center gap-1.5"><Star size={11} /> Moy. étoiles</span>
-                                        <span className="font-bold text-luna-charcoal text-sm">{'★'.repeat(Math.round(s.avgStars))} {s.avgStars}</span>
+                                        <span className="text-[12px] font-normal text-luna-text-muted uppercase tracking-wider flex items-center gap-1.5"><Star size={11} /> Moy. étoiles</span>
+                                        <span className="font-normal text-luna-charcoal text-sm">{'★'.repeat(Math.round(s.avgStars))} {s.avgStars}</span>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-semibold text-luna-text-muted uppercase tracking-wider flex items-center gap-1.5"><Sun size={11} /> Jours planifiés</span>
-                                        <span className="font-bold text-luna-charcoal text-sm">{s.days} jours</span>
+                                        <span className="text-[12px] font-normal text-luna-text-muted uppercase tracking-wider flex items-center gap-1.5"><Sun size={11} /> Jours planifiés</span>
+                                        <span className="font-normal text-luna-charcoal text-sm">{s.days} jours</span>
                                     </div>
                                 </div>
                             </motion.div>
@@ -139,7 +139,7 @@ export function Comparator({ destinations, onClose }: Props) {
 
                     {/* Radar chart */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-white rounded-2xl border border-luna-warm-gray/10 p-6 shadow-sm">
-                        <h3 className="text-[11px] font-bold text-luna-text-muted uppercase tracking-wider mb-4">Comparaison visuelle</h3>
+                        <h3 className="text-[12px] font-normal text-luna-text-muted uppercase tracking-wider mb-4">Comparaison visuelle</h3>
                         <div className="h-[300px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">

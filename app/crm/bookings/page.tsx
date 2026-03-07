@@ -6,9 +6,11 @@ import { CRMBooking, getBookings, createBooking, updateBooking, deleteBooking, g
 import { useAuth } from '@/src/contexts/AuthContext';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { T, useAutoTranslate } from '@/src/components/T';
 
 export default function BookingsPage() {
   const { tenantId } = useAuth();
+  const at = useAutoTranslate();
   const [bookings, setBookings] = useState<CRMBooking[]>([]);
   const [contacts, setContacts] = useState<CRMContact[]>([]);
   const [trips, setTrips] = useState<CRMTrip[]>([]);
@@ -68,11 +70,11 @@ export default function BookingsPage() {
     <div className="min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-luna-charcoal mb-1">Réservations</h1>
-          <p className="text-sm text-luna-text-muted">{bookings.length} réservations — Marge totale: <span className="font-bold text-emerald-600">{totalRevenue.toLocaleString('fr-FR')} €</span></p>
+          <h1 className="text-2xl font-normal text-luna-charcoal mb-1"><T>Réservations</T></h1>
+          <p className="text-sm text-luna-text-muted">{bookings.length} réservations — Marge totale: <span className="font-normal text-emerald-600">{totalRevenue.toLocaleString('fr-FR')} €</span></p>
         </div>
-        <button onClick={() => setShowModal(true)} className="bg-luna-charcoal hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ">
-          <Plus size={16} /> Nouvelle Réservation
+        <button onClick={() => setShowModal(true)} className="bg-luna-charcoal hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl text-sm font-normal transition-all flex items-center gap-2 ">
+          <Plus size={16} /> <T>Nouvelle Réservation</T>
         </button>
       </div>
 
@@ -84,20 +86,20 @@ export default function BookingsPage() {
             className="w-full pl-8 pr-3 py-2 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none focus:outline-none focus:border-luna-charcoal" />
         </div>
         {['ALL', 'FLIGHT', 'HOTEL', 'ACTIVITY', 'TRANSFER'].map(f => (
-          <button key={f} onClick={() => setFilter(f)} className={`px-3 py-2 rounded-xl text-xs font-bold transition-colors ${filter === f ? 'bg-luna-charcoal text-white' : 'bg-white/60 text-gray-500 hover:bg-white hover:shadow-sm'}`}>
-            {f === 'ALL' ? 'Tout' : f}
+          <button key={f} onClick={() => setFilter(f)} className={`px-3 py-2 rounded-xl text-xs font-normal transition-colors ${filter === f ? 'bg-luna-charcoal text-white' : 'bg-white/60 text-gray-500 hover:bg-white hover:shadow-sm'}`}>
+            {f === 'ALL' ? at('Tout') : f}
           </button>
         ))}
       </div>
 
       {/* Table */}
       {filtered.length === 0 ? (
-        <div className="text-center py-16 text-gray-400"><Plane size={40} className="mx-auto mb-3 opacity-30" /><p className="text-sm">Aucune réservation trouvée.</p></div>
+        <div className="text-center py-16 text-gray-400"><Plane size={40} className="mx-auto mb-3 opacity-30" /><p className="text-sm"><T>Aucune réservation trouvée.</T></p></div>
       ) : (
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl overflow-hidden ">
           <table className="w-full text-sm">
             <thead className="bg-gray-50/50">
-              <tr className="text-left text-xs font-medium tracking-wide text-gray-400">
+              <tr className="text-left text-xs font-normal tracking-wide text-gray-400">
                 <th className="px-4 py-3">Type</th><th className="px-4 py-3">Fournisseur</th><th className="px-4 py-3">Client</th>
                 <th className="px-4 py-3">Destination</th><th className="px-4 py-3">Dates</th><th className="px-4 py-3">Statut</th>
                 <th className="px-4 py-3 text-right">Marge</th><th className="px-4 py-3"></th>
@@ -107,18 +109,18 @@ export default function BookingsPage() {
               {filtered.map(b => (
                 <tr key={b.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                   <td className="px-4 py-3"><span className="flex items-center gap-1.5 text-gray-600">{getTypeIcon(b.type)} {b.type}</span></td>
-                  <td className="px-4 py-3 font-bold text-luna-charcoal">{b.supplier}</td>
+                  <td className="px-4 py-3 font-normal text-luna-charcoal">{b.supplier}</td>
                   <td className="px-4 py-3 text-gray-600">{b.clientName}</td>
                   <td className="px-4 py-3 text-gray-600">{b.destination}</td>
                   <td className="px-4 py-3 text-gray-500">{formatDate(b.checkIn)}{b.checkOut ? ` → ${formatDate(b.checkOut)}` : ''}</td>
                   <td className="px-4 py-3">
                     <select value={b.status} onChange={e => handleStatusChange(b.id!, e.target.value as any)}
-                      className={`text-[11px] font-bold uppercase px-2 py-1 rounded border cursor-pointer ${getStatusStyle(b.status)}`}>
+                      className={`text-[12px] font-normal uppercase px-2 py-1 rounded border cursor-pointer ${getStatusStyle(b.status)}`}>
                       {['PENDING', 'CONFIRMED', 'TICKETED', 'CANCELLED', 'REFUNDED'].map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </td>
-                  <td className="px-4 py-3 text-right font-bold text-emerald-600">{(b.clientPrice - b.supplierCost).toLocaleString('fr-FR')} €</td>
-                  <td className="px-4 py-3 text-gray-400">{b.confirmationNumber && <span className="text-[11px] bg-gray-100 px-2 py-0.5 rounded font-mono">{b.confirmationNumber}</span>}</td>
+                  <td className="px-4 py-3 text-right font-normal text-emerald-600">{(b.clientPrice - b.supplierCost).toLocaleString('fr-FR')} €</td>
+                  <td className="px-4 py-3 text-gray-400">{b.confirmationNumber && <span className="text-[12px] bg-gray-100 px-2 py-0.5 rounded font-mono">{b.confirmationNumber}</span>}</td>
                 </tr>
               ))}
             </tbody>
@@ -130,7 +132,7 @@ export default function BookingsPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
           <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-luna-charcoal mb-4">Nouvelle Réservation</h2>
+            <h2 className="text-lg font-normal text-luna-charcoal mb-4"><T>Nouvelle Réservation</T></h2>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <select value={newBooking.clientId} onChange={e => setNewBooking(p => ({ ...p, clientId: e.target.value }))}
                 className="px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none">
@@ -158,8 +160,8 @@ export default function BookingsPage() {
                 className="px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none" />
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none font-medium text-gray-600 hover:bg-gray-50">Annuler</button>
-              <button onClick={handleCreate} className="flex-1 px-4 py-3 rounded-xl bg-luna-charcoal hover:bg-gray-800 text-white text-sm font-medium transition-all">Créer</button>
+              <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none font-normal text-gray-600 hover:bg-gray-50"><T>Annuler</T></button>
+              <button onClick={handleCreate} className="flex-1 px-4 py-3 rounded-xl bg-luna-charcoal hover:bg-gray-800 text-white text-sm font-normal transition-all"><T>Créer</T></button>
             </div>
           </div>
         </div>

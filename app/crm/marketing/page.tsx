@@ -52,10 +52,10 @@ export default function MarketingPage() {
     <div className="min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-luna-charcoal mb-1">Marketing & Campagnes</h1>
+          <h1 className="text-2xl font-normal text-luna-charcoal mb-1">Marketing & Campagnes</h1>
           <p className="text-sm text-luna-text-muted">{campaigns.length} campagnes</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="bg-luna-charcoal hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ">
+        <button onClick={() => setShowModal(true)} className="bg-luna-charcoal hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl text-sm font-normal transition-all flex items-center gap-2 ">
           <Plus size={16} /> Nouvelle Campagne
         </button>
       </div>
@@ -64,22 +64,22 @@ export default function MarketingPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm flex items-center gap-4">
           <div className="w-11 h-11 bg-violet-50 rounded-full flex items-center justify-center text-violet-500 border border-violet-100"><Send size={22} /></div>
-          <div><p className="text-xs font-medium tracking-wide text-gray-400">Envoyés</p><p className="text-2xl font-semibold text-luna-charcoal">{totalSent.toLocaleString('fr-FR')}</p></div>
+          <div><p className="text-xs font-normal tracking-wide text-gray-400">Envoyés</p><p className="text-2xl font-normal text-luna-charcoal">{totalSent.toLocaleString('fr-FR')}</p></div>
         </div>
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm flex items-center gap-4">
           <div className="w-11 h-11 bg-sky-50 rounded-full flex items-center justify-center text-sky-500 border border-sky-100"><BarChart3 size={22} /></div>
-          <div><p className="text-xs font-medium tracking-wide text-gray-400">Taux d'ouverture</p><p className="text-2xl font-semibold text-sky-600">{totalSent > 0 ? Math.round((totalOpens / totalSent) * 100) : 0}%</p></div>
+          <div><p className="text-xs font-normal tracking-wide text-gray-400">Taux d'ouverture</p><p className="text-2xl font-normal text-sky-600">{totalSent > 0 ? Math.round((totalOpens / totalSent) * 100) : 0}%</p></div>
         </div>
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm flex items-center gap-4">
           <div className="w-11 h-11 bg-fuchsia-50 rounded-full flex items-center justify-center text-fuchsia-500 border border-fuchsia-100"><Megaphone size={22} /></div>
-          <div><p className="text-xs font-medium tracking-wide text-gray-400">Campagnes</p><p className="text-2xl font-semibold text-luna-charcoal">{campaigns.length}</p></div>
+          <div><p className="text-xs font-normal tracking-wide text-gray-400">Campagnes</p><p className="text-2xl font-normal text-luna-charcoal">{campaigns.length}</p></div>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex gap-2 mb-6">
         {['ALL', 'DRAFT', 'SCHEDULED', 'SENT'].map(f => (
-          <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${filter === f ? 'bg-luna-charcoal text-white' : 'bg-white/60 text-gray-500 hover:bg-white hover:shadow-sm'}`}>
+          <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded-lg text-xs font-normal transition-colors ${filter === f ? 'bg-luna-charcoal text-white' : 'bg-white/60 text-gray-500 hover:bg-white hover:shadow-sm'}`}>
             {f === 'ALL' ? 'Tout' : f}
           </button>
         ))}
@@ -92,7 +92,7 @@ export default function MarketingPage() {
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl overflow-hidden ">
           <table className="w-full text-sm">
             <thead className="bg-gray-50/50">
-              <tr className="text-left text-xs font-medium tracking-wide text-gray-400">
+              <tr className="text-left text-xs font-normal tracking-wide text-gray-400">
                 <th className="px-4 py-3">Campagne</th><th className="px-4 py-3">Canal</th><th className="px-4 py-3">Envoyés</th>
                 <th className="px-4 py-3">Ouvertures</th><th className="px-4 py-3">Clics</th><th className="px-4 py-3">Statut</th>
                 <th className="px-4 py-3">Date</th>
@@ -101,12 +101,12 @@ export default function MarketingPage() {
             <tbody>
               {filtered.map(c => (
                 <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                  <td className="px-4 py-3 font-bold text-luna-charcoal">{c.name}</td>
+                  <td className="px-4 py-3 font-normal text-luna-charcoal">{c.name}</td>
                   <td className="px-4 py-3 text-gray-500">{c.channel === 'EMAIL' ? '📧 Email' : '📱 SMS'}</td>
                   <td className="px-4 py-3 font-mono text-gray-600">{c.sentCount}</td>
                   <td className="px-4 py-3 font-mono text-gray-600">{c.openCount} <span className="text-gray-400">({c.sentCount > 0 ? Math.round((c.openCount / c.sentCount) * 100) : 0}%)</span></td>
                   <td className="px-4 py-3 font-mono text-gray-600">{c.clickCount}</td>
-                  <td className="px-4 py-3"><span className={`text-[11px] font-bold uppercase px-2 py-1 rounded border ${getStatusStyle(c.status)}`}>{c.status}</span></td>
+                  <td className="px-4 py-3"><span className={`text-[12px] font-normal uppercase px-2 py-1 rounded border ${getStatusStyle(c.status)}`}>{c.status}</span></td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{formatDate(c.createdAt)}</td>
                 </tr>
               ))}
@@ -119,7 +119,7 @@ export default function MarketingPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
           <div className="bg-white/95 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-md shadow-[0_25px_60px_rgba(0,0,0,0.12)] border border-white/50" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-luna-charcoal mb-4">Nouvelle Campagne</h2>
+            <h2 className="text-lg font-normal text-luna-charcoal mb-4">Nouvelle Campagne</h2>
             <input value={newCamp.name} onChange={e => setNewCamp(p => ({ ...p, name: e.target.value }))} placeholder="Nom de la campagne"
               className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-3" autoFocus />
             <select value={newCamp.channel} onChange={e => setNewCamp(p => ({ ...p, channel: e.target.value as any }))}
@@ -131,8 +131,8 @@ export default function MarketingPage() {
             <textarea value={newCamp.content} onChange={e => setNewCamp(p => ({ ...p, content: e.target.value }))} placeholder="Contenu du message"
               className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-4 min-h-[100px] resize-none" />
             <div className="flex gap-3">
-              <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none font-medium text-gray-600 hover:bg-gray-50">Annuler</button>
-              <button onClick={handleCreate} className="flex-1 px-4 py-3 rounded-xl bg-luna-charcoal hover:bg-gray-800 text-white text-sm font-medium  transition-all">Créer</button>
+              <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none font-normal text-gray-600 hover:bg-gray-50">Annuler</button>
+              <button onClick={handleCreate} className="flex-1 px-4 py-3 rounded-xl bg-luna-charcoal hover:bg-gray-800 text-white text-sm font-normal  transition-all">Créer</button>
             </div>
           </div>
         </div>

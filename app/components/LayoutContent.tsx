@@ -46,8 +46,8 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
                             <LunaLogo size={34} />
                         </Link>
                         <nav className="flex items-center gap-1">
-                            <Link href="/" className="text-luna-charcoal px-2 py-0.5 md:px-2.5 md:py-1 text-[9px] md:text-[10px] font-semibold rounded-full bg-luna-charcoal/5 uppercase tracking-wider">Voyages</Link>
-                            <Link href="/crm" className="text-luna-text-muted hover:text-luna-charcoal px-2 py-0.5 md:px-2.5 md:py-1 text-[9px] md:text-[10px] font-semibold rounded-full transition-colors uppercase tracking-wider">CRM</Link>
+                            <Link href="/" className="text-luna-charcoal px-2 py-0.5 md:px-2.5 md:py-1 text-[12px] md:text-[12px] font-normal rounded-full bg-luna-charcoal/5 uppercase tracking-wider">Voyages</Link>
+                            <Link href="/crm" className="text-luna-text-muted hover:text-luna-charcoal px-2 py-0.5 md:px-2.5 md:py-1 text-[12px] md:text-[12px] font-normal rounded-full transition-colors uppercase tracking-wider">CRM</Link>
                         </nav>
 
                         {/* Avatar inside the pill */}
@@ -56,7 +56,7 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
                                 {photoURL ? (
                                     <img src={photoURL} alt={displayName} className="w-[43px] h-[43px] rounded-full object-cover border-[3px] border-white shadow-md" referrerPolicy="no-referrer" />
                                 ) : (
-                                    <div className="w-[43px] h-[43px] rounded-full bg-gradient-to-br from-sky-400 to-violet-500 flex items-center justify-center text-white text-sm font-bold border-[3px] border-white shadow-md">
+                                    <div className="w-[43px] h-[43px] rounded-full bg-gradient-to-br from-sky-400 to-violet-500 flex items-center justify-center text-white text-sm font-normal border-[3px] border-white shadow-md">
                                         {getInitials(displayName)}
                                     </div>
                                 )}
@@ -65,8 +65,8 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
                             {dropdownOpen && (
                                 <div className="absolute right-0 top-full mt-2 w-60 bg-white/95 backdrop-blur-2xl rounded-2xl border border-luna-warm-gray/15 shadow-xl overflow-hidden">
                                     <div className="px-4 py-3 border-b border-luna-warm-gray/10">
-                                        <p className="text-sm font-semibold text-luna-charcoal truncate">{displayName}</p>
-                                        <p className="text-[11px] text-luna-text-muted truncate">{email}</p>
+                                        <p className="text-sm font-normal text-luna-charcoal truncate">{displayName}</p>
+                                        <p className="text-[12px] text-luna-text-muted truncate">{email}</p>
                                     </div>
                                     <div className="py-1">
                                         <Link href="/crm/settings" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-luna-charcoal hover:bg-luna-cream/80 transition-colors">

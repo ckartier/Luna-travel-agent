@@ -392,7 +392,7 @@ export function PdfExport({ results, destination, departureDate, returnDate }: P
         <button
             onClick={generatePdf}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-luna-charcoal to-luna-charcoal/90 text-white font-semibold text-[11px] uppercase tracking-wider rounded-xl hover:from-luna-charcoal/90 hover:to-luna-charcoal/80 transition-all shadow-lg disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-luna-charcoal to-luna-charcoal/90 text-white font-normal text-[12px] uppercase tracking-wider rounded-xl hover:from-luna-charcoal/90 hover:to-luna-charcoal/80 transition-all shadow-lg disabled:opacity-50"
         >
             {loading ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
             {loading ? 'Génération...' : 'Exporter PDF'}

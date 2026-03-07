@@ -107,10 +107,10 @@ export default function DocumentsPage() {
     <div className="min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-luna-charcoal mb-1">Coffre-fort Documents</h1>
+          <h1 className="text-2xl font-normal text-luna-charcoal mb-1">Coffre-fort Documents</h1>
           <p className="text-sm text-luna-text-muted">Stockez et gérez les documents de vos clients en toute sécurité.</p>
         </div>
-        <button onClick={() => setShowUpload(true)} className="bg-luna-charcoal hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ">
+        <button onClick={() => setShowUpload(true)} className="bg-luna-charcoal hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl text-sm font-normal transition-all flex items-center gap-2 ">
           <Upload size={16} /> Uploader
         </button>
       </div>
@@ -120,7 +120,7 @@ export default function DocumentsPage() {
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start gap-3">
           <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={18} />
           <div>
-            <p className="text-sm font-bold text-amber-700">⚠️ {expiringDocs.length} document(s) expirent dans moins de 90 jours</p>
+            <p className="text-sm font-normal text-amber-700">⚠️ {expiringDocs.length} document(s) expirent dans moins de 90 jours</p>
             <p className="text-xs text-amber-600 mt-1">{expiringDocs.map(d => d.name).join(', ')}</p>
           </div>
         </div>
@@ -155,7 +155,7 @@ export default function DocumentsPage() {
           {filteredDocs.map(doc => (
             <div key={doc.id} className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group">
               <div className="flex items-start justify-between mb-3">
-                <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${getTypeStyle(doc.type)}`}>{doc.type}</span>
+                <span className={`text-[12px] font-normal uppercase tracking-wider px-2 py-0.5 rounded border ${getTypeStyle(doc.type)}`}>{doc.type}</span>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <a href={doc.fileUrl} target="_blank" rel="noopener" className="text-gray-400 hover:text-sky-500"><Download size={14} /></a>
                   <button onClick={() => handleDelete(doc.id!)} className="text-gray-400 hover:text-red-500"><Trash2 size={14} /></button>
@@ -163,12 +163,12 @@ export default function DocumentsPage() {
               </div>
               <div className="flex items-center gap-3 mb-3">
                 <FileText size={20} className="text-gray-400" />
-                <h3 className="text-sm font-bold text-luna-charcoal truncate">{doc.name}</h3>
+                <h3 className="text-sm font-normal text-luna-charcoal truncate">{doc.name}</h3>
               </div>
               <div className="text-xs text-gray-500 space-y-1">
                 <p>Taille: {formatSize(doc.size)}</p>
                 <p>Uploadé: {formatDate(doc.createdAt)}</p>
-                {doc.expiryDate && <p className="text-amber-600 font-medium">Expire: {formatDate(doc.expiryDate)}</p>}
+                {doc.expiryDate && <p className="text-amber-600 font-normal">Expire: {formatDate(doc.expiryDate)}</p>}
                 <p>Par: {doc.uploadedBy}</p>
               </div>
             </div>
@@ -180,7 +180,7 @@ export default function DocumentsPage() {
       {showUpload && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowUpload(false)}>
           <div className="bg-white/95 backdrop-blur-2xl rounded-3xl p-8 w-full max-w-md shadow-[0_25px_60px_rgba(0,0,0,0.12)] border border-white/50" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-luna-charcoal mb-4">Uploader un document</h2>
+            <h2 className="text-lg font-normal text-luna-charcoal mb-4">Uploader un document</h2>
             <select value={newDoc.clientId} onChange={e => setNewDoc(p => ({ ...p, clientId: e.target.value }))}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-3 focus:outline-none focus:border-luna-charcoal">
               <option value="">Sélectionner un client</option>
@@ -197,9 +197,9 @@ export default function DocumentsPage() {
               className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-4 focus:outline-none focus:border-luna-charcoal" placeholder="Date d'expiration (optionnel)" />
             <input ref={fileRef} type="file" className="hidden" onChange={e => { if (e.target.files?.[0]) handleUpload(e.target.files[0]); }} />
             <div className="flex gap-3">
-              <button onClick={() => setShowUpload(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none font-medium text-gray-600 hover:bg-gray-50">Annuler</button>
+              <button onClick={() => setShowUpload(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none font-normal text-gray-600 hover:bg-gray-50">Annuler</button>
               <button onClick={() => fileRef.current?.click()} disabled={!newDoc.clientId || !newDoc.name || uploading}
-                className="flex-1 px-4 py-3 rounded-xl bg-luna-charcoal hover:bg-gray-800 text-white text-sm font-medium  transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                className="flex-1 px-4 py-3 rounded-xl bg-luna-charcoal hover:bg-gray-800 text-white text-sm font-normal  transition-all disabled:opacity-50 flex items-center justify-center gap-2">
                 {uploading ? <><Loader2 size={14} className="animate-spin" /> Envoi...</> : <><Upload size={14} /> Choisir fichier</>}
               </button>
             </div>

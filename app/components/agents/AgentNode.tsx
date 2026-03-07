@@ -32,7 +32,7 @@ export default function AgentNode({ id, title, subtitle, icon, position, isCente
                         {icon}
                     </div>
                     <h3 className="font-extrabold text-blue-900 tracking-wide text-lg text-center leading-tight">{title}</h3>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1 text-center">{subtitle}</p>
+                    <p className="text-[12px] text-gray-500 font-normal uppercase tracking-widest mt-1 text-center">{subtitle}</p>
                 </div>
             </motion.div>
         );
@@ -52,8 +52,8 @@ export default function AgentNode({ id, title, subtitle, icon, position, isCente
                     {icon}
                 </div>
                 <div className="flex flex-col pr-2">
-                    <h3 className="font-bold text-sm tracking-wide text-gray-900">{title}</h3>
-                    <p className="text-[11px] text-gray-500 font-medium">{subtitle}</p>
+                    <h3 className="font-normal text-sm tracking-wide text-gray-900">{title}</h3>
+                    <p className="text-[12px] text-gray-500 font-normal">{subtitle}</p>
                 </div>
             </div>
         </motion.div>

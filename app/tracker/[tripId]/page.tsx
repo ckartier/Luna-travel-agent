@@ -42,20 +42,20 @@ export default function TravelTrackerPage() {
             <div className="bg-white border-b border-gray-200 shadow-sm">
                 <div className="max-w-3xl mx-auto p-6">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 bg-gradient-to-tr from-sky-400 to-violet-500 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                        <div className="w-10 h-10 bg-gradient-to-tr from-sky-400 to-violet-500 rounded-xl flex items-center justify-center text-white font-normal text-sm shadow-sm">
                             L
                         </div>
-                        <span className="text-sm font-semibold text-gray-500">{MOCK_TRIP.agencyName}</span>
+                        <span className="text-sm font-normal text-gray-500">{MOCK_TRIP.agencyName}</span>
                     </div>
 
                     <h1 className="text-3xl font-black text-luna-charcoal mb-2">{MOCK_TRIP.title}</h1>
-                    <p className="text-gray-500 font-medium text-sm mb-4">{MOCK_TRIP.destination}</p>
+                    <p className="text-gray-500 font-normal text-sm mb-4">{MOCK_TRIP.destination}</p>
 
                     <div className="flex flex-wrap gap-4 text-sm">
-                        <span className="flex items-center gap-1.5 text-gray-600 font-medium bg-gray-100 px-3 py-1.5 rounded-lg">
+                        <span className="flex items-center gap-1.5 text-gray-600 font-normal bg-gray-100 px-3 py-1.5 rounded-lg">
                             <CalendarDays size={14} /> {MOCK_TRIP.startDate} → {MOCK_TRIP.endDate}
                         </span>
-                        <span className="flex items-center gap-1.5 font-bold bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg border border-emerald-200">
+                        <span className="flex items-center gap-1.5 font-normal bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg border border-emerald-200">
                             <CheckCircle2 size={14} /> Confirmé
                         </span>
                     </div>
@@ -72,13 +72,13 @@ export default function TravelTrackerPage() {
                         )}
 
                         <div className="flex items-start gap-4">
-                            <div className="w-10 h-10 bg-luna-charcoal text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0 shadow-sm z-10">
+                            <div className="w-10 h-10 bg-luna-charcoal text-white rounded-full flex items-center justify-center text-sm font-normal shrink-0 shadow-sm z-10">
                                 {dIdx + 1}
                             </div>
                             <div className="flex-1">
                                 <div className="flex items-baseline gap-3 mb-3">
-                                    <h2 className="text-lg font-bold text-luna-charcoal">{day.title}</h2>
-                                    <span className="text-xs text-gray-400 font-semibold">{day.date}</span>
+                                    <h2 className="text-lg font-normal text-luna-charcoal">{day.title}</h2>
+                                    <span className="text-xs text-gray-400 font-normal">{day.date}</span>
                                 </div>
 
                                 <div className="space-y-2">
@@ -92,8 +92,8 @@ export default function TravelTrackerPage() {
                                                 {seg.icon}
                                             </div>
                                             <div className="flex-1">
-                                                <p className="text-sm font-bold text-luna-charcoal">{seg.title}</p>
-                                                <p className="text-xs text-gray-400 font-medium flex items-center gap-1"><Clock size={10} /> {seg.time}</p>
+                                                <p className="text-sm font-normal text-luna-charcoal">{seg.title}</p>
+                                                <p className="text-xs text-gray-400 font-normal flex items-center gap-1"><Clock size={10} /> {seg.time}</p>
                                             </div>
                                         </div>
                                     ))}
@@ -104,8 +104,8 @@ export default function TravelTrackerPage() {
                 ))}
             </div>
 
-            <div className="text-center py-8 text-xs text-gray-400 font-medium border-t border-gray-100">
-                Propulsé par <span className="font-bold text-luna-charcoal">Luna Travel</span> — Votre agence de confiance.
+            <div className="text-center py-8 text-xs text-gray-400 font-normal border-t border-gray-100">
+                Propulsé par <span className="font-normal text-luna-charcoal">Luna Travel</span> — Votre agence de confiance.
             </div>
         </div>
     );

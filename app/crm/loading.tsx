@@ -6,7 +6,7 @@ export default function CRMLoading() {
                     <div className="absolute inset-0 rounded-full border-2 border-gray-200" />
                     <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-luna-charcoal animate-spin" />
                 </div>
-                <p className="text-sm text-luna-text-muted font-medium">Chargement…</p>
+                <p className="text-sm text-luna-text-muted font-normal">Chargement…</p>
             </div>
         </div>
     );

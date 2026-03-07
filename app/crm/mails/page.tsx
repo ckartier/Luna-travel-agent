@@ -8,9 +8,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createLead, createActivity, createContact, findContactByEmail } from '@/src/lib/firebase/crm';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
+import { T, useAutoTranslate } from '@/src/components/T';
 
 export default function MailsPage() {
   const { tenantId } = useAuth();
+  const at = useAutoTranslate();
   const [emails, setEmails] = useState<any[]>([]);
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -49,7 +51,7 @@ export default function MailsPage() {
     if (!email.bodyText) {
       setEmailContentLoading(true);
       try {
-        const res = await fetch(`/api/gmail/list?action=get&messageId=${email.id}`);
+        const res = await fetchWithAuth(`/api/gmail/list?action=get&messageId=${email.id}`);
         const data = await res.json();
         setEmails(prev => prev.map(e => e.id === email.id ? { ...e, ...data } : e));
         setSelectedEmail({ ...email, ...data });
@@ -245,14 +247,14 @@ export default function MailsPage() {
     <div className="h-full flex flex-col pt-4">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-luna-charcoal tracking-tight flex items-center gap-2 md:gap-3">
-            Boîte de Réception <span className="bg-luna-accent/10 text-luna-accent-dark text-xs py-0.5 px-2.5 rounded-full font-sans font-semibold">{emails.length}</span>
+          <h1 className="text-2xl font-normal text-luna-charcoal tracking-tight flex items-center gap-2 md:gap-3">
+            <T>Boîte de Réception</T> <span className="bg-luna-accent/10 text-luna-accent-dark text-xs py-0.5 px-2.5 rounded-full font-sans font-normal">{emails.length}</span>
           </h1>
           <p className="text-luna-text-muted text-xs md:text-sm mt-0.5 hidden sm:block">Analysez les demandes avec Luna AI et dispatchez aux agents.</p>
         </div>
         <button onClick={fetchEmails} disabled={loading}
-          className="bg-white hover:bg-luna-cream border border-luna-warm-gray/20 text-luna-charcoal font-medium px-3 py-2 rounded-lg shadow-sm transition-all flex items-center gap-2 disabled:opacity-50 text-xs">
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Actualiser
+          className="bg-white hover:bg-luna-cream border border-luna-warm-gray/20 text-luna-charcoal font-normal px-3 py-2 rounded-lg shadow-sm transition-all flex items-center gap-2 disabled:opacity-50 text-xs">
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> <T>Actualiser</T>
         </button>
       </div>
 
@@ -280,7 +282,7 @@ export default function MailsPage() {
             ) : emails.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-luna-text-muted p-6 text-center space-y-3">
                 <Mail size={36} className="opacity-20" />
-                <p className="font-semibold text-sm text-luna-charcoal">Aucune demande.</p>
+                <p className="font-normal text-sm text-luna-charcoal">Aucune demande.</p>
               </div>
             ) : (
               <div className="divide-y divide-luna-warm-gray/10">
@@ -288,13 +290,13 @@ export default function MailsPage() {
                   <button key={email.id} onClick={() => handleSelectEmail(email)}
                     className={`w-full text-left p-4 hover:bg-sky-50/50 transition-colors ${selectedEmail?.id === email.id ? 'bg-sky-50 border-l-2 border-l-sky-400' : 'border-l-2 border-l-transparent'}`}>
                     <div className="flex justify-between items-start mb-1.5">
-                      <span className="font-medium text-luna-charcoal truncate pr-3 text-xs">{email.sender.replace(/<.*>/, '')}</span>
-                      <span className="text-[11px] text-luna-text-muted whitespace-nowrap">
+                      <span className="font-normal text-luna-charcoal truncate pr-3 text-xs">{email.sender.replace(/<.*>/, '')}</span>
+                      <span className="text-[12px] text-luna-text-muted whitespace-nowrap">
                         {new Date(email.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                       </span>
                     </div>
-                    <h4 className={`text-xs mb-0.5 truncate ${selectedEmail?.id === email.id ? 'font-semibold text-sky-600' : 'font-medium text-luna-charcoal'}`}>{email.subject}</h4>
-                    <p className="text-[11px] text-luna-text-muted truncate">{email.snippet?.replace(/&#39;/g, "'")}</p>
+                    <h4 className={`text-xs mb-0.5 truncate ${selectedEmail?.id === email.id ? 'font-normal text-sky-600' : 'font-normal text-luna-charcoal'}`}>{email.subject}</h4>
+                    <p className="text-[12px] text-luna-text-muted truncate">{email.snippet?.replace(/&#39;/g, "'")}</p>
                   </button>
                 ))}
               </div>
@@ -308,25 +310,25 @@ export default function MailsPage() {
             <div className="flex-1 overflow-y-auto flex flex-col h-full">
               <div className="p-4 md:p-6 border-b border-luna-warm-gray/10">
                 {/* Mobile back button */}
-                <button onClick={() => setSelectedEmail(null)} className="lg:hidden text-xs text-sky-500 font-medium mb-3 flex items-center gap-1">← Retour aux emails</button>
-                <h2 className="font-serif text-lg md:text-xl font-semibold text-luna-charcoal mb-4">{selectedEmail.subject}</h2>
+                <button onClick={() => setSelectedEmail(null)} className="lg:hidden text-xs text-sky-500 font-normal mb-3 flex items-center gap-1">← Retour aux emails</button>
+                <h2 className="font-serif text-lg md:text-xl font-normal text-luna-charcoal mb-4">{selectedEmail.subject}</h2>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-sky-50 flex items-center justify-center text-sky-600 font-semibold text-sm border border-sky-100">
+                    <div className="w-8 h-8 rounded-full bg-sky-50 flex items-center justify-center text-sky-600 font-normal text-sm border border-sky-100">
                       {selectedEmail.sender.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-medium text-luna-charcoal text-sm">{selectedEmail.sender}</p>
-                      <p className="text-[11px] text-luna-text-muted flex items-center gap-1">
+                      <p className="font-normal text-luna-charcoal text-sm">{selectedEmail.sender}</p>
+                      <p className="text-[12px] text-luna-text-muted flex items-center gap-1">
                         <CalendarClock size={10} />
                         {new Date(selectedEmail.date).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })}
                       </p>
                     </div>
                   </div>
                   <button onClick={handleAnalyzeEmail} disabled={analyzing}
-                    className="bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md shadow-sky-500/20 transition-all text-xs flex items-center gap-2 disabled:opacity-60">
+                    className="bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-normal px-4 py-2 rounded-lg shadow-md shadow-sky-500/20 transition-all text-xs flex items-center gap-2 disabled:opacity-60">
                     {analyzing ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                    {analyzing ? 'Analyse…' : 'Analyser avec Luna AI'}
+                    {analyzing ? 'Analyse…' : at('Analyser avec Luna IA')}
                   </button>
                 </div>
               </div>
@@ -356,9 +358,9 @@ export default function MailsPage() {
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-2">
                             <Sparkles size={14} className="text-sky-500" />
-                            <h3 className="font-semibold text-sm text-luna-charcoal">Analyse Luna AI</h3>
+                            <h3 className="font-normal text-sm text-luna-charcoal">Analyse Luna AI</h3>
                           </div>
-                          <span className={`text-[11px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${priorityColors[analysis.priority] || priorityColors.MEDIUM}`}>
+                          <span className={`text-[12px] uppercase font-normal tracking-wider px-2 py-0.5 rounded-full border ${priorityColors[analysis.priority] || priorityColors.MEDIUM}`}>
                             {analysis.priority || 'MEDIUM'}
                           </span>
                         </div>
@@ -371,7 +373,7 @@ export default function MailsPage() {
                         {/* Extracted data */}
                         {analysis.extracted && (
                           <div className="space-y-2.5 mb-4">
-                            <h4 className="text-xs uppercase tracking-wider font-semibold text-luna-text-muted">Données extraites</h4>
+                            <h4 className="text-xs uppercase tracking-wider font-normal text-luna-text-muted">Données extraites</h4>
                             {[
                               { label: 'Client', value: analysis.extracted.clientName },
                               { label: 'Destinations', value: analysis.extracted.destinations?.join(', ') },
@@ -383,8 +385,8 @@ export default function MailsPage() {
                               { label: 'Spécial', value: analysis.extracted.specialRequests },
                             ].filter(item => item.value).map((item, i) => (
                               <div key={i} className="flex justify-between items-start bg-white rounded-lg p-2.5 border border-luna-warm-gray/10">
-                                <span className="text-[11px] font-semibold text-luna-text-muted uppercase tracking-wider">{item.label}</span>
-                                <span className="text-xs font-medium text-luna-charcoal text-right max-w-[160px]">{item.value}</span>
+                                <span className="text-[12px] font-normal text-luna-text-muted uppercase tracking-wider">{item.label}</span>
+                                <span className="text-xs font-normal text-luna-charcoal text-right max-w-[160px]">{item.value}</span>
                               </div>
                             ))}
                           </div>
@@ -392,12 +394,12 @@ export default function MailsPage() {
 
                         {/* Agent Dispatch */}
                         <div className="mb-4">
-                          <h4 className="text-xs uppercase tracking-wider font-semibold text-luna-text-muted mb-2">Agents à dispatcher</h4>
+                          <h4 className="text-xs uppercase tracking-wider font-normal text-luna-text-muted mb-2">Agents à dispatcher</h4>
                           <div className="grid grid-cols-2 gap-2">
                             {agentIcons.map((agent, i) => (
                               <div key={i} className={`bg-white rounded-lg p-2.5 border border-luna-warm-gray/10 flex items-center gap-2 ${dispatched ? 'border-emerald-200 bg-emerald-50/30' : ''}`}>
                                 <agent.icon size={14} className={dispatched ? 'text-emerald-500' : agent.color} />
-                                <span className="text-[11px] font-medium text-luna-charcoal">{agent.name}</span>
+                                <span className="text-[12px] font-normal text-luna-charcoal">{agent.name}</span>
                                 {dispatched && <CheckCircle2 size={10} className="text-emerald-500 ml-auto" />}
                               </div>
                             ))}
@@ -407,12 +409,12 @@ export default function MailsPage() {
                         {/* Dispatch button */}
                         {!dispatched ? (
                           <button onClick={handleDispatchToAgents} disabled={dispatching}
-                            className="w-full py-2.5 btn-primary font-semibold text-xs tracking-wider uppercase rounded-lg shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-60">
+                            className="w-full py-2.5 btn-primary font-normal text-xs tracking-wider uppercase rounded-lg shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-60">
                             {dispatching ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} />}
                             {dispatching ? 'Dispatch…' : 'Dispatcher aux 4 Agents'}
                           </button>
                         ) : (
-                          <div className="w-full py-2.5 bg-emerald-50 text-emerald-600 font-semibold text-xs tracking-wider uppercase rounded-lg border border-emerald-200 flex items-center justify-center gap-2">
+                          <div className="w-full py-2.5 bg-emerald-50 text-emerald-600 font-normal text-xs tracking-wider uppercase rounded-lg border border-emerald-200 flex items-center justify-center gap-2">
                             <CheckCircle2 size={14} /> Dispatché aux agents
                           </div>
                         )}
@@ -421,16 +423,16 @@ export default function MailsPage() {
                         <div className="mt-3 pt-3 border-t border-sky-100/30">
                           {!addedToPipeline ? (
                             <button onClick={handleAddToPipeline} disabled={addingToPipeline}
-                              className="w-full py-2.5 bg-sky-50 hover:bg-sky-100 text-sky-700 font-semibold text-xs tracking-wider uppercase rounded-lg border border-sky-200 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
+                              className="w-full py-2.5 bg-sky-50 hover:bg-sky-100 text-sky-700 font-normal text-xs tracking-wider uppercase rounded-lg border border-sky-200 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
                               {addingToPipeline ? <Loader2 size={14} className="animate-spin" /> : <PlusCircle size={14} />}
                               {addingToPipeline ? 'Ajout…' : 'Ajouter au Pipeline CRM'}
                             </button>
                           ) : (
                             <div className="space-y-2">
-                              <div className="w-full py-2.5 bg-emerald-50 text-emerald-600 font-semibold text-xs tracking-wider uppercase rounded-lg border border-emerald-200 flex items-center justify-center gap-2">
+                              <div className="w-full py-2.5 bg-emerald-50 text-emerald-600 font-normal text-xs tracking-wider uppercase rounded-lg border border-emerald-200 flex items-center justify-center gap-2">
                                 <CheckCircle2 size={14} /> Ajouté au Pipeline
                               </div>
-                              <Link href="/crm/pipeline" className="w-full py-2 text-sky-500 hover:text-sky-600 font-medium text-xs rounded-lg flex items-center justify-center gap-1.5 transition-colors">
+                              <Link href="/crm/pipeline" className="w-full py-2 text-sky-500 hover:text-sky-600 font-normal text-xs rounded-lg flex items-center justify-center gap-1.5 transition-colors">
                                 <ExternalLink size={12} /> Voir le Pipeline
                               </Link>
                             </div>
@@ -445,7 +447,7 @@ export default function MailsPage() {
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-luna-text-muted p-6 text-center space-y-3 bg-luna-cream/10">
               <Mail size={48} className="opacity-15 mb-2" />
-              <p className="font-serif font-semibold text-lg text-luna-charcoal">Aucun email sélectionné</p>
+              <p className="font-serif font-normal text-lg text-luna-charcoal"><T>Sélectionnez un email</T></p>
               <p className="text-luna-text-muted max-w-xs text-xs">Sélectionnez une demande pour l'analyser avec Luna AI.</p>
             </div>
           )}

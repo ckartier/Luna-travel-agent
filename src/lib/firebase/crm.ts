@@ -27,7 +27,14 @@ export interface CRMLead {
     vibe?: string;
     flexibility?: string;
     mustHaves?: string;
+    agentResults?: {
+        transport?: any;
+        accommodation?: any;
+        itinerary?: any;
+        client?: any;
+    };
     status: 'NEW' | 'ANALYSING' | 'PROPOSAL_READY' | 'WON' | 'LOST';
+    tripId?: string;
     createdAt: Timestamp | Date;
     updatedAt: Timestamp | Date;
 }
@@ -38,6 +45,7 @@ export interface CRMContact {
     lastName: string;
     email: string;
     phone?: string;
+    communicationPreference?: 'EMAIL' | 'WHATSAPP';
     company?: string;
     vipLevel: 'Standard' | 'Premium' | 'VIP' | 'Elite';
     preferences: string[];
@@ -50,6 +58,7 @@ export interface CRMContact {
     seatPreference?: string;
     roomPreference?: string;
     loyaltyTier?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
+    profileAnalysis?: string;
     createdAt: Timestamp | Date;
     updatedAt: Timestamp | Date;
 }
@@ -152,9 +161,48 @@ export interface CRMCatalogItem {
     recommendedMarkup: number;
     currency: string;
     images?: string[];
-    createdAt: Timestamp | Date;
-    updatedAt: Timestamp | Date;
+    concierge?: string;       // Nom du concierge / contact principal
+    phone?: string;           // Téléphone
+    email?: string;           // Email
+    website?: string;         // Site web
+    address?: string;         // Adresse
+    supplierId?: string;      // Lien vers l'ID du prestataire (Hôtel, Guide, etc.)
 }
+
+export interface CRMSupplierBooking {
+    id?: string;
+    supplierId: string;
+    prestationId: string;
+    prestationName: string;
+    clientId?: string;
+    clientName?: string;
+    date: string;              // ISO YYYY-MM-DD
+    startTime?: string;        // HH:mm
+    endTime?: string;
+    status: 'PROPOSED' | 'CONFIRMED' | 'TERMINATED' | 'CANCELLED' | 'CANCELLED_LATE';
+    rate: number;
+    extraFees?: number;
+    pickupLocation?: string;   // Client pickup point
+    numberOfGuests?: number;   // Number of guests
+    notes?: string;
+    // Reminder tracking
+    reminderJ1Sent?: boolean;  // 24h reminder sent
+    reminderH3Sent?: boolean;  // 3h reminder sent
+    // Cancellation metadata
+    cancelledAt?: Date | Timestamp;
+    cancelledLate?: boolean;   // true if cancelled < 1h before
+    reassignedTo?: string;     // new supplier ID if reassigned
+    reassignedFrom?: string;   // old booking ID if this is a reassignment
+    supplierResponse?: {
+        confirmed: boolean;
+        respondedAt: Date;
+        respondedBy: string;
+        respondedPhone: string;
+    };
+    createdAt: Timestamp | Date;
+}
+
+
 
 export interface CRMInvoiceItem {
     description: string;
@@ -162,6 +210,34 @@ export interface CRMInvoiceItem {
     unitPrice: number;
     total: number;
     taxRate: number;
+}
+
+export interface CRMQuoteItem {
+    description: string;
+    quantity: number;
+    netCost: number;       // Coût HT payé au prestataire
+    unitPrice: number;     // Prix HT vendu au client
+    total: number;
+    taxRate: number;
+}
+
+export interface CRMQuote {
+    id?: string;
+    quoteNumber: string;
+    tripId: string;
+    clientId: string;
+    clientName: string;
+    issueDate: string;
+    validUntil: string;
+    items: CRMQuoteItem[];
+    subtotal: number;
+    taxTotal: number;
+    totalAmount: number;
+    currency: string;
+    status: 'DRAFT' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED';
+    notes?: string;
+    createdAt: Timestamp | Date;
+    updatedAt: Timestamp | Date;
 }
 
 export interface CRMInvoice {
@@ -206,10 +282,14 @@ export interface CRMMessage {
     clientName: string;
     channel: 'EMAIL' | 'WHATSAPP' | 'SMS' | 'CHAT';
     direction: 'INBOUND' | 'OUTBOUND';
+    recipientType?: 'CLIENT' | 'SUPPLIER';
     content: string;
     senderId?: string;
     attachments?: string[];
     isRead: boolean;
+    bookingId?: string;
+    prestationName?: string;
+    buttonReply?: { id: string; title: string; confirmed: boolean };
     createdAt: Timestamp | Date;
 }
 
@@ -294,7 +374,19 @@ export const createLead = async (tid: string, data: Omit<CRMLead, 'id' | 'create
 export const getLeads = async (tid: string) => {
     const q = query(tenantCol(tid, 'leads'), orderBy('updatedAt', 'desc'));
     const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() } as CRMLead));
+    const leads = snap.docs.map(d => ({ id: d.id, ...d.data() } as CRMLead));
+
+    // Data Audit: Dynamically link leads to their latest contact info if clientId exists
+    const contactSnap = await getDocs(tenantCol(tid, 'contacts'));
+    const contactMap = new Map(contactSnap.docs.map(d => [d.id, d.data() as CRMContact]));
+
+    return leads.map(l => {
+        if (l.clientId && contactMap.has(l.clientId)) {
+            const c = contactMap.get(l.clientId)!;
+            return { ...l, clientName: `${c.firstName} ${c.lastName}` };
+        }
+        return l;
+    });
 };
 
 export const updateLeadStatus = async (tid: string, id: string, status: CRMLead['status']) => {
@@ -303,6 +395,21 @@ export const updateLeadStatus = async (tid: string, id: string, status: CRMLead[
 
 export const updateLead = async (tid: string, id: string, data: Partial<Omit<CRMLead, 'id' | 'createdAt'>>) => {
     await updateDoc(tenantDoc(tid, 'leads', id), { ...data, updatedAt: new Date() });
+};
+
+export const deleteLead = async (tid: string, id: string) => {
+    // Cascade: delete all activities linked to this lead
+    const actSnap = await getDocs(query(tenantCol(tid, 'activities'), where('leadId', '==', id)));
+    const deletePromises = actSnap.docs.map(d => deleteDoc(d.ref));
+
+    // Cascade: delete calendar events linked to this lead
+    const calSnap = await getDocs(query(tenantCol(tid, 'calendar'), where('sourceId', '==', id)));
+    deletePromises.push(...calSnap.docs.map(d => deleteDoc(d.ref)));
+
+    // Delete the lead itself
+    deletePromises.push(deleteDoc(tenantDoc(tid, 'leads', id)));
+
+    await Promise.all(deletePromises);
 };
 
 // ═══ CONTACTS CRUD ═══
@@ -322,6 +429,11 @@ export const findContactByEmail = async (tid: string, email: string): Promise<CR
     const q = query(tenantCol(tid, 'contacts'), where('email', '==', email.toLowerCase().trim()));
     const snap = await getDocs(q);
     return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() } as CRMContact;
+};
+
+export const updateContact = async (tid: string, contactId: string, data: Partial<CRMContact>) => {
+    const ref = doc(db, 'tenants', tid, 'contacts', contactId);
+    await updateDoc(ref, { ...data, updatedAt: new Date() });
 };
 
 // ═══ ACTIVITIES CRUD ═══
@@ -348,11 +460,12 @@ export interface CRMUser {
     displayName: string;
     email: string;
     photoURL: string | null;
-    role: 'Agent' | 'Admin' | 'Manager';
+    role: 'Agent' | 'Admin' | 'Manager' | 'SuperAdmin';
     agency: string;
     phone: string;
     bio: string;
     tenantId: string;
+    language?: 'fr' | 'en' | 'da' | 'nl' | 'es';
     createdAt: Timestamp | Date;
     updatedAt: Timestamp | Date;
 }
@@ -375,6 +488,13 @@ export const getOrCreateUser = async (firebaseUser: { uid: string; displayName: 
             await updateDoc(userRef, updates);
         }
 
+        // SuperAdmin auto-promotion for existing users
+        const SUPER_ADMIN_EMAILS = ['ckartier@gmail.com'];
+        if (SUPER_ADMIN_EMAILS.includes((firebaseUser.email || '').toLowerCase()) && data.role !== 'SuperAdmin') {
+            await updateDoc(userRef, { role: 'SuperAdmin' });
+            data.role = 'SuperAdmin';
+        }
+
         let result = { ...data, ...updates } as CRMUser;
         if (!result.tenantId) {
             const tenantId = await createTenant(
@@ -390,12 +510,16 @@ export const getOrCreateUser = async (firebaseUser: { uid: string; displayName: 
 
     const tenantId = await createTenant(firebaseUser.uid, firebaseUser.email || '', firebaseUser.displayName || 'Utilisateur');
 
+    // SuperAdmin auto-assignment
+    const SUPER_ADMIN_EMAILS = ['ckartier@gmail.com'];
+    const isSuperAdmin = SUPER_ADMIN_EMAILS.includes((firebaseUser.email || '').toLowerCase());
+
     const newUser: CRMUser = {
         uid: firebaseUser.uid,
         displayName: firebaseUser.displayName || 'Utilisateur',
         email: firebaseUser.email || '',
         photoURL: firebaseUser.photoURL || null,
-        role: 'Agent',
+        role: isSuperAdmin ? 'SuperAdmin' : 'Agent',
         agency: '',
         phone: '',
         bio: '',
@@ -409,7 +533,7 @@ export const getOrCreateUser = async (firebaseUser: { uid: string; displayName: 
     return newUser;
 };
 
-export const updateUserProfile = async (uid: string, data: Partial<Pick<CRMUser, 'phone' | 'agency' | 'bio' | 'role'>>) => {
+export const updateUserProfile = async (uid: string, data: Partial<Pick<CRMUser, 'phone' | 'agency' | 'bio' | 'role' | 'language'>>) => {
     await updateDoc(doc(db, 'users', uid), { ...data, updatedAt: new Date() });
 };
 
@@ -441,22 +565,58 @@ export const updateTrip = async (tid: string, id: string, data: Partial<Omit<CRM
 };
 
 export const deleteTrip = async (tid: string, id: string) => {
-    await deleteDoc(tenantDoc(tid, 'trips', id));
+    const deletePromises: Promise<void>[] = [];
+
+    // Cascade: delete trip days (sub-collection)
+    const daysColl = collection(db, 'tenants', tid, 'trips', id, 'days');
+    const daysSnap = await getDocs(daysColl);
+    deletePromises.push(...daysSnap.docs.map(d => deleteDoc(d.ref)));
+
+    // Cascade: delete bookings linked to this trip
+    const bookSnap = await getDocs(query(tenantCol(tid, 'bookings'), where('tripId', '==', id)));
+    deletePromises.push(...bookSnap.docs.map(d => deleteDoc(d.ref)));
+
+    // Cascade: delete activities linked to this trip
+    const actSnap = await getDocs(query(tenantCol(tid, 'activities'), where('tripId', '==', id)));
+    deletePromises.push(...actSnap.docs.map(d => deleteDoc(d.ref)));
+
+    // Cascade: delete calendar events
     await deleteCalendarEventsForSource(tid, id);
+
+    // Delete the trip itself
+    deletePromises.push(deleteDoc(tenantDoc(tid, 'trips', id)));
+
+    await Promise.all(deletePromises);
 };
 
 // ═══ LINKED QUERIES ═══
 
-export const getLeadsForContact = async (tid: string, contactId: string) => {
-    const q = query(tenantCol(tid, 'leads'), where('clientId', '==', contactId), orderBy('updatedAt', 'desc'));
+export const getLeadsForContact = async (tid: string, contactId: string, contactName?: string) => {
+    // First try by clientId (no orderBy to avoid composite index)
+    const q = query(tenantCol(tid, 'leads'), where('clientId', '==', contactId));
     const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() } as CRMLead));
+    let leads = snap.docs.map(d => ({ id: d.id, ...d.data() } as CRMLead));
+
+    // Fallback: also search by clientName if no results and name provided
+    if (leads.length === 0 && contactName) {
+        const q2 = query(tenantCol(tid, 'leads'), where('clientName', '==', contactName));
+        const snap2 = await getDocs(q2);
+        leads = snap2.docs.map(d => ({ id: d.id, ...d.data() } as CRMLead));
+    }
+
+    // Sort client-side to avoid composite index requirement
+    return leads.sort((a, b) => {
+        const aTime = a.updatedAt instanceof Date ? a.updatedAt.getTime() : (a.updatedAt as any)?.toMillis?.() || 0;
+        const bTime = b.updatedAt instanceof Date ? b.updatedAt.getTime() : (b.updatedAt as any)?.toMillis?.() || 0;
+        return bTime - aTime;
+    });
 };
 
 export const getTripsForContact = async (tid: string, contactId: string) => {
-    const q = query(tenantCol(tid, 'trips'), where('clientId', '==', contactId), orderBy('startDate', 'desc'));
+    const q = query(tenantCol(tid, 'trips'), where('clientId', '==', contactId));
     const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() } as CRMTrip));
+    const trips = snap.docs.map(d => ({ id: d.id, ...d.data() } as CRMTrip));
+    return trips.sort((a, b) => (b.startDate || '').localeCompare(a.startDate || ''));
 };
 
 export const getActivitiesForContact = async (tid: string, contactId: string) => {
@@ -569,10 +729,154 @@ export const updateInvoice = async (tid: string, id: string, data: Partial<Omit<
     await updateDoc(tenantDoc(tid, 'invoices', id), { ...data, updatedAt: new Date() });
 };
 
+export const deleteInvoice = async (tid: string, id: string) => {
+    await deleteDoc(tenantDoc(tid, 'invoices', id));
+};
+
+// ═══ QUOTES CRUD ═══
+
+export const createQuote = async (tid: string, data: Omit<CRMQuote, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const ref = await addDoc(tenantCol(tid, 'quotes'), { ...data, createdAt: new Date(), updatedAt: new Date() });
+
+    // Data Audit: Cross-log this quote creation to the client's activity timeline
+    await createActivity(tid, {
+        title: `Devis émis: ${data.quoteNumber}`,
+        time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        type: 'email',
+        color: 'emerald',
+        status: 'DONE',
+        iconName: 'Mail',
+        contactId: data.clientId,
+        contactName: data.clientName,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    } as any);
+
+    return ref.id;
+};
+
+export const getQuotes = async (tid: string) => {
+    const q = query(tenantCol(tid, 'quotes'), orderBy('issueDate', 'desc'));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as CRMQuote));
+};
+
+export const updateQuote = async (tid: string, id: string, data: Partial<Omit<CRMQuote, 'id' | 'createdAt'>>) => {
+    await updateDoc(tenantDoc(tid, 'quotes', id), { ...data, updatedAt: new Date() });
+
+    // Transition Logic: If quote is accepted, automatically generate an invoice
+    if (data.status === 'ACCEPTED') {
+        const quoteSnap = await getDoc(tenantDoc(tid, 'quotes', id));
+        if (quoteSnap.exists()) {
+            const quote = { id: quoteSnap.id, ...quoteSnap.data() } as CRMQuote;
+            await createInvoiceFromQuote(tid, quote);
+
+            // Also update trip status if exists
+            if (quote.tripId) {
+                await updateTrip(tid, quote.tripId, { status: 'CONFIRMED' });
+            }
+        }
+    }
+};
+
+export const deleteQuote = async (tid: string, id: string) => {
+    await deleteDoc(tenantDoc(tid, 'quotes', id));
+};
+
+/**
+ * Creates an invoice based on an accepted quote.
+ */
+export const createInvoiceFromQuote = async (tid: string, quote: CRMQuote) => {
+    const invoiceData: Omit<CRMInvoice, 'id' | 'createdAt' | 'updatedAt'> = {
+        invoiceNumber: `INV-${quote.quoteNumber.split('-')[1] || Date.now().toString().slice(-6)}`,
+        tripId: quote.tripId,
+        clientId: quote.clientId,
+        clientName: quote.clientName,
+        issueDate: new Date().toISOString().slice(0, 10),
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), // +7 days
+        items: quote.items.map(item => ({
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            total: item.total,
+            taxRate: item.taxRate
+        })),
+        subtotal: quote.subtotal,
+        taxTotal: quote.taxTotal,
+        totalAmount: quote.totalAmount,
+        currency: quote.currency,
+        amountPaid: 0,
+        status: 'SENT',
+        notes: `Facture générée depuis le devis ${quote.quoteNumber}. ${quote.notes || ''}`
+    };
+
+    return await createInvoice(tid, invoiceData);
+};
+
+/**
+ * Creates an invoice from a confirmed supplier booking.
+ * Auto-called when a booking status transitions to CONFIRMED.
+ */
+export const createInvoiceFromBooking = async (tid: string, booking: CRMSupplierBooking, supplierName: string) => {
+    const bookingDate = new Date(booking.date);
+    const invoiceData: Omit<CRMInvoice, 'id' | 'createdAt' | 'updatedAt'> = {
+        invoiceNumber: `INV-P${Date.now().toString().slice(-6)}`,
+        tripId: '', // Will be linked if trip exists
+        clientId: booking.clientId || booking.supplierId,
+        clientName: booking.clientName || supplierName,
+        issueDate: new Date().toISOString().slice(0, 10),
+        dueDate: new Date(bookingDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), // +30 days
+        items: [{
+            description: `${booking.prestationName} — ${supplierName} (${booking.date})`,
+            quantity: (booking as any).numberOfGuests || 1,
+            unitPrice: booking.rate,
+            total: booking.rate * ((booking as any).numberOfGuests || 1),
+            taxRate: 0,
+        }],
+        subtotal: booking.rate * ((booking as any).numberOfGuests || 1),
+        taxTotal: 0,
+        totalAmount: booking.rate * ((booking as any).numberOfGuests || 1) + (booking.extraFees || 0),
+        currency: 'EUR',
+        amountPaid: 0,
+        status: 'DRAFT',
+        notes: `Facture auto-générée — Prestation confirmée par ${supplierName}.\nDate: ${booking.date} ${booking.startTime || ''} - ${booking.endTime || ''}\n${(booking as any).pickupLocation ? `Lieu: ${(booking as any).pickupLocation}` : ''}\nBooking ID: ${booking.id || 'N/A'}`
+    };
+
+    const invoiceId = await createInvoice(tid, invoiceData);
+
+    // Link invoice to booking
+    if (booking.id) {
+        await updateSupplierBooking(tid, booking.id, { notes: `${booking.notes || ''}\n📄 Facture: ${invoiceData.invoiceNumber}`.trim() } as any);
+    }
+
+    return invoiceId;
+};
+
 // ═══ PAYMENTS CRUD ═══
 
 export const createPayment = async (tid: string, data: Omit<CRMPayment, 'id' | 'createdAt' | 'updatedAt'>) => {
     const ref = await addDoc(tenantCol(tid, 'payments'), { ...data, createdAt: new Date(), updatedAt: new Date() });
+
+    // Auto-sync invoice: update amountPaid and status
+    if (data.invoiceId && data.status === 'COMPLETED') {
+        try {
+            const invoiceRef = tenantDoc(tid, 'invoices', data.invoiceId);
+            const invoiceSnap = await getDoc(invoiceRef);
+            if (invoiceSnap.exists()) {
+                const invoice = invoiceSnap.data() as CRMInvoice;
+                const newAmountPaid = (invoice.amountPaid || 0) + data.amount;
+                const isPaid = newAmountPaid >= invoice.totalAmount;
+                await updateDoc(invoiceRef, {
+                    amountPaid: newAmountPaid,
+                    status: isPaid ? 'PAID' : 'PARTIAL',
+                    updatedAt: new Date(),
+                });
+            }
+        } catch (e) {
+            console.error('[Payment→Invoice Sync] Error:', e);
+        }
+    }
+
     return ref.id;
 };
 
@@ -738,3 +1042,146 @@ async function generateCalendarEventsForInvoice(tid: string, invoiceId: string, 
         sourceType: 'invoice', sourceId: invoiceId, clientId: invoice.clientId, clientName: invoice.clientName, isAllDay: true,
     });
 }
+
+// ═══ SUPPLIERS / PRESTATAIRES ═══
+
+export type SupplierCategory = 'HÉBERGEMENT' | 'RESTAURANT' | 'ACTIVITÉ' | 'CULTURE' | 'TRANSPORT' | 'GUIDE' | 'AUTRE';
+
+export interface CRMSupplier {
+    id?: string;
+    name: string;
+    category: SupplierCategory;
+    country: string;
+    city: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    website?: string;
+    contactName?: string;
+    notes?: string;
+    rating?: number; // 1-5
+    commission?: number; // % de commission
+    currency?: string;
+    professionalLicense?: string;
+    bankDetails?: string;
+    tags?: string[];
+    isFavorite?: boolean;
+    languages?: string[]; // New: FR, EN, ES, ID...
+    hasLicense?: boolean; // New: Professional Driver/Guide license
+    isGuide?: boolean; // New: Functions
+    isChauffeur?: boolean; // New: Functions
+    isLunaFriend?: boolean; // Created manually by user = "Luna Friends"
+    createdAt: Timestamp | Date;
+    updatedAt: Timestamp | Date;
+}
+
+export interface CRMPrestation {
+    id?: string;
+    supplierId: string;
+    supplierName: string;
+    tripId?: string;
+    tripTitle?: string;
+    clientId?: string;
+    clientName?: string;
+    name?: string; // Compatibility
+    description: string;
+    date: string;
+    cost: number;
+    clientPrice: number;
+    status: 'RÉSERVÉ' | 'CONFIRMÉ' | 'TERMINÉ' | 'ANNULÉ';
+    notes?: string;
+    createdAt: Timestamp | Date;
+    updatedAt: Timestamp | Date;
+}
+
+// ── Supplier CRUD ──
+
+export const createSupplier = async (tid: string, data: Omit<CRMSupplier, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const ref = await addDoc(tenantCol(tid, 'suppliers'), { ...data, createdAt: new Date(), updatedAt: new Date() });
+    return ref.id;
+};
+
+export const getSuppliers = async (tid: string) => {
+    const q = query(tenantCol(tid, 'suppliers'), orderBy('name', 'asc'));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as CRMSupplier));
+};
+
+export const getSupplierById = async (tid: string, supplierId: string): Promise<CRMSupplier | null> => {
+    const ref = doc(db, 'tenants', tid, 'suppliers', supplierId);
+    const snap = await getDoc(ref);
+    return snap.exists() ? { id: snap.id, ...snap.data() } as CRMSupplier : null;
+};
+
+export const updateSupplier = async (tid: string, supplierId: string, data: Partial<CRMSupplier>) => {
+    const ref = doc(db, 'tenants', tid, 'suppliers', supplierId);
+    await updateDoc(ref, { ...data, updatedAt: new Date() });
+};
+
+export const deleteSupplier = async (tid: string, supplierId: string) => {
+    const ref = doc(db, 'tenants', tid, 'suppliers', supplierId);
+    await deleteDoc(ref);
+};
+
+// ── Prestation CRUD ──
+
+export const createPrestation = async (tid: string, data: Omit<CRMPrestation, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const ref = await addDoc(tenantCol(tid, 'prestations'), { ...data, createdAt: new Date(), updatedAt: new Date() });
+    return ref.id;
+};
+
+export const getPrestations = async (tid: string) => {
+    const q = query(tenantCol(tid, 'catalog'), orderBy('name', 'asc'));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as CRMCatalogItem));
+};
+
+// ── Supplier Bookings ──
+
+export const createSupplierBooking = async (tid: string, data: Omit<CRMSupplierBooking, 'id' | 'createdAt'>) => {
+    // Sanitize: Firebase rejects undefined values — strip them
+    const clean: Record<string, any> = { createdAt: new Date() };
+    for (const [key, val] of Object.entries(data)) {
+        if (val !== undefined) clean[key] = val;
+    }
+    const ref = await addDoc(tenantCol(tid, 'supplier_bookings'), clean);
+    return ref.id;
+};
+
+export const getSupplierBookings = async (tid: string, supplierId: string) => {
+    const q = query(
+        tenantCol(tid, 'supplier_bookings'),
+        where('supplierId', '==', supplierId),
+        orderBy('date', 'desc')
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as CRMSupplierBooking));
+};
+
+export const updateSupplierBooking = async (tid: string, bookingId: string, data: Partial<CRMSupplierBooking>) => {
+    const ref = doc(db, 'tenants', tid, 'supplier_bookings', bookingId);
+    await updateDoc(ref, data);
+};
+
+export const getAllSupplierBookings = async (tid: string) => {
+    const q = query(tenantCol(tid, 'supplier_bookings'), orderBy('date', 'asc'));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as CRMSupplierBooking));
+};
+
+export const getPrestationsForSupplier = async (tid: string, supplierId: string) => {
+    const q = query(tenantCol(tid, 'prestations'), where('supplierId', '==', supplierId), orderBy('createdAt', 'desc'));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as CRMPrestation));
+};
+
+
+export const updatePrestation = async (tid: string, prestationId: string, data: Partial<CRMPrestation>) => {
+    const ref = doc(db, 'tenants', tid, 'prestations', prestationId);
+    await updateDoc(ref, { ...data, updatedAt: new Date() });
+};
+
+export const deletePrestation = async (tid: string, prestationId: string) => {
+    const ref = doc(db, 'tenants', tid, 'prestations', prestationId);
+    await deleteDoc(ref);
+};

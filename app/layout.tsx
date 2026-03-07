@@ -21,9 +21,9 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Quicksand:wght@300;400;500;600&display=swap" rel="stylesheet" />
       </head>
-      <body className="antialiased font-sans font-light relative w-screen min-h-screen overflow-x-hidden">
+      <body className="antialiased font-sans font-normal relative w-screen min-h-screen overflow-x-hidden">
         <AuthProvider>
           <AuthGuard>
             <SubscriptionGuard>

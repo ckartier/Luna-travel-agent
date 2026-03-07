@@ -119,15 +119,15 @@ export function WeatherWidget({ destinations }: WeatherWidgetProps) {
                                     {isLoading ? <Loader2 className="w-5 h-5 text-sky-400 animate-spin" /> : data ? getWeatherIcon(data.current.condition, "w-5 h-5") : <Cloud className="w-5 h-5 text-slate-300" />}
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-luna-charcoal capitalize text-sm leading-tight">{data?.city || dest}</h3>
+                                    <h3 className="font-normal text-luna-charcoal capitalize text-sm leading-tight">{data?.city || dest}</h3>
                                     {data && (
                                         <p className="text-xs text-luna-text-muted mt-0.5 flex items-center gap-2.5">
-                                            <span className="flex items-center gap-0.5 text-luna-charcoal font-bold"><ThermometerSun size={11} className="text-amber-500" /> {data.current.temp}°</span>
+                                            <span className="flex items-center gap-0.5 text-luna-charcoal font-normal"><ThermometerSun size={11} className="text-amber-500" /> {data.current.temp}°</span>
                                             <span className="flex items-center gap-0.5"><Droplets size={10} className="text-sky-400" /> {data.current.humidity}%</span>
                                             <span className="flex items-center gap-0.5"><Wind size={10} /> {data.current.wind} km/h</span>
                                         </p>
                                     )}
-                                    {isLoading && <p className="text-[10px] text-luna-text-muted mt-0.5">Chargement...</p>}
+                                    {isLoading && <p className="text-[12px] text-luna-text-muted mt-0.5">Chargement...</p>}
                                 </div>
                             </div>
                             <div className="flex items-center gap-1">
@@ -166,9 +166,9 @@ export function WeatherWidget({ destinations }: WeatherWidgetProps) {
                                                     key={idx}
                                                     className={`flex flex-col items-center p-2 rounded-xl min-w-[54px] flex-shrink-0 border transition-all ${idx === 0 ? 'bg-luna-charcoal border-luna-charcoal text-white' : 'bg-white/80 border-luna-warm-gray/15'}`}
                                                 >
-                                                    <span className={`text-[9px] font-semibold uppercase mb-1 ${idx === 0 ? 'text-luna-cream/60' : 'text-luna-text-muted'}`}>{formatDate(day.date).split(' ')[0]}</span>
+                                                    <span className={`text-[12px] font-normal uppercase mb-1 ${idx === 0 ? 'text-luna-cream/60' : 'text-luna-text-muted'}`}>{formatDate(day.date).split(' ')[0]}</span>
                                                     {getWeatherIcon(day.condition, idx === 0 ? "w-4 h-4 text-white" : "w-4 h-4")}
-                                                    <span className={`text-sm font-bold mt-1 ${idx === 0 ? 'text-white' : 'text-luna-charcoal'}`}>{day.temp}°</span>
+                                                    <span className={`text-sm font-normal mt-1 ${idx === 0 ? 'text-white' : 'text-luna-charcoal'}`}>{day.temp}°</span>
                                                 </div>
                                             ))}
                                         </div>

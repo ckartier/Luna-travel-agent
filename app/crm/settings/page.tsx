@@ -11,30 +11,13 @@ import { db } from '@/src/lib/firebase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Save, CheckCircle2, Mail, Phone, Building2, FileText,
-  Shield, LogOut, Globe, Briefcase, Clock, MapPin, Sparkles, CreditCard, Camera
+  Shield, LogOut, Globe, Briefcase, Clock, MapPin, Sparkles, CreditCard, Camera, Languages
 } from 'lucide-react';
 import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
+import { LunaLocale, LOCALE_LABELS } from '@/src/lib/i18n/translations';
+import { useTranslation } from '@/src/hooks/useTranslation';
 
-// ═══ ANIMATED FLIGHT ROUTES ═══
-const FLIGHT_ROUTES = [
-  { from: { x: 30, y: 28 }, to: { x: 72, y: 35 }, color: '#3b82f6', label: 'AF1234' },
-  { from: { x: 75, y: 32 }, to: { x: 22, y: 45 }, color: '#8b5cf6', label: 'AA100' },
-  { from: { x: 50, y: 20 }, to: { x: 85, y: 55 }, color: '#f59e0b', label: 'SQ308' },
-  { from: { x: 15, y: 60 }, to: { x: 55, y: 25 }, color: '#22c55e', label: 'LA800' },
-  { from: { x: 80, y: 25 }, to: { x: 88, y: 65 }, color: '#dc2626', label: 'QF1' },
-  { from: { x: 60, y: 30 }, to: { x: 40, y: 50 }, color: '#06b6d4', label: 'ET700' },
-  { from: { x: 45, y: 40 }, to: { x: 90, y: 35 }, color: '#ec4899', label: 'EK001' },
-  { from: { x: 25, y: 35 }, to: { x: 60, y: 55 }, color: '#6366f1', label: 'BA2049' },
-];
 
-function generateArcPath(from: { x: number; y: number }, to: { x: number; y: number }): string {
-  const midX = (from.x + to.x) / 2;
-  const midY = (from.y + to.y) / 2;
-  const dist = Math.sqrt(Math.pow(to.x - from.x, 2) + Math.pow(to.y - from.y, 2));
-  const cpX = midX;
-  const cpY = midY - dist * 0.2;
-  return `M ${from.x} ${from.y} Q ${cpX} ${cpY} ${to.x} ${to.y}`;
-}
 
 function getInitials(name: string | null | undefined): string {
   if (!name) return 'U';
@@ -50,6 +33,7 @@ const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> 
 export default function SettingsPage() {
   const { user, userProfile, logout, refreshProfile } = useAuth();
   const { subscription, isActive, planName } = useSubscription();
+  const { t } = useTranslation();
   const [portalLoading, setPortalLoading] = useState(false);
   const [phone, setPhone] = useState('');
   const [agency, setAgency] = useState('');
@@ -58,6 +42,7 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [language, setLanguage] = useState<LunaLocale>('fr');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { setMounted(true); }, []);
@@ -170,6 +155,7 @@ export default function SettingsPage() {
       setPhone(userProfile.phone || '');
       setAgency(userProfile.agency || '');
       setBio(userProfile.bio || '');
+      setLanguage((userProfile as any).language || 'fr');
     }
   }, [userProfile]);
 
@@ -177,7 +163,7 @@ export default function SettingsPage() {
     if (!user) return;
     setSaving(true);
     try {
-      await updateUserProfile(user.uid, { phone, agency, bio });
+      await updateUserProfile(user.uid, { phone, agency, bio, language });
       await refreshProfile();
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -199,55 +185,13 @@ export default function SettingsPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-80px)] overflow-hidden">
-      {/* ═══ ANIMATED WORLD MAP BACKGROUND ═══ */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'linear-gradient(rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.08) 1px, transparent 1px)', backgroundSize: '50px 50px' }} />
-        <div className="absolute top-10 right-20 w-96 h-96 bg-sky-100/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-20 left-10 w-72 h-72 bg-violet-100/15 rounded-full blur-[100px]" />
-        <div className="absolute top-[30%] left-[50%] w-48 h-48 bg-amber-100/15 rounded-full blur-[80px]" />
-
-        {mounted && (
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 80" preserveAspectRatio="xMidYMid slice">
-            <defs>
-              <filter id="settingsGlow"><feGaussianBlur stdDeviation="0.3" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
-            </defs>
-            {FLIGHT_ROUTES.map((route, i) => {
-              const path = generateArcPath(route.from, route.to);
-              const pathId = `sp-${i}`;
-              return (
-                <g key={i}>
-                  <path d={path} fill="none" stroke={route.color} strokeWidth="0.1" strokeOpacity="0.08" strokeLinecap="round" />
-                  <path d={path} fill="none" stroke={route.color} strokeWidth="0.18" strokeLinecap="round" filter="url(#settingsGlow)"
-                    strokeDasharray="6 94" style={{ animation: `sp ${4 + i * 0.5}s linear infinite`, animationDelay: `${i * 0.6}s` }} strokeOpacity="0.2" />
-                  <circle cx={route.from.x} cy={route.from.y} r="0.25" fill={route.color} opacity="0.15">
-                    <animate attributeName="r" values="0.15;0.35;0.15" dur={`${3 + i * 0.2}s`} repeatCount="indefinite" />
-                  </circle>
-                  <circle cx={route.to.x} cy={route.to.y} r="0.15" fill={route.color} opacity="0.1" />
-                  <path id={pathId} d={path} fill="none" stroke="none" />
-                  <circle r="0.5" fill={route.color} opacity="0.5" filter="url(#settingsGlow)">
-                    <animateMotion dur={`${7 + i * 0.8}s`} repeatCount="indefinite">
-                      <mpath href={`#${pathId}`} />
-                    </animateMotion>
-                  </circle>
-                  <circle r="0.2" fill="#fff" opacity="0.7">
-                    <animateMotion dur={`${7 + i * 0.8}s`} repeatCount="indefinite">
-                      <mpath href={`#${pathId}`} />
-                    </animateMotion>
-                  </circle>
-                </g>
-              );
-            })}
-          </svg>
-        )}
-        <style jsx>{`@keyframes sp { 0% { stroke-dashoffset: 100; } 100% { stroke-dashoffset: 0; } }`}</style>
-      </div>
 
       {/* ═══ MAIN CONTENT ═══ */}
       <div className="relative z-10 py-4 md:py-8">
         {/* Page header */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8 md:mb-10">
-          <h1 className="text-2xl font-semibold text-luna-charcoal tracking-tight">Mon Profil</h1>
-          <p className="text-luna-text-muted text-base font-normal mt-2">Gérez votre identité et vos paramètres de compte</p>
+          <h1 className="text-2xl font-normal text-luna-charcoal tracking-tight">{t('settings.title')}</h1>
+          <p className="text-luna-text-muted text-base font-normal mt-2">{t('settings.subtitle')}</p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -285,14 +229,14 @@ export default function SettingsPage() {
 
                 {/* Name & email at bottom */}
                 <div className="absolute bottom-0 left-0 right-0 px-6 pb-4 z-10">
-                  <h2 className="text-white text-xl font-semibold tracking-tight drop-shadow-lg">{displayName}</h2>
+                  <h2 className="text-white text-xl font-normal tracking-tight drop-shadow-lg">{displayName}</h2>
                   <p className="text-white/50 text-sm mt-0.5 drop-shadow">{email}</p>
                 </div>
               </div>
 
               {/* Badge & stats */}
               <div className="px-6 -mt-5 relative z-10">
-                <div className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wider ${roleStyle.bg} ${roleStyle.text} rounded-full border ${roleStyle.border} shadow-sm`}>
+                <div className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[12px] font-normal uppercase tracking-wider ${roleStyle.bg} ${roleStyle.text} rounded-full border ${roleStyle.border} shadow-sm`}>
                   <Shield size={11} />
                   {role}
                 </div>
@@ -304,18 +248,18 @@ export default function SettingsPage() {
                   <div className="bg-luna-cream/60 rounded-xl px-4 py-3 border border-luna-warm-gray/8">
                     <div className="flex items-center gap-1.5 text-luna-text-muted mb-1">
                       <Clock size={12} />
-                      <span className="text-[11px] uppercase tracking-wider font-semibold">Membre</span>
+                      <span className="text-[12px] uppercase tracking-wider font-normal">Membre</span>
                     </div>
-                    <p className="text-sm font-semibold text-luna-charcoal">{memberSince}</p>
+                    <p className="text-sm font-normal text-luna-charcoal">{memberSince}</p>
                   </div>
                   <div className="bg-luna-cream/60 rounded-xl px-4 py-3 border border-luna-warm-gray/8">
                     <div className="flex items-center gap-1.5 text-luna-text-muted mb-1">
                       <Sparkles size={12} />
-                      <span className="text-[11px] uppercase tracking-wider font-semibold">Statut</span>
+                      <span className="text-[12px] uppercase tracking-wider font-normal">Statut</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span>
-                      <p className="text-sm font-semibold text-emerald-600">Actif</p>
+                      <p className="text-sm font-normal text-emerald-600">Actif</p>
                     </div>
                   </div>
                 </div>
@@ -339,14 +283,14 @@ export default function SettingsPage() {
                 <div className="bg-gradient-to-br from-violet-50/80 to-sky-50/80 rounded-xl p-4 border border-violet-100/40">
                   <div className="flex items-center gap-2 mb-3">
                     <CreditCard size={14} className="text-violet-500" />
-                    <span className="text-[11px] uppercase tracking-[0.15em] font-bold text-violet-600">Abonnement</span>
+                    <span className="text-[12px] uppercase tracking-[0.15em] font-normal text-violet-600">Abonnement</span>
                   </div>
                   {isActive ? (
                     <>
-                      <p className="text-sm font-semibold text-luna-charcoal">{planName || 'Actif'}</p>
+                      <p className="text-sm font-normal text-luna-charcoal">{planName || 'Actif'}</p>
                       <div className="flex items-center gap-1.5 mt-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        <span className="text-[11px] text-emerald-600 font-semibold">Actif</span>
+                        <span className="text-[12px] text-emerald-600 font-normal">Actif</span>
                       </div>
                     </>
                   ) : (
@@ -355,7 +299,7 @@ export default function SettingsPage() {
 
                   {/* ── Plan Switcher (dev/test) ── */}
                   <div className="mt-3 pt-3 border-t border-violet-100/50">
-                    <p className="text-[11px] uppercase tracking-wider text-violet-400 font-medium mb-2">Changer de plan</p>
+                    <p className="text-[12px] uppercase tracking-wider text-violet-400 font-normal mb-2">Changer de plan</p>
                     <div className="grid grid-cols-3 gap-1.5">
                       {[
                         { id: 'starter', name: 'Starter', color: 'from-sky-500 to-blue-600' },
@@ -380,7 +324,7 @@ export default function SettingsPage() {
                                 }, { merge: true });
                               } catch (e) { console.error('Plan switch error:', e); }
                             }}
-                            className={`py-1.5 rounded-lg text-[11px] font-semibold transition-all ${isCurrent
+                            className={`py-1.5 rounded-lg text-[12px] font-normal transition-all ${isCurrent
                               ? `bg-gradient-to-r ${plan.color} text-white shadow-sm`
                               : 'bg-white/80 text-gray-500 hover:bg-white hover:shadow-sm border border-gray-100'
                               }`}
@@ -401,7 +345,7 @@ export default function SettingsPage() {
                             }, { merge: true });
                           } catch (e) { console.error(e); }
                         }}
-                        className="mt-2 w-full py-1.5 text-[11px] text-red-400 hover:text-red-500 hover:bg-red-50/50 rounded-lg transition-all font-medium"
+                        className="mt-2 w-full py-1.5 text-[12px] text-red-400 hover:text-red-500 hover:bg-red-50/50 rounded-lg transition-all font-normal"
                       >
                         Désactiver l'abonnement
                       </button>
@@ -424,7 +368,7 @@ export default function SettingsPage() {
                         } catch (e) { console.error(e); }
                         finally { setPortalLoading(false); }
                       }}
-                      className="mt-3 w-full py-2 bg-white border border-violet-200 hover:bg-violet-50 text-violet-600 text-[11px] font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                      className="mt-3 w-full py-2 bg-white border border-violet-200 hover:bg-violet-50 text-violet-600 text-[12px] font-normal rounded-lg transition-colors flex items-center justify-center gap-1.5"
                     >
                       {portalLoading ? (
                         <div className="w-3 h-3 border-2 border-violet-200 border-t-violet-500 rounded-full animate-spin" />
@@ -440,7 +384,7 @@ export default function SettingsPage() {
               <div className="px-5 pb-5">
                 <button
                   onClick={logout}
-                  className="w-full py-2.5 bg-white border border-luna-warm-gray/15 hover:border-red-200 hover:bg-red-50/50 text-luna-text-muted hover:text-red-500 font-medium text-[12px] rounded-xl transition-all flex items-center justify-center gap-2"
+                  className="w-full py-2.5 bg-white border border-luna-warm-gray/15 hover:border-red-200 hover:bg-red-50/50 text-luna-text-muted hover:text-red-500 font-normal text-[12px] rounded-xl transition-all flex items-center justify-center gap-2"
                 >
                   <LogOut size={13} />
                   Déconnexion
@@ -458,25 +402,25 @@ export default function SettingsPage() {
           >
             <div className="bg-white/85 backdrop-blur-2xl rounded-2xl border border-luna-warm-gray/12 shadow-sm p-6 md:p-8">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-9 h-9 rounded-xl bg-luna-charcoal/5 flex items-center justify-center">
-                  <Globe size={16} className="text-luna-charcoal" />
+                <div className="w-11 h-11 rounded-2xl bg-[#f0f4ff] flex items-center justify-center">
+                  <Globe size={18} className="text-[#3B82F6]" strokeWidth={1.5} />
                 </div>
-                <h3 className="text-base font-semibold text-luna-charcoal tracking-tight">Informations du compte</h3>
-                <span className="ml-auto text-[11px] uppercase tracking-wider font-semibold text-luna-text-muted/50 bg-luna-cream px-2.5 py-1 rounded-full">Lecture seule</span>
+                <h3 className="text-base font-normal text-luna-charcoal tracking-tight">{t('settings.account_info')}</h3>
+                <span className="ml-auto text-[11px] uppercase tracking-wider font-medium text-luna-text-muted/50 bg-luna-cream px-3 py-1 rounded-full">{t('settings.readonly')}</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="text-[11px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted flex items-center gap-1.5 mb-2">
-                    <Mail size={11} /> Adresse email
+                  <label className="text-[12px] uppercase tracking-[0.15em] font-normal text-luna-text-muted flex items-center gap-1.5 mb-2">
+                    <Mail size={11} /> {t('settings.email')}
                   </label>
                   <div className="py-3 px-4 bg-luna-cream/40 rounded-xl border border-luna-warm-gray/8 text-sm text-luna-charcoal/60 select-all">
                     {email}
                   </div>
                 </div>
                 <div>
-                  <label className="text-[11px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted flex items-center gap-1.5 mb-2">
-                    <Shield size={11} /> Rôle
+                  <label className="text-[12px] uppercase tracking-[0.15em] font-normal text-luna-text-muted flex items-center gap-1.5 mb-2">
+                    <Shield size={11} /> {t('settings.role')}
                   </label>
                   <div className="py-3 px-4 bg-luna-cream/40 rounded-xl border border-luna-warm-gray/8 text-sm text-luna-charcoal/60 flex items-center gap-2">
                     <span className={`w-2.5 h-2.5 rounded-full ${role === 'Admin' ? 'bg-violet-500' : role === 'Manager' ? 'bg-amber-500' : 'bg-sky-500'}`} />
@@ -484,8 +428,8 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="text-[11px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted flex items-center gap-1.5 mb-2">
-                    <MapPin size={11} /> Identifiant Firebase
+                  <label className="text-[12px] uppercase tracking-[0.15em] font-normal text-luna-text-muted flex items-center gap-1.5 mb-2">
+                    <MapPin size={11} /> {t('settings.firebase_id')}
                   </label>
                   <div className="py-3 px-4 bg-luna-cream/40 rounded-xl border border-luna-warm-gray/8 text-xs text-luna-charcoal/40 font-mono select-all">
                     {user?.uid || '—'}
@@ -494,18 +438,47 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            {/* ═══ LANGUAGE SELECTOR ═══ */}
+            <div className="bg-white/85 backdrop-blur-2xl rounded-2xl border border-luna-warm-gray/12 shadow-sm p-6 md:p-8">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-11 h-11 rounded-2xl bg-[#fff7ed] flex items-center justify-center">
+                  <Languages size={18} className="text-[#F59E0B]" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <h3 className="text-base font-normal text-luna-charcoal tracking-tight">{t('settings.language_title')}</h3>
+                  <p className="text-[12px] text-luna-text-muted mt-0.5">{t('settings.language_auto')}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-5 gap-2">
+                {(Object.entries(LOCALE_LABELS) as [LunaLocale, { label: string; flag: string }][]).map(([code, { label, flag }]) => (
+                  <button
+                    key={code}
+                    onClick={() => setLanguage(code)}
+                    className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border transition-all ${language === code
+                      ? 'bg-luna-charcoal text-white border-luna-charcoal shadow-md'
+                      : 'bg-white text-luna-text-muted border-luna-warm-gray/15 hover:border-luna-charcoal/20 hover:bg-luna-cream/50'
+                      }`}
+                  >
+                    <span className="text-xl">{flag}</span>
+                    <span className="text-[10px] uppercase tracking-wider font-medium">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="bg-white/85 backdrop-blur-2xl rounded-2xl border border-luna-warm-gray/12 shadow-sm p-6 md:p-8">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center">
-                  <Briefcase size={16} className="text-sky-600" />
+                <div className="w-11 h-11 rounded-2xl bg-[#f0fdf4] flex items-center justify-center">
+                  <Briefcase size={18} className="text-[#22C55E]" strokeWidth={1.5} />
                 </div>
-                <h3 className="text-base font-semibold text-luna-charcoal tracking-tight">Profil professionnel</h3>
+                <h3 className="text-base font-normal text-luna-charcoal tracking-tight">{t('settings.professional')}</h3>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
                 <div>
-                  <label className="text-[11px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted flex items-center gap-1.5 mb-2">
-                    <Phone size={11} /> Téléphone
+                  <label className="text-[12px] uppercase tracking-[0.15em] font-normal text-luna-text-muted flex items-center gap-1.5 mb-2">
+                    <Phone size={11} /> {t('settings.phone')}
                   </label>
                   <input
                     type="tel"
@@ -516,8 +489,8 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted flex items-center gap-1.5 mb-2">
-                    <Building2 size={11} /> Agence
+                  <label className="text-[12px] uppercase tracking-[0.15em] font-normal text-luna-text-muted flex items-center gap-1.5 mb-2">
+                    <Building2 size={11} /> {t('settings.agency')}
                   </label>
                   <input
                     type="text"
@@ -530,8 +503,8 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="text-[11px] uppercase tracking-[0.15em] font-semibold text-luna-text-muted flex items-center gap-1.5 mb-2">
-                  <FileText size={11} /> Bio / Spécialités
+                <label className="text-[12px] uppercase tracking-[0.15em] font-normal text-luna-text-muted flex items-center gap-1.5 mb-2">
+                  <FileText size={11} /> {t('settings.bio')}
                 </label>
                 <textarea
                   placeholder="Ex : Spécialiste circuits premium Asie du Sud-Est, expert voyages sur-mesure haut de gamme..."
@@ -551,7 +524,7 @@ export default function SettingsPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full py-4 btn-primary font-semibold text-[13px] tracking-[0.12em] uppercase rounded-xl shadow-lg transition-all hover:shadow-xl active:scale-[0.98] flex justify-center items-center gap-3 disabled:opacity-60"
+                className="w-full py-4 btn-primary font-normal text-[13px] tracking-[0.12em] uppercase rounded-xl shadow-lg transition-all hover:shadow-xl active:scale-[0.98] flex justify-center items-center gap-3 disabled:opacity-60"
               >
                 <AnimatePresence mode="wait">
                   {saving ? (
@@ -562,12 +535,12 @@ export default function SettingsPage() {
                   ) : saved ? (
                     <motion.span key="saved" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
                       className="flex items-center gap-2 text-emerald-300">
-                      <CheckCircle2 size={16} /> Profil sauvegardé
+                      <CheckCircle2 size={16} /> {t('settings.profile_saved')}
                     </motion.span>
                   ) : (
                     <motion.span key="save" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                       className="flex items-center gap-2">
-                      <Save size={14} /> Sauvegarder les modifications
+                      <Save size={14} /> {t('settings.save')}
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -581,7 +554,7 @@ export default function SettingsPage() {
       {cropSrc && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <h3 className="text-base font-bold text-luna-charcoal mb-4 text-center">Recadrer votre photo</h3>
+            <h3 className="text-base font-normal text-luna-charcoal mb-4 text-center">Recadrer votre photo</h3>
             {/* Hidden image for canvas drawing */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img ref={cropImgRef} src={cropSrc} alt="crop" className="hidden" onLoad={() => {
@@ -620,8 +593,8 @@ export default function SettingsPage() {
               <span className="text-xs text-gray-400">+</span>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setCropSrc(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none font-medium text-gray-600 hover:bg-gray-50 transition-colors">Annuler</button>
-              <button onClick={handleCropConfirm} className="flex-1 px-4 py-3 rounded-xl bg-luna-charcoal hover:bg-gray-800 text-white text-sm font-medium transition-all">Enregistrer</button>
+              <button onClick={() => setCropSrc(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none font-normal text-gray-600 hover:bg-gray-50 transition-colors">Annuler</button>
+              <button onClick={handleCropConfirm} className="flex-1 px-4 py-3 rounded-xl bg-luna-charcoal hover:bg-gray-800 text-white text-sm font-normal transition-all">Enregistrer</button>
             </div>
           </div>
         </div>

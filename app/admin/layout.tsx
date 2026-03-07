@@ -42,7 +42,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <div className="p-5 border-b border-white/5">
                     <div className="flex items-center gap-3">
                         <LunaLogo size={36} />
-                        <p className="text-[10px] uppercase tracking-[0.2em] text-violet-400 font-bold">Admin Panel</p>
+                        <p className="text-[12px] uppercase tracking-[0.2em] text-violet-400 font-normal">Admin Panel</p>
                     </div>
                 </div>
 
@@ -51,7 +51,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         const active = pathname === n.href;
                         return (
                             <Link key={n.href} href={n.href}
-                                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${active ? 'bg-violet-500/15 text-violet-400' : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+                                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-normal transition-all ${active ? 'bg-violet-500/15 text-violet-400' : 'text-white/50 hover:text-white/80 hover:bg-white/5'
                                     }`}>
                                 <n.icon size={18} />
                                 {n.label}

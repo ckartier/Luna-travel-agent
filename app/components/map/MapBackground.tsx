@@ -146,9 +146,9 @@ export const MapBackground = forwardRef<LeafletMapHandle>(function MapBackground
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                     </span>
-                    <span className="text-[10px] font-bold text-white uppercase tracking-wider">Luna</span>
+                    <span className="text-[12px] font-normal text-white uppercase tracking-wider">Luna</span>
                     <span className="h-3 w-px bg-white/20" />
-                    <span className="text-[9px] text-white/60 font-medium">Concierge Voyage</span>
+                    <span className="text-[12px] text-white/60 font-normal">Concierge Voyage</span>
                 </div>
             </motion.div>
         </div>

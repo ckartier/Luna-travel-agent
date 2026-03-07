@@ -21,16 +21,28 @@ export async function getEmailContent(messageId: string) {
         // Parse the body
         let bodyText = '';
 
+        // Helper function to recursively find text parts
+        const findTextPart = (parts: any[], mimeType: string): any => {
+            if (!parts) return null;
+            for (const part of parts) {
+                if (part.mimeType === mimeType) return part;
+                if (part.parts) {
+                    const found = findTextPart(part.parts, mimeType);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+
         if (message.payload?.parts) {
-            // It's a multipart email
-            const textPart = message.payload.parts.find(part => part.mimeType === 'text/plain');
+            // It's a multipart email (potentially nested)
+            const textPart = findTextPart(message.payload.parts, 'text/plain');
             if (textPart && textPart.body?.data) {
                 bodyText = Buffer.from(textPart.body.data, 'base64').toString('utf8');
             } else {
                 // Fallback to HTML if no plain text
-                const htmlPart = message.payload.parts.find(part => part.mimeType === 'text/html');
+                const htmlPart = findTextPart(message.payload.parts, 'text/html');
                 if (htmlPart && htmlPart.body?.data) {
-                    // In a real prod environment, strip HTML tags here using a library like 'html-to-text'
                     bodyText = Buffer.from(htmlPart.body.data, 'base64').toString('utf8');
                 }
             }
@@ -106,3 +118,47 @@ export async function listEmails(query: string = '', maxResults: number = 20) {
     }
 }
 
+export async function sendEmail({ to, subject, bodyText, bodyHtml }: { to: string, subject: string, bodyText: string, bodyHtml?: string }) {
+    const gmail = getGmailClient();
+    try {
+        const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
+
+        let emailLines: string[];
+        if (bodyHtml) {
+            // Send as HTML email
+            emailLines = [
+                `To: ${to}`,
+                'Content-Type: text/html; charset=utf-8',
+                'MIME-Version: 1.0',
+                `Subject: ${utf8Subject}`,
+                '',
+                bodyHtml
+            ];
+        } else {
+            emailLines = [
+                `To: ${to}`,
+                'Content-Type: text/plain; charset=utf-8',
+                'MIME-Version: 1.0',
+                `Subject: ${utf8Subject}`,
+                '',
+                bodyText
+            ];
+        }
+
+        const rawEmail = Buffer.from(emailLines.join('\r\n'))
+            .toString('base64')
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '');
+
+        const res = await gmail.users.messages.send({
+            userId: 'me',
+            requestBody: { raw: rawEmail }
+        });
+
+        return { success: true, messageId: res.data.id };
+    } catch (error: any) {
+        console.error('Error sending email:', error);
+        throw new Error(error.message || 'Failed to send email');
+    }
+}

@@ -38,13 +38,13 @@ export default function LandingPage() {
                     <Link href="/landing" className="flex items-center gap-3">
                         <LunaLogo size={44} />
                     </Link>
-                    <div className="hidden md:flex items-center gap-8 text-sm text-luna-text-muted font-medium">
+                    <div className="hidden md:flex items-center gap-8 text-sm text-luna-text-muted font-normal">
                         <a href="#features" className="hover:text-luna-charcoal transition-colors">Fonctionnalités</a>
                         <a href="#pricing" className="hover:text-luna-charcoal transition-colors">Tarifs</a>
                         <a href="#testimonials" className="hover:text-luna-charcoal transition-colors">Témoignages</a>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Link href="/login" className="text-sm text-luna-text-muted hover:text-luna-charcoal font-medium px-4 py-2 transition-colors">Connexion</Link>
+                        <Link href="/login" className="text-sm text-luna-text-muted hover:text-luna-charcoal font-normal px-4 py-2 transition-colors">Connexion</Link>
                         <Link href="/pricing" className="text-sm btn-primary">
                             Commencer →
                         </Link>
@@ -62,11 +62,11 @@ export default function LandingPage() {
 
                 <div className="max-w-5xl mx-auto text-center relative z-10">
                     <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-                        <span className="inline-flex items-center gap-2 bg-luna-charcoal text-white text-xs font-semibold px-5 py-2 rounded-full mb-8 shadow-lg">
+                        <span className="inline-flex items-center gap-2 bg-luna-charcoal text-white text-xs font-normal px-5 py-2 rounded-full mb-8 shadow-lg">
                             <Sparkles size={14} /> Plateforme IA pour Agences de Voyage B2B
                         </span>
 
-                        <h1 className="font-serif text-5xl md:text-7xl font-bold text-luna-charcoal leading-[1.1] mb-6">
+                        <h1 className="font-serif text-5xl md:text-7xl font-normal text-luna-charcoal leading-[1.1] mb-6">
                             Vos agents IA<br />
                             <span className="bg-gradient-to-r from-violet-600 via-sky-500 to-emerald-500 bg-clip-text text-transparent">
                                 créent des voyages
@@ -80,12 +80,12 @@ export default function LandingPage() {
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <Link href="/pricing"
-                                className="group btn-primary font-semibold px-8 py-4 rounded-2xl shadow-xl hover:shadow-2xl transition-all flex items-center gap-3 text-base">
+                                className="group btn-primary font-normal px-8 py-4 rounded-2xl shadow-xl hover:shadow-2xl transition-all flex items-center gap-3 text-base">
                                 Démarrer maintenant
                                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                             </Link>
                             <a href="#features"
-                                className="text-luna-charcoal font-medium px-8 py-4 rounded-2xl border border-luna-warm-gray/20 hover:bg-white/60 transition-all text-base">
+                                className="text-luna-charcoal font-normal px-8 py-4 rounded-2xl border border-luna-warm-gray/20 hover:bg-white/60 transition-all text-base">
                                 Voir les fonctionnalités
                             </a>
                         </div>
@@ -101,8 +101,8 @@ export default function LandingPage() {
                             { value: '500+', label: 'Agences connectées' },
                         ].map((s, i) => (
                             <div key={i} className="text-center">
-                                <p className="text-3xl md:text-4xl font-bold text-luna-charcoal font-serif">{s.value}</p>
-                                <p className="text-xs text-luna-text-muted font-medium mt-1 uppercase tracking-wider">{s.label}</p>
+                                <p className="text-3xl md:text-4xl font-normal text-luna-charcoal font-serif">{s.value}</p>
+                                <p className="text-xs text-luna-text-muted font-normal mt-1 uppercase tracking-wider">{s.label}</p>
                             </div>
                         ))}
                     </motion.div>
@@ -117,7 +117,7 @@ export default function LandingPage() {
                         <div className="bg-[#faf8f5] rounded-2xl p-8 md:p-12">
                             <div className="grid grid-cols-3 gap-4 mb-6">
                                 {['Pipeline', 'CRM', 'IA Agents'].map((tab, i) => (
-                                    <div key={tab} className={`text-center py-3 rounded-xl text-sm font-semibold transition-all ${i === 2 ? 'bg-luna-charcoal text-white shadow-lg' : 'bg-luna-cream text-luna-text-muted'}`}>
+                                    <div key={tab} className={`text-center py-3 rounded-xl text-sm font-normal transition-all ${i === 2 ? 'bg-luna-charcoal text-white shadow-lg' : 'bg-luna-cream text-luna-text-muted'}`}>
                                         {tab}
                                     </div>
                                 ))}
@@ -125,7 +125,7 @@ export default function LandingPage() {
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                 {['Nouveau', 'IA en cours', 'Devis envoyé', 'Gagné'].map((stage, i) => (
                                     <div key={stage} className="bg-white rounded-xl p-4 border border-luna-warm-gray/10 shadow-sm">
-                                        <p className="text-[10px] uppercase tracking-wider font-bold text-luna-text-muted mb-3">{stage}</p>
+                                        <p className="text-[12px] uppercase tracking-wider font-normal text-luna-text-muted mb-3">{stage}</p>
                                         {Array.from({ length: 3 - i }, (_, j) => (
                                             <div key={j} className="bg-luna-cream/50 rounded-lg p-2.5 mb-2 border border-luna-warm-gray/5">
                                                 <div className="w-3/4 h-2 bg-luna-warm-gray/15 rounded mb-1.5" />
@@ -144,8 +144,8 @@ export default function LandingPage() {
             <section id="features" className="px-6 py-20 bg-white">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-16">
-                        <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-luna-text-muted bg-luna-cream px-4 py-1.5 rounded-full">Fonctionnalités</span>
-                        <h2 className="font-serif text-3xl md:text-4xl font-bold text-luna-charcoal mt-6 mb-4">Tout pour gérer votre agence</h2>
+                        <span className="text-[12px] uppercase tracking-[0.2em] font-normal text-luna-text-muted bg-luna-cream px-4 py-1.5 rounded-full">Fonctionnalités</span>
+                        <h2 className="font-serif text-3xl md:text-4xl font-normal text-luna-charcoal mt-6 mb-4">Tout pour gérer votre agence</h2>
                         <p className="text-luna-text-muted max-w-xl mx-auto">Une plateforme complète qui connecte chaque aspect de votre activité.</p>
                     </div>
 
@@ -156,7 +156,7 @@ export default function LandingPage() {
                                 <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${f.color} flex items-center justify-center text-white mb-5 shadow-lg group-hover:scale-110 transition-transform`}>
                                     <f.icon size={22} />
                                 </div>
-                                <h3 className="font-semibold text-lg text-luna-charcoal mb-2">{f.title}</h3>
+                                <h3 className="font-normal text-lg text-luna-charcoal mb-2">{f.title}</h3>
                                 <p className="text-sm text-luna-text-muted leading-relaxed">{f.desc}</p>
                             </motion.div>
                         ))}
@@ -168,7 +168,7 @@ export default function LandingPage() {
             <section className="px-6 py-20">
                 <div className="max-w-4xl mx-auto">
                     <div className="text-center mb-16">
-                        <h2 className="font-serif text-3xl md:text-4xl font-bold text-luna-charcoal mb-4">Comment ça marche</h2>
+                        <h2 className="font-serif text-3xl md:text-4xl font-normal text-luna-charcoal mb-4">Comment ça marche</h2>
                         <p className="text-luna-text-muted">3 étapes pour transformer votre productivité</p>
                     </div>
 
@@ -180,9 +180,9 @@ export default function LandingPage() {
                         ].map((s, i) => (
                             <motion.div key={i} initial={{ opacity: 0, x: i % 2 === 0 ? -30 : 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
                                 className="flex items-start gap-6 py-8 border-b border-luna-warm-gray/10 last:border-0">
-                                <div className="text-5xl font-serif font-bold text-luna-warm-gray/20 shrink-0 w-16">{s.step}</div>
+                                <div className="text-5xl font-serif font-normal text-luna-warm-gray/20 shrink-0 w-16">{s.step}</div>
                                 <div className="flex-1">
-                                    <h3 className="font-semibold text-xl text-luna-charcoal mb-2 flex items-center gap-3">
+                                    <h3 className="font-normal text-xl text-luna-charcoal mb-2 flex items-center gap-3">
                                         <s.icon size={20} className="text-luna-accent" />
                                         {s.title}
                                     </h3>
@@ -198,7 +198,7 @@ export default function LandingPage() {
             <section id="testimonials" className="px-6 py-20 bg-white">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-16">
-                        <h2 className="font-serif text-3xl md:text-4xl font-bold text-luna-charcoal mb-4">Ils nous font confiance</h2>
+                        <h2 className="font-serif text-3xl md:text-4xl font-normal text-luna-charcoal mb-4">Ils nous font confiance</h2>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -210,11 +210,11 @@ export default function LandingPage() {
                                 </div>
                                 <p className="text-luna-charcoal text-sm leading-relaxed mb-5 italic">"{t.text}"</p>
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-sky-500 flex items-center justify-center text-white text-xs font-bold">
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-sky-500 flex items-center justify-center text-white text-xs font-normal">
                                         {t.avatar}
                                     </div>
                                     <div>
-                                        <p className="text-sm font-semibold text-luna-charcoal">{t.name}</p>
+                                        <p className="text-sm font-normal text-luna-charcoal">{t.name}</p>
                                         <p className="text-xs text-luna-text-muted">{t.role}</p>
                                     </div>
                                 </div>
@@ -227,7 +227,7 @@ export default function LandingPage() {
             {/* Pricing preview */}
             <section id="pricing" className="px-6 py-20">
                 <div className="max-w-4xl mx-auto text-center">
-                    <h2 className="font-serif text-3xl md:text-4xl font-bold text-luna-charcoal mb-4">Tarifs simples, sans surprise</h2>
+                    <h2 className="font-serif text-3xl md:text-4xl font-normal text-luna-charcoal mb-4">Tarifs simples, sans surprise</h2>
                     <p className="text-luna-text-muted mb-12">Pas de version gratuite. Un outil professionnel pour des professionnels.</p>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -235,22 +235,22 @@ export default function LandingPage() {
                             <motion.div key={plan.name} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
                                 className={`bg-white rounded-3xl p-7 border-2 ${plan.popular ? 'border-violet-300 shadow-xl scale-105' : plan.color + ' shadow-lg'} relative`}>
                                 {plan.popular && (
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-violet-500 to-purple-600 text-white text-[10px] font-bold px-4 py-1 rounded-full uppercase tracking-wider">
+                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-violet-500 to-purple-600 text-white text-[12px] font-normal px-4 py-1 rounded-full uppercase tracking-wider">
                                         Populaire
                                     </div>
                                 )}
-                                <h3 className="font-semibold text-lg text-luna-charcoal mb-1">{plan.name}</h3>
-                                <p className="text-3xl font-bold text-luna-charcoal font-serif mb-1">{plan.price}€<span className="text-sm text-luna-text-muted font-normal">/mois</span></p>
+                                <h3 className="font-normal text-lg text-luna-charcoal mb-1">{plan.name}</h3>
+                                <p className="text-3xl font-normal text-luna-charcoal font-serif mb-1">{plan.price}€<span className="text-sm text-luna-text-muted font-normal">/mois</span></p>
                                 <p className="text-xs text-luna-text-muted mb-5">{plan.desc}</p>
                                 <Link href="/pricing"
-                                    className={`block w-full py-2.5 rounded-xl font-semibold text-sm text-center transition-all ${plan.popular ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg' : 'bg-luna-charcoal text-white'}`}>
+                                    className={`block w-full py-2.5 rounded-xl font-normal text-sm text-center transition-all ${plan.popular ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg' : 'bg-luna-charcoal text-white'}`}>
                                     Choisir
                                 </Link>
                             </motion.div>
                         ))}
                     </div>
 
-                    <Link href="/pricing" className="text-sm text-violet-500 hover:text-violet-600 font-medium transition-colors">
+                    <Link href="/pricing" className="text-sm text-violet-500 hover:text-violet-600 font-normal transition-colors">
                         Voir tous les détails et comparer →
                     </Link>
                 </div>
@@ -265,14 +265,14 @@ export default function LandingPage() {
                             <div className="absolute bottom-0 left-0 w-48 h-48 bg-sky-500/10 rounded-full blur-[60px]" />
                         </div>
                         <div className="relative z-10">
-                            <h2 className="font-serif text-3xl md:text-4xl font-bold text-white mb-4">
+                            <h2 className="font-serif text-3xl md:text-4xl font-normal text-white mb-4">
                                 Prêt à transformer votre agence ?
                             </h2>
                             <p className="text-white/50 mb-8 max-w-lg mx-auto">
                                 Rejoignez les 500+ agences qui utilisent Luna pour automatiser leur prospection et créer des voyages sur mesure.
                             </p>
                             <Link href="/pricing"
-                                className="inline-flex items-center gap-3 bg-white text-luna-charcoal font-semibold px-8 py-4 rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all text-base">
+                                className="inline-flex items-center gap-3 bg-white text-luna-charcoal font-normal px-8 py-4 rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all text-base">
                                 Commencer maintenant <ArrowRight size={18} />
                             </Link>
                         </div>
@@ -291,21 +291,21 @@ export default function LandingPage() {
                             <p className="text-xs text-luna-text-muted leading-relaxed">La plateforme IA B2B pour les professionnels du voyage.</p>
                         </div>
                         <div>
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-luna-charcoal mb-3">Produit</h4>
+                            <h4 className="text-xs font-normal uppercase tracking-wider text-luna-charcoal mb-3">Produit</h4>
                             <div className="space-y-2">
                                 <a href="#features" className="block text-sm text-luna-text-muted hover:text-luna-charcoal transition-colors">Fonctionnalités</a>
                                 <Link href="/pricing" className="block text-sm text-luna-text-muted hover:text-luna-charcoal transition-colors">Tarifs</Link>
                             </div>
                         </div>
                         <div>
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-luna-charcoal mb-3">Légal</h4>
+                            <h4 className="text-xs font-normal uppercase tracking-wider text-luna-charcoal mb-3">Légal</h4>
                             <div className="space-y-2">
                                 <Link href="/cgv" className="block text-sm text-luna-text-muted hover:text-luna-charcoal transition-colors">CGV</Link>
                                 <a href="mailto:legal@luna-travel.io" className="block text-sm text-luna-text-muted hover:text-luna-charcoal transition-colors">Contact</a>
                             </div>
                         </div>
                         <div>
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-luna-charcoal mb-3">Compte</h4>
+                            <h4 className="text-xs font-normal uppercase tracking-wider text-luna-charcoal mb-3">Compte</h4>
                             <div className="space-y-2">
                                 <Link href="/login" className="block text-sm text-luna-text-muted hover:text-luna-charcoal transition-colors">Connexion</Link>
                                 <Link href="/pricing" className="block text-sm text-luna-text-muted hover:text-luna-charcoal transition-colors">S'abonner</Link>

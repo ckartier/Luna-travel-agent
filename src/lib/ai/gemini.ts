@@ -155,14 +155,22 @@ export function buildActivityUrl(activity: string, destination: string): string 
 // ══════════════════════════════════════════════════════════════════════
 export async function searchTransport(params: {
   destinations: { city: string }[];
+  departureCity?: string;
   departureDate: string;
   returnDate: string;
   pax: string;
+  budget?: string;
+  realData?: any[];
 }) {
   const destList = params.destinations.map(d => d.city).join(' → ');
-  const from = 'Paris';
+  const from = params.departureCity || 'Paris';
+  const realFlightsContext = params.realData && params.realData.length > 0
+    ? `\n\n🎯 DONNÉES RÉELLES (AMADEUS):\nVoici les vols RÉELS trouvés pour ce trajet. Utilise UNIQUEMENT ces vols s'ils sont pertinents :\n${JSON.stringify(params.realData, null, 2)}`
+    : '';
 
-  const prompt = `Tu es un agent EXPERT TRANSPORT MULTIMODAL pour une agence de voyage ULTRA-LUXE.
+  const budgetNote = params.budget ? `\n⚠️ BUDGET TOTAL DU VOYAGE: ${params.budget} (pour ${params.pax || '2'} personnes, TOUT COMPRIS: vol + hôtel + activités).\nLe transport ne doit PAS dépasser 30-40% du budget total.` : '';
+
+  const prompt = `Tu es un agent EXPERT TRANSPORT pour une agence de voyage professionnelle.
 
 MISSION: Trouver TOUTES les options de transport (avion, train, voiture) pour:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -170,19 +178,24 @@ MISSION: Trouver TOUTES les options de transport (avion, train, voiture) pour:
 • Itinéraire: ${from} → ${destList}
 • Date aller: ${params.departureDate || 'flexible'}
 • Date retour: ${params.returnDate || 'flexible'}
-• Passagers: ${params.pax || '2'}
+• Passagers: ${params.pax || '2'}${budgetNote}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 RÈGLES OBLIGATOIRES:
-1. ✈️ VOLS: 6 options avec compagnies RÉELLES, codes IATA corrects, prix réalistes
-2. 🚄 TRAINS: 3-4 options si pertinent (TGV, Eurostar, ICE, Thalys, AVE, Frecciarossa, Nightjet...)
-   - Inclure gare de départ et d'arrivée (ex: Paris Gare de Lyon → Lyon Part-Dieu)
+1. ✈️ VOLS: Utilise en priorité les DONNÉES RÉELLES fournies ci-dessus.
+2. Si les données réelles sont incomplètes, propose 6-8 options avec compagnies RÉELLES, prix RÉALISTES
+   - Au moins 4-5 options Economy (400-900€/pers)
+   - 1-2 options Premium Economy (800-1500€/pers)
+   - 1 option Business SEULEMENT si le budget le permet
+3. 🚄 TRAINS: 3-4 options si pertinent (TGV, Eurostar, ICE, Thalys, AVE, Frecciarossa, Nightjet...)
+   - Inclure gare de départ et d'arrivée (ex: Paris Gare de Lyon → Lyon Part-Part Dieu)
    - Prix réalistes (1ère: 80-200€, 2nde: 30-100€ selon distance)
    - Si la destination est trop loin pour le train (>8h), mettre seulement 1 option train avec mention "longue durée"
-3. 🚗 VOITURE: 2 options (location + trajet estimé)
+4. 🚗 VOITURE: 2 options (location + trajet estimé)
    - Distance et durée réelles
    - Coût carburant estimé et prix location/jour
-4. Chaque option a un "type": "flight", "train" ou "car"
+5. Chaque option a un "type": "flight", "train" ou "car"${realFlightsContext}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Réponds UNIQUEMENT en JSON valide, AUCUN texte avant ou après:
 {
@@ -262,40 +275,59 @@ export async function searchAccommodation(params: {
   vibe: string;
   budget: string;
   pax: string;
+  realData?: any[];
 }) {
   const destList = params.destinations.map(d => d.city).join(', ');
-  const primaryDest = params.destinations[0]?.city || 'destination';
+  const destCount = params.destinations.length;
+  const hotelsPerDest = Math.max(3, Math.ceil(10 / destCount));
 
-  const prompt = `Tu es un agent EXPERT de l'hébergement ultra-luxe pour une agence de voyage premium.
+  const realHotelsContext = params.realData && params.realData.length > 0
+    ? `\n\n🎯 DONNÉES RÉELLES (BOOKING):\nUtilise ces hôtels comme priorité absolue :\n${JSON.stringify(params.realData, null, 2)}`
+    : '';
 
-MISSION: Trouver les 10 MEILLEURS hôtels pour:
+  const budgetPerNight = params.budget ? Math.round(parseInt(params.budget.replace(/[^\d]/g, '')) * 0.35 / (parseInt(params.pax) || 2) / 7) : 0;
+
+  const prompt = `Tu es un agent EXPERT de l'hébergement pour une agence de voyage professionnelle.
+
+MISSION: Trouver les MEILLEURS hôtels ADAPTÉS AU BUDGET pour un voyage MULTI-DESTINATION:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Destination: ${destList}
-• Ambiance: ${params.vibe || 'Luxe & Détente'}
-• Budget: ${params.budget || 'Premium (500-2000€/nuit)'}
+• Destinations: ${destList} (${destCount} ville${destCount > 1 ? 's' : ''})
+• Ambiance: ${params.vibe || 'Découverte & Détente'}
+• Budget TOTAL voyage: ${params.budget || 'Non précisé'}
 • Voyageurs: ${params.pax || '2'}
+${budgetPerNight > 0 ? `• Budget hébergement estimé: ~${budgetPerNight}€/nuit/personne` : ''}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-RÈGLES OBLIGATOIRES:
-1. 🏨 Hôtels qui EXISTENT RÉELLEMENT à ${primaryDest} (noms officiels complets)
-2. 💰 Prix RÉELS par nuit en saison (vérifie les tarifs typiques de chaque enseigne)
-3. ⭐ Mélange: 4 palaces 5★, 3 boutique-hôtels exclusifs, 2 resorts, 1 villa privée
-4. 📋 Highlights = vrais services de l'hôtel (nom du restaurant, spa, vue spécifique)
-5. 💡 Ajouter une recommandation personnalisée (2 phrases max)
+⚠️ RÈGLE CRITIQUE: Tu DOIS proposer ${hotelsPerDest} hôtels POUR CHAQUE DESTINATION séparément.
+${params.destinations.map(d => `- ${hotelsPerDest} hôtels à ${d.city}`).join('\n')}
 
-Réponds UNIQUEMENT en JSON valide, AUCUN texte avant ou après:
+Chaque hôtel DOIT avoir un champ "destination" correspondant EXACTEMENT à sa ville.
+
+RESPECTE LE BUDGET ! Propose un MIX réaliste pour CHAQUE ville :
+- Hôtels économiques (3★, 30-80€/nuit)
+- Hôtels milieu de gamme (4★, 80-200€/nuit) 
+- Hôtels premium (5★, 200-400€/nuit)
+
+RÈGLES:
+1. 🏨 Utilise les DONNÉES RÉELLES ci-dessous en priorité.
+2. Hôtels qui EXISTENT RÉELLEMENT dans chaque ville.
+3. 💰 Prix RÉELS par nuit.
+4. ⭐ Mélange de gammes (3★ à 5★) DANS CHAQUE ville.${realHotelsContext}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Réponds UNIQUEMENT en JSON valide:
 {
   "hotels": [
     {
-      "name": "Nom complet officiel (ex: Four Seasons Resort Bali at Sayan)",
-      "destination": "${primaryDest}",
+      "name": "Nom complet officiel",
+      "destination": "NOM DE LA VILLE EXACTE (${destList})",
       "stars": 5,
       "pricePerNight": "XXX €",
-      "highlights": ["Nom restaurant étoilé", "Type de vue spécifique", "Spa signature nom"],
-      "recommendation": "Pourquoi ce choix pour ce profil client en 2 phrases."
+      "highlights": ["Service 1", "Service 2", "Service 3"],
+      "recommendation": "Pourquoi ce choix pour ce profil client."
     }
   ],
-  "summary": "Sélection de X hôtels d'exception à ${primaryDest}. Du palace iconique au boutique-hôtel confidentiel."
+  "summary": "Sélection de X hôtels à travers ${destList}."
 }`;
 
   try {
@@ -379,9 +411,10 @@ export async function planItinerary(params: {
   returnDate: string;
   vibe: string;
   mustHaves: string;
+  budget?: string;
 }) {
-  // Uses generateJSON helper
   const destList = params.destinations.map(d => d.city).join(' → ');
+  const destCount = params.destinations.length;
   const primaryDest = params.destinations[0]?.city || 'destination';
 
   // Calculate actual trip duration
@@ -393,7 +426,29 @@ export async function planItinerary(params: {
     if (diff > 0 && diff <= 30) numDays = diff;
   }
 
-  const prompt = `Tu es un agent EXPERT planificateur d'itinéraires pour une agence de voyage ultra-luxe.
+  // Multi-destination allocation
+  const daysPerDest = Math.max(2, Math.floor(numDays / destCount));
+  const destAllocation = params.destinations.map((d, i) => {
+    const days = i === params.destinations.length - 1
+      ? numDays - daysPerDest * (destCount - 1)
+      : daysPerDest;
+    return `${d.city}: ${days} jours`;
+  }).join(', ');
+
+  const multiDestInstructions = destCount > 1 ? `
+⚠️ MULTI-DESTINATION CRITIQUE:
+Ce voyage couvre ${destCount} villes: ${destList}
+Répartition recommandée: ${destAllocation}
+
+RÈGLES MULTI-DEST:
+- Chaque jour DOIT avoir un champ "destination" = le nom EXACT de la ville
+- Inclure 1 jour de TRANSFERT entre chaque ville (vol/train)
+- Les jours de transfert combinent départ d'une ville et arrivée dans la suivante
+- NE PAS mélanger les activités de deux villes dans un même jour (sauf jour de transfert)
+- Résumer le jour de transfert: matin dans ville A, voyage, soir dans ville B
+` : '';
+
+  const prompt = `Tu es un agent EXPERT planificateur d'itinéraires pour une agence de voyage professionnelle.
 
 MISSION: Créer un itinéraire jour par jour EXCEPTIONNEL:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -402,30 +457,30 @@ MISSION: Créer un itinéraire jour par jour EXCEPTIONNEL:
 • Ambiance: ${params.vibe || 'Découverte & Détente'}
 • Must-haves: ${params.mustHaves || 'Aucun'}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+${multiDestInstructions}
 RÈGLES OBLIGATOIRES:
-1. 📍 Noms de lieux RÉELS: vrais restaurants (ex: "L'Atelier de Joël Robuchon"), vrais temples (ex: "Tanah Lot"), vraies plages (ex: "Anse Source d'Argent")
+1. 📍 Noms de lieux RÉELS: vrais restaurants, vrais monuments, vraies adresses
 2. 📐 Exactement ${numDays} jours, pas plus pas moins
-3. 🕐 Rythme réaliste: pas trop d'activités par jour, temps de repos inclus
-4. 🌟 Chaque jour a un "highlight" — le moment fort de la journée
-5. 🍽️ Au moins 1 restaurant nommé par jour (petit-déjeuner, déjeuner ou dîner)
-6. 🏨 Si multi-destination, répartir les jours logiquement avec jours de transfert
+3. 🕐 Rythme réaliste: pas trop d'activités par jour
+4. 🌟 Chaque jour a un "highlight" — le moment fort
+5. 🍽️ Au moins 1 restaurant nommé par jour
+6. 📌 Chaque jour a un champ "destination" = nom de la ville
 
-Réponds UNIQUEMENT en JSON valide, AUCUN texte avant ou après:
+Réponds UNIQUEMENT en JSON valide:
 {
   "days": [
     {
       "day": 1,
-      "title": "Titre évocateur et unique pour ce jour",
-      "destination": "ville",
-      "morning": "Activité détaillée avec NOM DU LIEU spécifique",
+      "title": "Titre évocateur",
+      "destination": "${primaryDest}",
+      "morning": "Activité avec NOM DU LIEU",
       "afternoon": "Activité avec NOM DU LIEU",
-      "evening": "Restaurant + activité avec NOM du restaurant ou lieu",
+      "evening": "Restaurant NOM + activité",
       "highlight": "🌟 Moment fort en 1 phrase"
     }
   ],
-  "summary": "Itinéraire de ${numDays} jours à ${destList}. Un parcours mêlant [thèmes principaux].",
-  "tips": ["Conseil pratique spécifique à ${primaryDest} #1", "Conseil #2", "Conseil #3"]
+  "summary": "Itinéraire de ${numDays} jours: ${destList}.",
+  "tips": ["Conseil pratique #1", "Conseil #2", "Conseil #3"]
 }`;
 
   try {

@@ -4,10 +4,10 @@ export default function CGVPage() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-[#faf8f5] to-white">
             <nav className="flex items-center justify-between px-6 md:px-12 py-5 max-w-4xl mx-auto">
-                <Link href="/" className="font-serif text-xl font-semibold text-luna-charcoal">Luna</Link>
+                <Link href="/" className="font-serif text-xl font-normal text-luna-charcoal">Luna</Link>
                 <div className="flex gap-4 text-sm">
-                    <Link href="/pricing" className="text-luna-text-muted hover:text-luna-charcoal font-medium">Tarifs</Link>
-                    <Link href="/login" className="text-luna-text-muted hover:text-luna-charcoal font-medium">Connexion</Link>
+                    <Link href="/pricing" className="text-luna-text-muted hover:text-luna-charcoal font-normal">Tarifs</Link>
+                    <Link href="/login" className="text-luna-text-muted hover:text-luna-charcoal font-normal">Connexion</Link>
                 </div>
             </nav>
 
@@ -110,7 +110,7 @@ export default function CGVPage() {
                 </p>
 
                 <div className="mt-12 pt-6 border-t border-gray-200 text-center">
-                    <Link href="/pricing" className="text-sm text-luna-accent-dark hover:underline font-medium">← Retour aux tarifs</Link>
+                    <Link href="/pricing" className="text-sm text-luna-accent-dark hover:underline font-normal">← Retour aux tarifs</Link>
                 </div>
             </article>
         </div>

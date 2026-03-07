@@ -101,7 +101,7 @@ export default function PricingPage() {
                     <LunaLogo size={44} />
                 </Link>
                 <div className="flex items-center gap-6">
-                    <Link href="/cgv" className="text-sm text-luna-text-muted hover:text-luna-charcoal transition-colors font-medium">CGV</Link>
+                    <Link href="/cgv" className="text-sm text-luna-text-muted hover:text-luna-charcoal transition-colors font-normal">CGV</Link>
                     <Link href="/login" className="text-sm btn-primary">
                         Connexion
                     </Link>
@@ -111,10 +111,10 @@ export default function PricingPage() {
             {/* Hero */}
             <div className="text-center px-6 pt-12 pb-8 max-w-4xl mx-auto">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                    <span className="inline-flex items-center gap-2 bg-luna-charcoal/5 text-luna-charcoal text-xs font-semibold px-4 py-1.5 rounded-full mb-6">
+                    <span className="inline-flex items-center gap-2 bg-luna-charcoal/5 text-luna-charcoal text-xs font-normal px-4 py-1.5 rounded-full mb-6">
                         <Sparkles size={14} /> Plateforme B2B pour agences de voyage
                     </span>
-                    <h1 className="font-serif text-4xl md:text-5xl font-bold text-luna-charcoal leading-tight mb-4">
+                    <h1 className="font-serif text-4xl md:text-5xl font-normal text-luna-charcoal leading-tight mb-4">
                         L'IA qui transforme vos<br />
                         <span className="bg-gradient-to-r from-violet-600 to-sky-500 bg-clip-text text-transparent">demandes en voyages</span>
                     </h1>
@@ -125,13 +125,13 @@ export default function PricingPage() {
 
                 {/* Annual toggle */}
                 <div className="flex items-center justify-center gap-3 mt-8">
-                    <span className={`text-sm font-medium ${!annual ? 'text-luna-charcoal' : 'text-luna-text-muted'}`}>Mensuel</span>
+                    <span className={`text-sm font-normal ${!annual ? 'text-luna-charcoal' : 'text-luna-text-muted'}`}>Mensuel</span>
                     <button onClick={() => setAnnual(!annual)}
                         className={`relative w-12 h-6 rounded-full transition-colors ${annual ? 'bg-violet-500' : 'bg-luna-warm-gray/30'}`}>
                         <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${annual ? 'translate-x-6' : 'translate-x-0.5'}`} />
                     </button>
-                    <span className={`text-sm font-medium ${annual ? 'text-luna-charcoal' : 'text-luna-text-muted'}`}>
-                        Annuel <span className="text-emerald-500 font-semibold">-20%</span>
+                    <span className={`text-sm font-normal ${annual ? 'text-luna-charcoal' : 'text-luna-text-muted'}`}>
+                        Annuel <span className="text-emerald-500 font-normal">-20%</span>
                     </span>
                 </div>
             </div>
@@ -147,19 +147,19 @@ export default function PricingPage() {
                             className={`relative bg-white rounded-3xl border ${plan.popular ? 'border-violet-300 shadow-xl shadow-violet-100/50 scale-105' : 'border-luna-warm-gray/15 shadow-lg'} overflow-hidden flex flex-col`}>
 
                             {plan.popular && (
-                                <div className="bg-gradient-to-r from-violet-500 to-purple-600 text-white text-center text-xs font-bold uppercase tracking-widest py-2">
+                                <div className="bg-gradient-to-r from-violet-500 to-purple-600 text-white text-center text-xs font-normal uppercase tracking-widest py-2">
                                     ⭐ Le plus populaire
                                 </div>
                             )}
 
                             <div className="p-7 flex-1 flex flex-col">
-                                <div className={`inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.15em] font-semibold px-3 py-1 rounded-full border w-fit mb-4 ${plan.accentLight}`}>
+                                <div className={`inline-flex items-center gap-1.5 text-[12px] uppercase tracking-[0.15em] font-normal px-3 py-1 rounded-full border w-fit mb-4 ${plan.accentLight}`}>
                                     {plan.name}
                                 </div>
 
                                 <div className="mb-2">
-                                    <span className="text-4xl font-bold text-luna-charcoal">{annual ? Math.round(plan.price * 0.8) : plan.price}€</span>
-                                    <span className="text-luna-text-muted text-sm font-medium">{plan.period}</span>
+                                    <span className="text-4xl font-normal text-luna-charcoal">{annual ? Math.round(plan.price * 0.8) : plan.price}€</span>
+                                    <span className="text-luna-text-muted text-sm font-normal">{plan.period}</span>
                                 </div>
                                 <p className="text-sm text-luna-text-muted mb-6">{plan.tagline}</p>
 
@@ -174,7 +174,7 @@ export default function PricingPage() {
 
                                 <button onClick={() => handleSubscribe(plan.id)}
                                     disabled={loading === plan.id}
-                                    className={`w-full py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${plan.popular
+                                    className={`w-full py-3 rounded-xl font-normal text-sm transition-all flex items-center justify-center gap-2 ${plan.popular
                                         ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-200/50 hover:shadow-xl hover:shadow-violet-200/70'
                                         : 'bg-luna-charcoal text-white hover:bg-[#1a1a1a]'
                                         } ${loading === plan.id ? 'opacity-60' : ''}`}>
@@ -192,7 +192,7 @@ export default function PricingPage() {
 
             {/* Features grid */}
             <div className="max-w-6xl mx-auto px-6 pb-20">
-                <h2 className="font-serif text-2xl font-semibold text-luna-charcoal text-center mb-10">Tout ce qu'il faut pour réussir</h2>
+                <h2 className="font-serif text-2xl font-normal text-luna-charcoal text-center mb-10">Tout ce qu'il faut pour réussir</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
                         { icon: Zap, title: 'Agents IA', desc: 'Multi-agents spécialisés : vols, hôtels, activités' },
@@ -207,7 +207,7 @@ export default function PricingPage() {
                         <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.05 }}
                             className="bg-white/60 backdrop-blur-xl rounded-2xl p-5 border border-luna-warm-gray/10 shadow-sm hover:shadow-md transition-all">
                             <f.icon size={20} className="text-luna-accent mb-3" />
-                            <h3 className="font-semibold text-sm text-luna-charcoal mb-1">{f.title}</h3>
+                            <h3 className="font-normal text-sm text-luna-charcoal mb-1">{f.title}</h3>
                             <p className="text-xs text-luna-text-muted leading-relaxed">{f.desc}</p>
                         </motion.div>
                     ))}

@@ -5,6 +5,7 @@ import { UserPlus, Shield, Search, Clock, CheckCircle2, Users, Loader2, MoreVert
 import { CRMUser, getUser } from '@/src/lib/firebase/crm';
 import { getTenant } from '@/src/lib/firebase/tenant';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { T } from '@/src/components/T';
 
 export default function TeamPage() {
   const { user, tenantId } = useAuth();
@@ -62,7 +63,7 @@ export default function TeamPage() {
     <div className="min-h-screen">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-luna-charcoal mb-1">Gestion d'Équipe</h1>
+          <h1 className="text-2xl font-normal text-luna-charcoal mb-1"><T>Équipe</T></h1>
           <p className="text-sm text-luna-text-muted">{members.length} membre(s) dans votre agence.</p>
         </div>
       </div>
@@ -72,22 +73,22 @@ export default function TeamPage() {
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm flex items-center gap-4">
           <div className="w-11 h-11 bg-sky-50 rounded-full flex items-center justify-center text-sky-500 border border-sky-100"><Users size={22} /></div>
           <div>
-            <p className="text-xs font-medium tracking-wide text-gray-400">Membres Totaux</p>
-            <p className="text-2xl font-semibold text-luna-charcoal">{members.length}</p>
+            <p className="text-xs font-normal tracking-wide text-gray-400">Membres Totaux</p>
+            <p className="text-2xl font-normal text-luna-charcoal">{members.length}</p>
           </div>
         </div>
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm flex items-center gap-4">
           <div className="w-11 h-11 bg-purple-50 rounded-full flex items-center justify-center text-purple-500 border border-purple-100"><Shield size={22} /></div>
           <div>
-            <p className="text-xs font-medium tracking-wide text-gray-400">Admins</p>
-            <p className="text-2xl font-semibold text-lua-charcoal">{members.filter(m => m.role === 'Admin').length}</p>
+            <p className="text-xs font-normal tracking-wide text-gray-400">Admins</p>
+            <p className="text-2xl font-normal text-lua-charcoal">{members.filter(m => m.role === 'Admin').length}</p>
           </div>
         </div>
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm flex items-center gap-4">
           <div className="w-11 h-11 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 border border-emerald-100"><CheckCircle2 size={22} /></div>
           <div>
-            <p className="text-xs font-medium tracking-wide text-gray-400">Agents</p>
-            <p className="text-2xl font-semibold text-luna-charcoal">{members.filter(m => m.role === 'Agent').length}</p>
+            <p className="text-xs font-normal tracking-wide text-gray-400">Agents</p>
+            <p className="text-2xl font-normal text-luna-charcoal">{members.filter(m => m.role === 'Agent').length}</p>
           </div>
         </div>
       </div>
@@ -108,23 +109,23 @@ export default function TeamPage() {
                 {member.photoURL ? (
                   <img src={member.photoURL} alt={member.displayName} className="w-12 h-12 rounded-full object-cover shadow-[0_2px_20px_rgba(0,0,0,0.04)]" />
                 ) : (
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 font-semibold text-lg">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 font-normal text-lg">
                     {member.displayName?.split(' ').map(w => w[0]).join('').slice(0, 2) || '?'}
                   </div>
                 )}
                 {member.uid === user?.uid && <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white bg-emerald-500" />}
               </div>
               <div>
-                <h3 className="text-base font-bold text-luna-charcoal leading-tight">{member.displayName}</h3>
-                <p className="text-xs text-gray-500 font-medium">{member.email}</p>
+                <h3 className="text-base font-normal text-luna-charcoal leading-tight">{member.displayName}</h3>
+                <p className="text-xs text-gray-500 font-normal">{member.email}</p>
               </div>
             </div>
 
             <div className="flex items-center justify-between mb-4">
-              <span className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border ${getRoleStyle(member.role)}`}>
+              <span className={`text-[12px] font-normal uppercase tracking-wider px-2.5 py-1 rounded-md border ${getRoleStyle(member.role)}`}>
                 <Shield size={10} className="inline mr-1" />{member.role}
               </span>
-              {member.agency && <span className="text-[11px] font-medium text-gray-400">{member.agency}</span>}
+              {member.agency && <span className="text-[12px] font-normal text-gray-400">{member.agency}</span>}
             </div>
 
             {member.bio && (

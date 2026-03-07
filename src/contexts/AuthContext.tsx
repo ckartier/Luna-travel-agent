@@ -9,6 +9,8 @@ interface AuthContextType {
     userProfile: CRMUser | null;
     tenantId: string | null;
     loading: boolean;
+    isSuperAdmin: boolean;
+    role: string;
     login: (email: string, password: string) => Promise<{ error: string | null }>;
     loginWithGoogle: () => Promise<{ error: string | null }>;
     logout: () => Promise<void>;
@@ -86,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, userProfile, tenantId: userProfile?.tenantId || null, loading, login, loginWithGoogle, logout, refreshProfile }}>
+        <AuthContext.Provider value={{ user, userProfile, tenantId: userProfile?.tenantId || null, loading, isSuperAdmin: userProfile?.role === 'SuperAdmin', role: userProfile?.role || 'Agent', login, loginWithGoogle, logout, refreshProfile }}>
             {children}
         </AuthContext.Provider>
     );

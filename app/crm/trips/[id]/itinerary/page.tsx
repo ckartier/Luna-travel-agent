@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { CRMTripDay, CRMTripSegment, getTripDays, createTripDay, updateTripDay } from '@/src/lib/firebase/crm';
 import { useAuth } from '@/src/contexts/AuthContext';
@@ -11,7 +11,8 @@ import { fr } from 'date-fns/locale';
 // This is a simplified frontend mockup of an Itinerary Builder.
 // In a full production app, you'd use @hello-pangea/dnd for real drag and drop.
 
-export default function ItineraryBuilderPage({ params }: { params: { id: string } }) {
+export default function ItineraryBuilderPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id: tripId } = use(params);
     const { tenantId } = useAuth();
     const router = useRouter();
     const [days, setDays] = useState<CRMTripDay[]>([]);
@@ -20,12 +21,12 @@ export default function ItineraryBuilderPage({ params }: { params: { id: string 
 
     useEffect(() => {
         loadItinerary();
-    }, [params.id]);
+    }, [tripId]);
 
     const loadItinerary = async () => {
         setLoading(true);
         try {
-            const fetchedDays = await getTripDays(tenantId!, params.id);
+            const fetchedDays = await getTripDays(tenantId!, tripId);
             if (fetchedDays.length === 0) {
                 // Initialize with a blank Day 1 if empty
                 const newDay: Omit<CRMTripDay, 'id'> = {
@@ -34,7 +35,7 @@ export default function ItineraryBuilderPage({ params }: { params: { id: string 
                     title: 'Arrivée & Installation',
                     segments: []
                 };
-                const id = await createTripDay(tenantId!, params.id, newDay);
+                const id = await createTripDay(tenantId!, tripId, newDay);
                 setDays([{ id, ...newDay }]);
             } else {
                 setDays(fetchedDays);
@@ -59,7 +60,7 @@ export default function ItineraryBuilderPage({ params }: { params: { id: string 
                 segments: []
             };
 
-            const id = await createTripDay(tenantId!, params.id, newDay);
+            const id = await createTripDay(tenantId!, tripId, newDay);
             setDays([...days, { id, ...newDay }]);
         } catch (error) {
             console.error(error);
@@ -83,7 +84,7 @@ export default function ItineraryBuilderPage({ params }: { params: { id: string 
         setDays(updatedDays);
 
         // Auto-save
-        updateTripDay(tenantId!, params.id, dayId, { segments: updatedDays[dayIndex].segments });
+        updateTripDay(tenantId!, tripId, dayId, { segments: updatedDays[dayIndex].segments });
     };
 
     const removeSegment = async (dayId: string, segmentId: string) => {
@@ -95,7 +96,7 @@ export default function ItineraryBuilderPage({ params }: { params: { id: string 
         setDays(updatedDays);
 
         // Auto-save
-        updateTripDay(tenantId!, params.id, dayId, { segments: updatedDays[dayIndex].segments });
+        updateTripDay(tenantId!, tripId, dayId, { segments: updatedDays[dayIndex].segments });
     };
 
     const getSegmentIcon = (type: string) => {
@@ -120,13 +121,13 @@ export default function ItineraryBuilderPage({ params }: { params: { id: string 
                         <ArrowLeft size={18} />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-luna-charcoal">Itinéraire Détaillé</h1>
+                        <h1 className="text-2xl font-normal text-luna-charcoal">Itinéraire Détaillé</h1>
                         <p className="text-sm text-gray-500">Planification jour par jour</p>
                     </div>
                 </div>
 
                 <div className="flex gap-3">
-                    <button onClick={addDay} className="bg-white border border-gray-200 text-luna-charcoal px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2">
+                    <button onClick={addDay} className="bg-white border border-gray-200 text-luna-charcoal px-4 py-2 rounded-xl text-sm font-normal hover:bg-gray-50 transition-colors flex items-center gap-2">
                         <CalendarIcon size={16} /> Ajouter un Jour
                     </button>
                     <button className="btn-primary text-sm flex items-center gap-2">
@@ -142,8 +143,8 @@ export default function ItineraryBuilderPage({ params }: { params: { id: string 
                         <div className="bg-gray-50/80 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <div className="bg-white shadow-sm border border-gray-200 px-3 py-1.5 rounded-lg text-center">
-                                    <span className="block text-xs font-medium tracking-wide text-gray-400">Jour</span>
-                                    <span className="block text-lg font-semibold text-luna-charcoal">{day.dayIndex}</span>
+                                    <span className="block text-xs font-normal tracking-wide text-gray-400">Jour</span>
+                                    <span className="block text-lg font-normal text-luna-charcoal">{day.dayIndex}</span>
                                 </div>
                                 <div>
                                     <input
@@ -155,7 +156,7 @@ export default function ItineraryBuilderPage({ params }: { params: { id: string 
                                             newDays[dx].title = e.target.value;
                                             setDays(newDays);
                                         }}
-                                        className="font-bold text-lg text-luna-charcoal bg-transparent border-none p-0 focus:ring-0 w-64 placeholder-gray-300"
+                                        className="font-normal text-lg text-luna-charcoal bg-transparent border-none p-0 focus:ring-0 w-64 placeholder-gray-300"
                                         placeholder="Titre de la journée"
                                     />
                                     <p className="text-xs text-gray-500 mt-0.5">{format(new Date(day.date), 'EEEE d MMMM yyyy', { locale: fr })}</p>
@@ -174,12 +175,12 @@ export default function ItineraryBuilderPage({ params }: { params: { id: string 
                         <div className="p-6">
                             {day.segments.length === 0 ? (
                                 <div className="text-center py-8 border-2 border-dashed border-gray-100 rounded-xl">
-                                    <p className="text-sm text-gray-400 font-medium mb-3">Aucune étape planifiée pour ce jour.</p>
+                                    <p className="text-sm text-gray-400 font-normal mb-3">Aucune étape planifiée pour ce jour.</p>
                                     <div className="flex justify-center gap-3">
-                                        <button onClick={() => addSegment(day.id, 'ACTIVITY')} className="text-xs bg-white border border-gray-200 px-3 py-1.5 rounded-lg font-semibold text-gray-600 hover:bg-gray-50 flex items-center gap-1.5">
+                                        <button onClick={() => addSegment(day.id, 'ACTIVITY')} className="text-xs bg-white border border-gray-200 px-3 py-1.5 rounded-lg font-normal text-gray-600 hover:bg-gray-50 flex items-center gap-1.5">
                                             <Plus size={14} /> Activité
                                         </button>
-                                        <button onClick={() => addSegment(day.id, 'HOTEL')} className="text-xs bg-white border border-gray-200 px-3 py-1.5 rounded-lg font-semibold text-gray-600 hover:bg-gray-50 flex items-center gap-1.5">
+                                        <button onClick={() => addSegment(day.id, 'HOTEL')} className="text-xs bg-white border border-gray-200 px-3 py-1.5 rounded-lg font-normal text-gray-600 hover:bg-gray-50 flex items-center gap-1.5">
                                             <Plus size={14} /> Hôtel
                                         </button>
                                     </div>
@@ -207,7 +208,7 @@ export default function ItineraryBuilderPage({ params }: { params: { id: string 
                                                             newDays[dx].segments[idx].title = e.target.value;
                                                             setDays(newDays);
                                                         }}
-                                                        className="font-bold text-sm text-luna-charcoal w-full border-none p-0 focus:ring-0 mb-1"
+                                                        className="font-normal text-sm text-luna-charcoal w-full border-none p-0 focus:ring-0 mb-1"
                                                         placeholder="Titre de l'étape"
                                                     />
                                                     <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded w-max">
@@ -220,7 +221,7 @@ export default function ItineraryBuilderPage({ params }: { params: { id: string 
                                                                 newDays[dx].segments[idx].timeSlot = e.target.value;
                                                                 setDays(newDays);
                                                             }}
-                                                            className="bg-transparent border-none p-0 text-xs font-medium focus:ring-0 text-gray-600"
+                                                            className="bg-transparent border-none p-0 text-xs font-normal focus:ring-0 text-gray-600"
                                                         >
                                                             <option value="Morning">Matin</option>
                                                             <option value="Afternoon">Après-midi</option>
@@ -261,7 +262,7 @@ export default function ItineraryBuilderPage({ params }: { params: { id: string 
 
                 <button
                     onClick={addDay}
-                    className="w-full py-4 border-2 border-dashed border-gray-200 text-gray-500 font-bold rounded-2xl hover:border-luna-charcoal hover:text-luna-charcoal transition-colors hover:bg-gray-50 flex items-center justify-center gap-2"
+                    className="w-full py-4 border-2 border-dashed border-gray-200 text-gray-500 font-normal rounded-2xl hover:border-luna-charcoal hover:text-luna-charcoal transition-colors hover:bg-gray-50 flex items-center justify-center gap-2"
                 >
                     <Plus size={18} /> Ajouter un Jour
                 </button>
