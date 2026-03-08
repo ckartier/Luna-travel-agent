@@ -36,7 +36,7 @@ const BOOKING_STATUS_CONFIG: Record<CRMSupplierBooking['status'], { label: strin
 };
 
 const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-const DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+const DAYS_FULL = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE'];
 
 function getDaysInMonth(year: number, month: number) {
     return new Date(year, month + 1, 0).getDate();
@@ -288,80 +288,92 @@ export default function SupplierPlanningPage() {
                 </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            {/* Stats — Premium glassmorphism with orange gradient accents */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 {[
-                    { label: 'Ce mois', value: monthBookings.length, icon: Calendar, color: 'text-purple-500' },
-                    { label: 'Validées ✅', value: confirmed, icon: CheckCircle2, color: 'text-emerald-500' },
-                    { label: 'En attente', value: pending, icon: Clock, color: 'text-amber-500' },
-                    { label: 'Valeur totale', value: `${totalValue.toLocaleString('fr-FR')}€`, icon: Briefcase, color: 'text-sky-500' },
+                    { label: 'PRESTATIONS', value: monthBookings.length, icon: Calendar, gradient: 'from-orange-400 to-amber-500', iconBg: 'bg-orange-100 text-orange-600' },
+                    { label: 'VALIDÉES', value: confirmed, icon: CheckCircle2, gradient: 'from-emerald-400 to-green-500', iconBg: 'bg-emerald-100 text-emerald-600' },
+                    { label: 'EN ATTENTE', value: pending, icon: Clock, gradient: 'from-amber-400 to-yellow-500', iconBg: 'bg-amber-100 text-amber-600' },
+                    { label: 'REVENUS', value: `${totalValue.toLocaleString('fr-FR')}€`, icon: Briefcase, gradient: 'from-violet-400 to-purple-500', iconBg: 'bg-violet-100 text-violet-600' },
                 ].map((stat, i) => (
-                    <div key={i} className="bg-white/80 backdrop-blur-xl rounded-2xl border border-luna-warm-gray/10 p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            <stat.icon size={14} className={stat.color} />
-                            <span className="text-xs uppercase tracking-[0.15em] text-luna-text-muted">{stat.label}</span>
+                    <div key={i} className="relative bg-white/80 backdrop-blur-xl rounded-2xl border border-luna-warm-gray/10 p-5 hover:shadow-lg transition-all duration-300 group overflow-hidden">
+                        <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.gradient}`} />
+                        <div className="flex items-center gap-2.5 mb-3">
+                            <div className={`w-8 h-8 rounded-xl ${stat.iconBg} flex items-center justify-center`}>
+                                <stat.icon size={15} />
+                            </div>
+                            <span className="text-[11px] uppercase tracking-[0.15em] text-luna-text-muted font-medium">{stat.label}</span>
                         </div>
-                        <p className="text-2xl font-normal text-luna-charcoal">{stat.value}</p>
+                        <p className="text-3xl font-light text-luna-charcoal">{stat.value}</p>
                     </div>
                 ))}
             </div>
 
-            {/* Filters + Month navigation */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+            {/* Filters + Month navigation — Premium */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-5">
                 <div className="flex items-center gap-2 overflow-x-auto pb-1">
                     <Filter size={14} className="text-luna-text-muted shrink-0" />
                     {(['ALL', ...Object.keys(BOOKING_STATUS_CONFIG)] as Array<CRMSupplierBooking['status'] | 'ALL'>).map(s => (
                         <button key={s} onClick={() => setFilter(s)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-normal whitespace-nowrap transition-all ${filter === s
-                                ? 'bg-purple-600 text-white shadow-sm'
-                                : 'bg-white/60 text-luna-text-muted hover:bg-white/80 border border-luna-warm-gray/10'
+                            className={`px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${filter === s
+                                ? 'bg-orange-500 text-white shadow-md shadow-orange-100'
+                                : 'bg-white/70 text-luna-text-muted hover:bg-white border border-luna-warm-gray/10'
                                 }`}>
-                            {s === 'ALL' ? '🎨 Toutes' : BOOKING_STATUS_CONFIG[s as CRMSupplierBooking['status']].label}
+                            {s === 'ALL' ? `🎨 Toutes ${bookings.length}` : `${BOOKING_STATUS_CONFIG[s as CRMSupplierBooking['status']].label}`}
                         </button>
                     ))}
                 </div>
-                <div className="flex items-center gap-3">
-                    <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-white/80 transition-all"><ChevronLeft size={18} /></button>
-                    <h2 className="text-lg font-normal text-luna-charcoal min-w-[180px] text-center">{MONTHS[month]} {year}</h2>
-                    <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-white/80 transition-all"><ChevronRight size={18} /></button>
+                <div className="flex items-center gap-2">
+                    <button onClick={prevMonth} className="p-2.5 rounded-xl border border-gray-100 hover:bg-white/80 hover:shadow-sm transition-all"><ChevronLeft size={18} /></button>
+                    <h2 className="text-xl font-light text-luna-charcoal min-w-[200px] text-center tracking-wide">{MONTHS[month]} {year}</h2>
+                    <button onClick={nextMonth} className="p-2.5 rounded-xl border border-gray-100 hover:bg-white/80 hover:shadow-sm transition-all"><ChevronRight size={18} /></button>
+                    <button onClick={() => { setMonth(today.getMonth()); setYear(today.getFullYear()); }}
+                        className="ml-2 px-4 py-2 rounded-xl text-xs font-medium bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 transition-all">
+                        Aujourd'hui
+                    </button>
                 </div>
             </div>
 
-            {/* Calendar */}
-            <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-luna-warm-gray/10 overflow-hidden">
-                <div className="grid grid-cols-7 border-b border-luna-warm-gray/10">
-                    {DAYS.map(d => (
-                        <div key={d} className="py-3 text-center text-xs uppercase tracking-[0.15em] text-luna-text-muted">{d}</div>
+            {/* Calendar — Premium enlarged with full day headers */}
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-luna-warm-gray/10 overflow-hidden shadow-sm">
+                <div className="grid grid-cols-7 border-b border-luna-warm-gray/10 bg-gradient-to-r from-orange-50/30 to-amber-50/20">
+                    {DAYS_FULL.map(d => (
+                        <div key={d} className="py-4 text-center text-[11px] uppercase tracking-[0.2em] text-luna-text-muted font-medium">{d}</div>
                     ))}
                 </div>
                 <div className="grid grid-cols-7">
                     {Array.from({ length: firstDay }).map((_, i) => (
-                        <div key={`e-${i}`} className="min-h-[100px] border-b border-r border-luna-warm-gray/5 bg-luna-cream/20" />
+                        <div key={`e-${i}`} className="min-h-[140px] border-b border-r border-luna-warm-gray/5 bg-gray-50/30" />
                     ))}
                     {Array.from({ length: daysInMonth }).map((_, i) => {
                         const day = i + 1;
                         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                         const dayBookings = getBookingsForDay(dateStr);
                         const isToday = dateStr === todayStr;
+                        const dayOfWeek = (firstDay + i) % 7;
+                        const isWeekend = dayOfWeek >= 5;
 
                         return (
-                            <div key={day} className={`min-h-[100px] border-b border-r border-luna-warm-gray/5 p-1.5 transition-all hover:bg-purple-50/30 ${isToday ? 'bg-purple-50/40' : ''}`}>
-                                <span className={`text-xs w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-purple-500 text-white' : 'text-luna-charcoal'}`}>
+                            <div key={day} className={`min-h-[140px] border-b border-r border-luna-warm-gray/5 p-2 transition-all hover:bg-orange-50/30
+                                ${isToday ? 'bg-orange-50/50 ring-1 ring-inset ring-orange-200/50' : ''}
+                                ${isWeekend ? 'bg-gray-50/40' : ''}`}>
+                                <span className={`text-xs w-7 h-7 flex items-center justify-center rounded-full font-medium
+                                    ${isToday ? 'bg-orange-500 text-white shadow-md shadow-orange-200' : 'text-luna-charcoal'}`}>
                                     {day}
                                 </span>
-                                <div className="flex flex-col gap-0.5 mt-1">
+                                <div className="flex flex-col gap-1 mt-1.5">
                                     {dayBookings.slice(0, 3).map(b => {
                                         const bs = BOOKING_STATUS_CONFIG[b.status];
                                         return (
                                             <button key={b.id} onClick={() => setSelectedBooking(b)}
-                                                className={`w-full text-left px-1.5 py-0.5 rounded text-[11px] truncate transition-all hover:opacity-80 ${bs.bg} ${bs.color}`}
-                                                style={{ borderLeft: `2px solid ${b.status === 'CONFIRMED' ? '#22c55e' : b.status === 'CANCELLED' ? '#ef4444' : '#f59e0b'}` }}>
-                                                🎨 {b.prestationName}
+                                                className={`w-full text-left px-2 py-1 rounded-lg text-[11px] truncate transition-all hover:shadow-sm ${bs.bg} ${bs.color}`}
+                                                style={{ borderLeft: `3px solid ${b.status === 'CONFIRMED' ? '#22c55e' : b.status === 'CANCELLED' || b.status === 'CANCELLED_LATE' ? '#ef4444' : '#f59e0b'}` }}>
+                                                {b.startTime && <span className="font-medium">{b.startTime} </span>}{b.prestationName}
                                             </button>
                                         );
                                     })}
                                     {dayBookings.length > 3 && (
-                                        <span className="text-[10px] text-luna-text-muted pl-1">+{dayBookings.length - 3}</span>
+                                        <span className="text-[10px] text-orange-500 font-medium pl-1">+{dayBookings.length - 3} autres</span>
                                     )}
                                 </div>
                             </div>
@@ -370,47 +382,51 @@ export default function SupplierPlanningPage() {
                 </div>
             </div>
 
-            {/* Bookings list */}
-            <div className="mt-6">
-                <h3 className="text-lg font-normal text-luna-charcoal mb-3 flex items-center gap-2">
-                    🎨 Prestations prestataires
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">{filtered.length}</span>
+            {/* Bookings list — Premium grid */}
+            <div className="mt-8">
+                <h3 className="text-xl font-light text-luna-charcoal mb-4 flex items-center gap-3">
+                    🎨 Prestations à venir
+                    <span className="text-xs px-3 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200 font-medium">{filtered.filter(b => b.date >= todayStr || b.status === 'PROPOSED').length}</span>
                 </h3>
-                <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {filtered.filter(b => b.date >= todayStr || b.status === 'PROPOSED').slice(0, 20).map(booking => {
                         const bs = BOOKING_STATUS_CONFIG[booking.status];
                         const supplier = getSupplier(booking.supplierId);
                         return (
-                            <motion.div key={booking.id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-                                className={`flex items-center gap-4 p-4 rounded-2xl border ${bs.bg} bg-white/60 backdrop-blur-xl shadow-sm cursor-pointer hover:shadow-md transition-all`}
+                            <motion.div key={booking.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                                className={`relative flex items-center gap-4 p-5 rounded-2xl border bg-white/70 backdrop-blur-xl shadow-sm 
+                                    cursor-pointer hover:shadow-lg hover:scale-[1.01] transition-all duration-200 group overflow-hidden`}
                                 onClick={() => setSelectedBooking(booking)}>
-                                <div className={`w-2 h-12 rounded-full ${bs.dot}`} />
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <h4 className="font-normal text-sm text-luna-charcoal truncate">🎨 {booking.prestationName}</h4>
-                                        <span className={`text-[11px] px-2 py-0.5 rounded-full ${bs.color} ${bs.bg} border`}>
+                                <div className={`absolute top-0 left-0 bottom-0 w-1.5 bg-gradient-to-b ${booking.status === 'CONFIRMED' ? 'from-emerald-400 to-green-500' :
+                                        booking.status === 'CANCELLED' || booking.status === 'CANCELLED_LATE' ? 'from-red-400 to-red-500' :
+                                            'from-amber-400 to-orange-400'
+                                    }`} />
+                                <div className="flex-1 min-w-0 pl-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <h4 className="font-medium text-sm text-luna-charcoal truncate">{booking.prestationName}</h4>
+                                        <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-medium ${bs.color} ${bs.bg} border`}>
                                             {bs.label}
                                         </span>
                                         {booking.supplierResponse && (
-                                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
-                                                📱 Répondu WhatsApp
+                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                                                <MessageCircle size={9} /> WhatsApp ✓
                                             </span>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-3 mt-1 text-xs text-luna-text-muted">
+                                    <div className="flex items-center gap-3 mt-1.5 text-xs text-luna-text-muted">
                                         <span className="flex items-center gap-1"><Users size={11} />{supplier?.name || 'Prestataire'}</span>
-                                        <span>📅 {booking.date}</span>
-                                        {booking.startTime && <span>⏰ {booking.startTime}{booking.endTime ? ` - ${booking.endTime}` : ''}</span>}
+                                        <span className="flex items-center gap-1"><Calendar size={11} />{booking.date}</span>
+                                        {booking.startTime && <span className="flex items-center gap-1"><Clock size={11} />{booking.startTime}{booking.endTime ? ` - ${booking.endTime}` : ''}</span>}
                                     </div>
                                 </div>
                                 <div className="text-right shrink-0">
-                                    <p className="font-normal text-luna-charcoal">{booking.rate.toLocaleString('fr-FR')}€</p>
+                                    <p className="text-lg font-light text-luna-charcoal">{booking.rate.toLocaleString('fr-FR')}€</p>
                                 </div>
                                 {booking.status === 'PROPOSED' && (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleValidateBooking(booking); }}
                                         disabled={validatingId === booking.id}
-                                        className="px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center gap-2 shrink-0 shadow-lg shadow-emerald-100 disabled:opacity-50"
+                                        className="px-5 py-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:shadow-lg hover:shadow-emerald-100 transition-all flex items-center gap-2 shrink-0 disabled:opacity-50"
                                     >
                                         {validatingId === booking.id ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                                         Valider
