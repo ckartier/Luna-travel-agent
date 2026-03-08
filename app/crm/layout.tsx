@@ -1,6 +1,7 @@
 'use client';
 
 import { CRMSidebar } from '@/src/components/crm/Sidebar';
+import { NotificationBell } from '@/src/components/crm/NotificationBell';
 import { ReactNode, useState, useCallback, useEffect } from 'react';
 import { Maximize2, Minimize2 } from 'lucide-react';
 
@@ -34,13 +35,15 @@ export default function CRMLayout({ children }: { children: ReactNode }) {
                     {children}
                 </div>
             </main>
+            {/* Global notification bell — visible on ALL CRM pages */}
+            <NotificationBell />
 
             {/* Fullscreen toggle button */}
             <button
                 onClick={toggleFullscreen}
                 className={`fixed z-[60] transition-all duration-300 group ${isFullscreen
-                        ? 'top-3 right-3 bg-red-500/90 hover:bg-red-600 text-white shadow-lg'
-                        : 'bottom-4 right-4 bg-luna-charcoal/80 hover:bg-luna-charcoal text-white shadow-lg'
+                    ? 'top-3 right-3 bg-red-500/90 hover:bg-red-600 text-white shadow-lg'
+                    : 'bottom-4 right-4 bg-luna-charcoal/80 hover:bg-luna-charcoal text-white shadow-lg'
                     } backdrop-blur-xl px-3 py-2.5 rounded-xl flex items-center gap-2 text-xs font-medium`}
                 title={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
             >
