@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ChevronLeft, ChevronRight, X, Calendar,
     Clock, CheckCircle2, Briefcase, Users, MapPin,
-    Filter, Send, MessageCircle, Loader2, Phone
+    Filter, Send, MessageCircle, Loader2, Phone, Bell, BellRing, RefreshCw
 } from 'lucide-react';
 import {
     getAllSupplierBookings, CRMSupplierBooking,
@@ -15,12 +15,24 @@ import {
 import { useAuth } from '@/src/contexts/AuthContext';
 import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 
+interface SupplierAlert {
+    id: string;
+    type: 'CONFIRMED' | 'CANCELLED' | 'CANCELLED_LATE';
+    prestationName: string;
+    supplierName: string;
+    date: string;
+    timestamp: Date;
+    bookingId: string;
+    seen: boolean;
+}
+
 // ═══ STATUS CONFIG ═══
 const BOOKING_STATUS_CONFIG: Record<CRMSupplierBooking['status'], { label: string; color: string; bg: string; dot: string }> = {
     PROPOSED: { label: 'En attente', color: 'text-amber-700', bg: 'bg-amber-50', dot: 'bg-amber-400' },
     CONFIRMED: { label: 'Validé ✅', color: 'text-emerald-700', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
     TERMINATED: { label: 'Terminé', color: 'text-gray-500', bg: 'bg-gray-50', dot: 'bg-gray-400' },
     CANCELLED: { label: 'Annulé ❌', color: 'text-red-700', bg: 'bg-red-50', dot: 'bg-red-500' },
+    CANCELLED_LATE: { label: 'Annulé tardif ⚠️', color: 'text-red-800', bg: 'bg-red-100', dot: 'bg-red-600' },
 };
 
 const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
@@ -44,6 +56,10 @@ export default function SupplierPlanningPage() {
     const [filter, setFilter] = useState<CRMSupplierBooking['status'] | 'ALL'>('ALL');
     const [selectedBooking, setSelectedBooking] = useState<CRMSupplierBooking | null>(null);
     const [validatingId, setValidatingId] = useState<string | null>(null);
+    const [alerts, setAlerts] = useState<SupplierAlert[]>([]);
+    const [toastAlert, setToastAlert] = useState<SupplierAlert | null>(null);
+    const [lastPollMap, setLastPollMap] = useState<Map<string, string>>(new Map());
+    const [showAlerts, setShowAlerts] = useState(false);
 
     const loadData = useCallback(async () => {
         if (!tenantId) return;
@@ -60,6 +76,75 @@ export default function SupplierPlanningPage() {
     }, [tenantId]);
 
     useEffect(() => { loadData(); }, [loadData]);
+
+    // Initialize poll map
+    useEffect(() => {
+        const map = new Map<string, string>();
+        bookings.forEach(b => {
+            if (b.id) {
+                map.set(b.id, b.status);
+                if ((b as any).supplierResponse?.respondedAt) map.set(`resp_${b.id}`, 'responded');
+            }
+        });
+        setLastPollMap(map);
+    }, [bookings.length]);
+
+    // ═══ AUTO-POLL for supplier responses (every 15s) ═══
+    useEffect(() => {
+        if (!tenantId) return;
+        if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+        const interval = setInterval(async () => {
+            try {
+                const fresh = await getAllSupplierBookings(tenantId);
+                const newAlerts: SupplierAlert[] = [];
+                fresh.forEach(b => {
+                    if (!b.id) return;
+                    const prev = lastPollMap.get(b.id);
+                    const statusChanged = prev && prev !== b.status &&
+                        (b.status === 'CONFIRMED' || b.status === 'CANCELLED' || b.status === 'CANCELLED_LATE');
+                    const hasNewResponse = (b as any).supplierResponse?.respondedAt &&
+                        !lastPollMap.has(`resp_${b.id}`);
+                    if (statusChanged || hasNewResponse) {
+                        const sup = suppliers.find(s => s.id === b.supplierId);
+                        newAlerts.push({
+                            id: `${b.id}-${Date.now()}`,
+                            type: b.status as any,
+                            prestationName: b.prestationName,
+                            supplierName: sup?.name || 'Prestataire',
+                            date: b.date,
+                            timestamp: new Date(),
+                            bookingId: b.id,
+                            seen: false,
+                        });
+                        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                            new Notification(`${b.status === 'CONFIRMED' ? '✅' : '❌'} ${sup?.name || 'Prestataire'}`, {
+                                body: `${b.prestationName} — ${b.status === 'CONFIRMED' ? 'Confirmé' : 'Refusé'}`,
+                                icon: '/favicon.ico',
+                            });
+                        }
+                    }
+                });
+                const newMap = new Map<string, string>();
+                fresh.forEach(b => {
+                    if (b.id) {
+                        newMap.set(b.id, b.status);
+                        if ((b as any).supplierResponse?.respondedAt) newMap.set(`resp_${b.id}`, 'responded');
+                    }
+                });
+                setLastPollMap(newMap);
+                if (newAlerts.length > 0) {
+                    setAlerts(prev => [...newAlerts, ...prev].slice(0, 20));
+                    setToastAlert(newAlerts[0]);
+                    setBookings(fresh);
+                    setTimeout(() => setToastAlert(null), 10000);
+                    try { new Audio('/notification.wav').play().catch(() => { }); } catch { }
+                }
+            } catch (e) { /* silent */ }
+        }, 15000);
+        return () => clearInterval(interval);
+    }, [tenantId, lastPollMap, suppliers]);
 
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const daysInMonth = getDaysInMonth(year, month);
@@ -108,13 +193,98 @@ export default function SupplierPlanningPage() {
         }
     };
 
+    const unseenAlerts = alerts.filter(a => !a.seen).length;
+
     return (
         <div className="flex-1 p-4 md:p-6 overflow-y-auto">
+            {/* ═══ TOAST ALERT ═══ */}
+            <AnimatePresence>
+                {toastAlert && (
+                    <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }}
+                        className={`fixed top-20 right-6 z-[100] max-w-sm p-4 rounded-2xl shadow-2xl border backdrop-blur-xl
+                            ${toastAlert.type === 'CONFIRMED' ? 'bg-emerald-50 border-emerald-200' :
+                                toastAlert.type === 'CANCELLED_LATE' ? 'bg-red-100 border-red-300' :
+                                    'bg-rose-50 border-rose-200'}`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-lg
+                                ${toastAlert.type === 'CONFIRMED' ? 'bg-emerald-500' :
+                                    toastAlert.type === 'CANCELLED_LATE' ? 'bg-red-600' : 'bg-rose-500'}`}>
+                                {toastAlert.type === 'CONFIRMED' ? '✓' : toastAlert.type === 'CANCELLED_LATE' ? '!!' : '✕'}
+                            </div>
+                            <div className="flex-1">
+                                <p className="font-medium text-sm text-luna-charcoal">
+                                    {toastAlert.type === 'CONFIRMED' ? 'Prestataire a confirmé !' :
+                                        toastAlert.type === 'CANCELLED_LATE' ? 'ANNULATION TARDIVE !' : 'Prestataire a refusé'}
+                                </p>
+                                <p className="text-xs text-luna-text-muted">
+                                    {toastAlert.supplierName} — {toastAlert.prestationName}
+                                </p>
+                            </div>
+                            <button onClick={() => setToastAlert(null)} className="p-1 rounded-lg hover:bg-white/60">
+                                <X size={14} />
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="text-2xl font-normal text-luna-charcoal">Planning Prestataires</h1>
-                    <p className="text-luna-text-muted text-sm mt-0.5">Vos prestations, disponibilités et validations — synchronisé WhatsApp 📱</p>
+                    <h1 className="text-3xl font-light text-luna-charcoal">Planning Prestataires</h1>
+                    <p className="text-luna-text-muted text-sm mt-1 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                        Synchronisé en temps réel — {MONTHS[month]} {year}
+                    </p>
+                </div>
+                <div className="flex items-center gap-2">
+                    {/* Alert bell */}
+                    <div className="relative">
+                        <button onClick={() => setShowAlerts(!showAlerts)}
+                            className="p-2.5 rounded-xl border border-gray-100 hover:bg-white/80 transition-all relative">
+                            {unseenAlerts > 0 ? <BellRing size={18} className="text-amber-500" /> : <Bell size={18} className="text-gray-400" />}
+                            {unseenAlerts > 0 && (
+                                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold animate-bounce">
+                                    {unseenAlerts}
+                                </span>
+                            )}
+                        </button>
+                        {showAlerts && (
+                            <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+                                <div className="p-3 border-b border-gray-100 flex items-center justify-between">
+                                    <span className="text-sm font-medium text-luna-charcoal">🔔 Alertes prestataires</span>
+                                    <button onClick={() => setAlerts(prev => prev.map(a => ({ ...a, seen: true })))}
+                                        className="text-xs text-sky-500 hover:underline">Tout marquer lu</button>
+                                </div>
+                                <div className="max-h-64 overflow-y-auto">
+                                    {alerts.length === 0 ? (
+                                        <p className="p-4 text-center text-xs text-luna-text-muted">Aucune alerte</p>
+                                    ) : alerts.slice(0, 10).map(alert => (
+                                        <div key={alert.id}
+                                            className={`p-3 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-all ${!alert.seen ? 'bg-amber-50/30' : ''}`}
+                                            onClick={() => {
+                                                setAlerts(prev => prev.map(a => a.id === alert.id ? { ...a, seen: true } : a));
+                                                const b = bookings.find(sb => sb.id === alert.bookingId);
+                                                if (b) setSelectedBooking(b);
+                                                setShowAlerts(false);
+                                            }}>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm">{alert.type === 'CONFIRMED' ? '✅' : '❌'}</span>
+                                                <span className="text-xs font-medium text-luna-charcoal">{alert.supplierName}</span>
+                                                {!alert.seen && <span className="w-2 h-2 bg-amber-400 rounded-full" />}
+                                            </div>
+                                            <p className="text-[11px] text-luna-text-muted mt-0.5">{alert.prestationName}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <button onClick={() => loadData()}
+                        className="p-2.5 rounded-xl border border-gray-100 hover:bg-white/80 transition-all">
+                        <RefreshCw size={18} className="text-gray-400" />
+                    </button>
                 </div>
             </div>
 
