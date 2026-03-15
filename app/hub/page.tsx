@@ -229,7 +229,7 @@ function TerminalPrompt({ onComplete, locale }: { onComplete?: () => void; local
     }, [visibleLines, typedChars, onComplete]);
 
     return (
-        <div className="font-mono text-[14px] leading-[1.8] text-left">
+        <div className="font-mono text-[11px] sm:text-[14px] leading-[1.8] text-left">
             {lines.slice(0, visibleLines + 1).map((line, i) => {
                 const isCurrentLine = i === visibleLines;
                 const text = isCurrentLine ? line.text.substring(0, typedChars) : line.text;
@@ -293,7 +293,7 @@ function TypewriterTitle({ locale }: { locale: Locale }) {
 
     return (
         <div className="text-center">
-            <h2 className="font-mono text-[42px] md:text-[56px] font-light text-white leading-[1.1] tracking-tight">
+            <h2 className="font-mono text-[28px] sm:text-[42px] md:text-[56px] font-light text-white leading-[1.1] tracking-tight">
                 {t('titlePre', locale)}{' '}
                 <span className="text-white font-light">
                     {displayed}
@@ -302,7 +302,7 @@ function TypewriterTitle({ locale }: { locale: Locale }) {
                 <br />
                 {t('titlePost', locale)}
             </h2>
-            <p className="font-mono text-[13px] text-white/50 mt-4">
+            <p className="font-mono text-[10px] sm:text-[13px] text-white/50 mt-4">
                 {t('subtitle', locale)}
             </p>
         </div>
@@ -481,14 +481,14 @@ export default function HubPage() {
             </AnimatePresence>
 
             {/* ═══ Full-screen single viewport ═══ */}
-            <div className="h-screen overflow-hidden relative">
+            <div className="min-h-screen md:h-screen md:overflow-hidden relative overflow-y-auto">
 
                 {/* Video Background — Fixed */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={contentReady ? { opacity: 1 } : {}}
                     transition={{ duration: 1, ease: 'easeOut' }}
-                    className="absolute inset-0 z-0"
+                    className="fixed md:absolute inset-0 z-0"
                 >
                     <div className="absolute inset-0">
                         <video
@@ -509,7 +509,7 @@ export default function HubPage() {
                     initial={{ opacity: 0, y: -20 }}
                     animate={contentReady ? { opacity: 1, y: 0 } : {}}
                     transition={{ delay: 0.8, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute top-0 left-0 right-0 z-20 py-8 px-8"
+                    className="absolute top-0 left-0 right-0 z-20 py-4 px-4 sm:py-8 sm:px-8"
                 >
                     <div className="max-w-[1000px] mx-auto flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -542,7 +542,7 @@ export default function HubPage() {
                     initial={{ opacity: 0 }}
                     animate={contentReady ? { opacity: 1 } : {}}
                     transition={{ duration: 0.8, ease: 'easeOut', delay: 0.5 }}
-                    className="absolute inset-0 z-10 flex flex-col items-center justify-center pt-[80px] pb-6 px-4 md:px-6"
+                    className="relative md:absolute inset-0 z-10 flex flex-col items-center md:justify-center pt-[90px] sm:pt-[80px] pb-6 px-4 md:px-6"
                 >
                     {/* Block 1: Title with terminal prompt first */}
                     <AnimatePresence mode="wait">
@@ -566,7 +566,7 @@ export default function HubPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                                className="text-center mb-8"
+                                className="text-center mb-4 sm:mb-8"
                             >
                                 <p className="text-[9px] uppercase tracking-[0.4em] text-white font-medium mb-4">
                                     {t('studio', locale)}
@@ -582,10 +582,10 @@ export default function HubPage() {
                             initial={{ opacity: 0, y: 15 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.8, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                            className="text-center mb-8"
+                            className="text-center mb-4 sm:mb-8"
                         >
                             <p className="font-mono text-[9px] text-emerald-400/60 uppercase tracking-[0.2em] mb-3">{t('demoLabel', locale)}</p>
-                            <div className="inline-flex flex-col gap-0.5 items-start text-left">
+                            <div className="inline-flex flex-col gap-0.5 items-start text-left max-w-full overflow-hidden">
                                 <FeatureTypein text={t('demo1', locale)} delay={1000} />
                                 <FeatureTypein text={t('demo2', locale)} delay={1400} />
                                 <FeatureTypein text={t('demo3', locale)} delay={1800} />
@@ -595,8 +595,8 @@ export default function HubPage() {
                     )}
 
                     {/* Block 3: Product Cards */}
-                    <div className="w-full max-w-[1100px]">
-                        <div className="flex md:grid md:grid-cols-3 gap-3 md:gap-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory pb-2 md:pb-0 scrollbar-hide">
+                    <div className="w-full max-w-[1100px] px-2 sm:px-0">
+                        <div className="flex flex-col sm:flex-row md:grid md:grid-cols-3 gap-3 md:gap-4 sm:overflow-x-auto md:overflow-visible sm:snap-x sm:snap-mandatory pb-4 md:pb-0 scrollbar-hide">
                         {products.map((p, i) => {
                             const isExt = 'isExternal' in p && p.isExternal;
                             return (
@@ -606,7 +606,7 @@ export default function HubPage() {
                                     animate={terminalDone ? { opacity: 1, y: 0, scale: 1 } : {}}
                                     transition={{ delay: 3.0 + i * 0.25, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
                                     whileHover={{ y: -6, scale: 1.02, transition: { duration: 0.3 } }}
-                                    className="group relative flex-shrink-0 w-[80vw] md:w-auto snap-center flex flex-col gap-2 md:gap-3 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/[0.08] p-4 md:p-5 overflow-hidden cursor-pointer"
+                                    className="group relative flex-shrink-0 w-full sm:w-[80vw] md:w-auto sm:snap-center flex flex-col gap-2 md:gap-3 rounded-xl bg-white/[0.04] backdrop-blur-md border border-white/[0.08] p-4 md:p-5 overflow-hidden cursor-pointer"
                                 >
                                     {/* Top accent bar */}
                                     <motion.div
