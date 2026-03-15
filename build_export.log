@@ -1,0 +1,48 @@
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 2 errors:
+./app/layout.tsx:4:1
+Module not found: Can't resolve './components/LayoutContent'
+[0m [90m 2 |[39m [36mimport[39m { [33mSuspense[39m } [36mfrom[39m [32m"react"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m [32m"./globals.css"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 4 |[39m [36mimport[39m { [33mLayoutContent[39m } [36mfrom[39m [32m"./components/LayoutContent"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 5 |[39m [36mimport[39m { [33mAuthProvider[39m } [36mfrom[39m [32m"@/src/contexts/AuthContext"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { [33mAuthGuard[39m } [36mfrom[39m [32m"@/src/components/AuthGuard"[39m[33m;[39m
+ [90m 7 |[39m [36mimport[39m { [33mSubscriptionGuard[39m } [36mfrom[39m [32m"@/src/components/SubscriptionGuard"[39m[33m;[39m[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./src/components/AuthGuard.tsx:7:1
+Module not found: Can't resolve '@/app/components/LunaLogo'
+[0m [90m  5 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@/src/contexts/AuthContext'[39m[33m;[39m
+ [90m  6 |[39m [36mimport[39m { motion } [36mfrom[39m [32m'framer-motion'[39m[33m;[39m
+[31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m { [33mLunaLogo[39m } [36mfrom[39m [32m'@/app/components/LunaLogo'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m  8 |[39m
+ [90m  9 |[39m [90m/** Public routes that don't require authentication */[39m
+ [90m 10 |[39m [36mconst[39m [33mPUBLIC_ROUTES[39m [33m=[39m [[32m'/login'[39m[33m,[39m [32m'/pricing'[39m[33m,[39m [32m'/cgv'[39m[33m,[39m [32m'/landing'[39m[33m,[39m [32m'/trip'[39m[33m,[39m [32m'/conciergerie'[39m[33m,[39m [32m'/hub'[39m[33m,[39m [32m'/demos'[39m[33m,[39m [32m'/welcome'[39m][33m;[39m[0m
+
+Import map: aliased to relative './app/components/LunaLogo' inside of [project]/
+
+
+Import trace:
+  Server Component:
+    ./src/components/AuthGuard.tsx
+    ./app/layout.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (./app/layout.tsx:4:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./src/components/AuthGuard.tsx:7:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)

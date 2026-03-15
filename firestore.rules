@@ -1,0 +1,156 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ═══ GLOBAL COLLECTIONS ═══
+
+    // Users: owner can read their profile; write allowed EXCEPT modifying 'role' field
+    // Role changes are restricted to Admin SDK (server-side only) to prevent privilege escalation
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId
+                    && (!('role' in request.resource.data) || request.resource.data.role in ['Agent', 'Manager']);
+      allow update: if request.auth != null && request.auth.uid == userId
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']);
+    }
+
+    // Subscriptions: user can read their own (keyed by email)
+    match /subscriptions/{email} {
+      allow read: if request.auth != null && request.auth.token.email == email;
+      allow write: if false; // Only Admin SDK / webhooks
+    }
+
+    // Platform settings (read-only for maintenance flag)
+    match /settings/{document} {
+      allow read: if true;
+      allow write: if false; // Only Admin SDK
+    }
+
+    // Shared Trips: public read (client views itinerary), authenticated write (agent shares)
+    match /sharedTrips/{shareId} {
+      allow read: if true;  // Anyone with the link can view
+      allow write: if request.auth != null;  // Only authenticated agents can share
+    }
+
+    // Shared Quotes: public read for clients
+    match /sharedQuotes/{shareId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ═══ TENANT-SCOPED COLLECTIONS ═══
+    // All CRM data lives under tenants/{tenantId}/
+    // A user can only access data in their own tenant
+
+    match /tenants/{tenantId} {
+      // Tenant document: only members can read, only Admin/SuperAdmin can update
+      allow read: if request.auth != null && isTenantMember(tenantId);
+      allow create: if request.auth != null && request.auth.uid == tenantId;
+      allow update: if request.auth != null && isTenantMember(tenantId) && isAdminOrAbove();
+
+      // Site config: public read (for conciergerie frontend), admin write
+      match /site_config/{document} {
+        allow read: if true;
+        allow write: if request.auth != null && isTenantMember(tenantId) && isAdminOrAbove();
+      }
+
+      // Shared quotes (portal): public read for client portal access
+      match /shared-quotes/{document} {
+        allow read: if true;
+        allow write: if request.auth != null && isTenantMember(tenantId);
+      }
+
+      // Settings: only Admin/SuperAdmin can modify
+      match /settings/{document} {
+        allow read: if request.auth != null && isTenantMember(tenantId);
+        allow write: if request.auth != null && isTenantMember(tenantId) && isAdminOrAbove();
+      }
+
+      // Activity log: read for all members, write only via Admin SDK
+      match /activity_log/{document} {
+        allow read: if request.auth != null && isTenantMember(tenantId);
+        allow write: if false; // Only Admin SDK (server-side logActivity)
+      }
+
+      // Contacts, Trips, Leads, Activities, Calendar, Messages, Documents
+      // All authenticated tenant members can read/write
+      match /contacts/{document=**} {
+        allow read, write: if request.auth != null && isTenantMember(tenantId);
+      }
+      match /leads/{document=**} {
+        allow read, write: if request.auth != null && isTenantMember(tenantId);
+      }
+      match /trips/{document=**} {
+        allow read, write: if request.auth != null && isTenantMember(tenantId);
+      }
+      match /activities/{document=**} {
+        allow read, write: if request.auth != null && isTenantMember(tenantId);
+      }
+      match /calendar/{document=**} {
+        allow read, write: if request.auth != null && isTenantMember(tenantId);
+      }
+      match /messages/{document=**} {
+        allow read, write: if request.auth != null && isTenantMember(tenantId);
+      }
+      match /documents/{document=**} {
+        allow read, write: if request.auth != null && isTenantMember(tenantId);
+      }
+      match /suppliers/{document=**} {
+        allow read, write: if request.auth != null && isTenantMember(tenantId);
+      }
+      match /supplier_bookings/{document=**} {
+        allow read, write: if request.auth != null && isTenantMember(tenantId);
+      }
+      match /catalog/{document=**} {
+        allow read, write: if request.auth != null && isTenantMember(tenantId);
+      }
+      match /bookings/{document=**} {
+        allow read, write: if request.auth != null && isTenantMember(tenantId);
+      }
+
+      // Finance: quotes/invoices/payments — all members can read, only Manager+ can delete
+      match /quotes/{document} {
+        allow read, create, update: if request.auth != null && isTenantMember(tenantId);
+        allow delete: if request.auth != null && isTenantMember(tenantId) && isManagerOrAbove();
+      }
+      match /invoices/{document} {
+        allow read, create, update: if request.auth != null && isTenantMember(tenantId);
+        allow delete: if request.auth != null && isTenantMember(tenantId) && isManagerOrAbove();
+      }
+      match /payments/{document=**} {
+        allow read, create, update: if request.auth != null && isTenantMember(tenantId);
+        allow delete: if request.auth != null && isTenantMember(tenantId) && isManagerOrAbove();
+      }
+
+      // Webhooks config: only Admin/SuperAdmin
+      match /webhooks/{document=**} {
+        allow read: if request.auth != null && isTenantMember(tenantId);
+        allow write: if request.auth != null && isTenantMember(tenantId) && isAdminOrAbove();
+      }
+
+      // Catch-all for any other sub-collections: authenticated tenant members
+      match /{collection}/{document=**} {
+        allow read, write: if request.auth != null && isTenantMember(tenantId);
+      }
+    }
+
+    // ═══ HELPER FUNCTIONS ═══
+
+    // Check if the authenticated user belongs to the tenant
+    function isTenantMember(tenantId) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tenantId == tenantId;
+    }
+
+    // Check if user has Admin or SuperAdmin role
+    function isAdminOrAbove() {
+      let userRole = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return userRole in ['Admin', 'SuperAdmin'];
+    }
+
+    // Check if user has Manager, Admin, or SuperAdmin role
+    function isManagerOrAbove() {
+      let userRole = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return userRole in ['Manager', 'Admin', 'SuperAdmin'];
+    }
+  }
+}

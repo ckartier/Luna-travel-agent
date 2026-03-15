@@ -1,0 +1,30 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Public uploads: images and videos accessible by anyone (read-only)
+    match /uploads/{allPaths=**} {
+      allow read: if true;
+      allow write: if false; // Only writable via Admin SDK (server-side)
+    }
+
+    // Avatars: user can upload their own, anyone authenticated can read
+    match /avatars/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // Tenant-scoped documents (passports, contracts, tickets, etc.)
+    match /tenants/{tenantId}/documents/{allPaths=**} {
+      allow read: if request.auth != null && isTenantMember(tenantId);
+      allow write: if request.auth != null && isTenantMember(tenantId)
+                   && request.resource.size < 25 * 1024 * 1024; // 25MB max
+    }
+
+    // Helper: check tenant membership via Firestore
+    function isTenantMember(tenantId) {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.tenantId == tenantId;
+    }
+  }
+}

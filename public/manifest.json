@@ -1,0 +1,27 @@
+{
+    "name": "Luna CRM — Conciergerie Voyage",
+    "short_name": "Luna CRM",
+    "description": "Plateforme de gestion voyage sur mesure — CRM, itinéraires, devis, factures, portail client",
+    "start_url": "/crm",
+    "display": "standalone",
+    "background_color": "#FAF9F7",
+    "theme_color": "#2E2E2E",
+    "orientation": "any",
+    "icons": [
+        {
+            "src": "/luna-logo-noir.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/luna-logo-noir.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "categories": ["business", "travel", "productivity"],
+    "lang": "fr",
+    "dir": "ltr"
+}

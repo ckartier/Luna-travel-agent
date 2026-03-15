@@ -1,0 +1,281 @@
+No Firebase app associated with site datarnivore, injecting project default config.
+  You can link a Web app to a Hosting site here https://console.firebase.google.com/project/datarnivore/settings/general/web
+
+   Thank you for trying our early preview of Next.js support on Firebase Hosting.
+   During the preview, support is best-effort and breaking changes can be expected. Proceed with caution.
+   The integration is known to work with Next.js version 12 - 15.0. You may encounter errors.
+
+   Documentation: https://firebase.google.com/docs/hosting/frameworks/nextjs
+   File a bug: https://github.com/firebase/firebase-tools/issues/new?template=bug_report.md
+   Submit a feature request: https://github.com/firebase/firebase-tools/issues/new?template=feature_request.md
+
+   We'd love to learn from you. Express your interest in helping us shape the future of Firebase Hosting: https://goo.gle/41enW5X
+
+
+WARNING: Your package.json contains a custom build that is being ignored. Only the Next.js default build script (e.g, "next build") is respected. If you have a more advanced build process you should build a custom integration https://firebase.google.com/docs/hosting/express
+
+▲ Next.js 16.1.6 (Turbopack)
+
+- Environments: .env.local
+- Experiments (use with caution):
+  · serverActions
+
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+
+  Creating an optimized production build ...
+
+✓ Compiled successfully in 10.7s
+
+  Running TypeScript ...
+
+  Collecting page data using 9 workers ...
+
+  Generating static pages using 9 workers (0/157) ...
+
+  Generating static pages using 9 workers (39/157) 
+
+  Generating static pages using 9 workers (78/157) 
+
+  Generating static pages using 9 workers (117/157) 
+
+✓ Generating static pages using 9 workers (157/157) in 546.4ms
+
+  Finalizing page optimization ...
+
+
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /admin
+├ ○ /admin/maintenance
+├ ○ /admin/subscriptions
+├ ○ /admin/users
+├ ƒ /api_bak/admin/maintenance
+├ ƒ /api_bak/admin/stats
+├ ƒ /api_bak/admin/subscriptions
+├ ƒ /api_bak/admin/tenants
+├ ƒ /api_bak/admin/tenants/api-keys
+├ ƒ /api_bak/admin/users
+├ ƒ /api_bak/agents
+├ ƒ /api_bak/agents/legal
+├ ƒ /api_bak/agents/prestations
+├ ƒ /api_bak/ai/agent-search
+├ ƒ /api_bak/ai/embed
+├ ƒ /api_bak/ai/generate-image
+├ ƒ /api_bak/ai/suggest-text
+├ ƒ /api_bak/amadeus
+├ ƒ /api_bak/booking
+├ ƒ /api_bak/bookings/validate
+├ ƒ /api_bak/catalog/seed
+├ ƒ /api_bak/catalog/update-photo
+├ ƒ /api_bak/client-booking
+├ ƒ /api_bak/client/data
+├ ƒ /api_bak/client/invoice-pdf
+├ ƒ /api_bak/conciergerie/catalog
+├ ƒ /api_bak/conciergerie/checkout
+├ ƒ /api_bak/conciergerie/collections
+├ ƒ /api_bak/conciergerie/collections/seed
+├ ƒ /api_bak/conciergerie/contact
+├ ƒ /api_bak/conciergerie/mock-checkout
+├ ƒ /api_bak/conciergerie/stripe-checkout
+├ ƒ /api_bak/conciergerie/translations
+├ ƒ /api_bak/crm/activity-feed
+├ ƒ /api_bak/crm/api-usage
+├ ƒ /api_bak/crm/audit-log
+├ ƒ /api_bak/crm/batch
+├ ƒ /api_bak/crm/bug-report
+├ ƒ /api_bak/crm/calendar
+├ ƒ /api_bak/crm/chat
+├ ƒ /api_bak/crm/client-timeline
+├ ƒ /api_bak/crm/clone-trip
+├ ƒ /api_bak/crm/compare
+├ ƒ /api_bak/crm/dashboard
+├ ƒ /api_bak/crm/devis-pdf
+├ ƒ /api_bak/crm/documents
+├ ƒ /api_bak/crm/duplicates
+├ ƒ /api_bak/crm/email-preview
+├ ƒ /api_bak/crm/email-templates
+├ ƒ /api_bak/crm/export
+├ ƒ /api_bak/crm/feedback
+├ ƒ /api_bak/crm/forecast
+├ ƒ /api_bak/crm/generate-image
+├ ƒ /api_bak/crm/import-contacts
+├ ƒ /api_bak/crm/invite
+├ ƒ /api_bak/crm/merge-contacts
+├ ƒ /api_bak/crm/migrate-invoices
+├ ƒ /api_bak/crm/notes
+├ ƒ /api_bak/crm/notification-prefs
+├ ƒ /api_bak/crm/onboarding
+├ ƒ /api_bak/crm/profitability
+├ ƒ /api_bak/crm/purge
+├ ƒ /api_bak/crm/quote-pdf
+├ ƒ /api_bak/crm/quotes-xlsx
+├ ƒ /api_bak/crm/reminders
+├ ƒ /api_bak/crm/report
+├ ƒ /api_bak/crm/scrape
+├ ƒ /api_bak/crm/scrape-supplier
+├ ƒ /api_bak/crm/search
+├ ƒ /api_bak/crm/segments
+├ ƒ /api_bak/crm/share-quote
+├ ƒ /api_bak/crm/site-config
+├ ƒ /api_bak/crm/supplier-availability
+├ ƒ /api_bak/crm/supplier-score
+├ ƒ /api_bak/crm/team
+├ ƒ /api_bak/crm/tenant-settings
+├ ƒ /api_bak/crm/upload
+├ ƒ /api_bak/crm/usage-stats
+├ ƒ /api_bak/crm/voice-token
+├ ƒ /api_bak/crm/voucher-pdf
+├ ƒ /api_bak/cron/booking-reminders
+├ ƒ /api_bak/cron/payment-reminders
+├ ƒ /api_bak/cron/quote-expiry
+├ ƒ /api_bak/cron/supplier-retry
+├ ƒ /api_bak/daily-quote
+├ ƒ /api_bak/email-analyze
+├ ƒ /api_bak/flights
+├ ƒ /api_bak/gmail/action
+├ ƒ /api_bak/gmail/auth
+├ ƒ /api_bak/gmail/callback
+├ ƒ /api_bak/gmail/list
+├ ƒ /api_bak/gmail/send
+├ ƒ /api_bak/gmail/test
+├ ƒ /api_bak/gmail/webhook
+├ ƒ /api_bak/health
+├ ƒ /api_bak/portal/[token]
+├ ƒ /api_bak/quote/[shareId]
+├ ƒ /api_bak/signup/seed-demo
+├ ƒ /api_bak/stripe/checkout
+├ ƒ /api_bak/stripe/portal
+├ ƒ /api_bak/stripe/webhook
+├ ƒ /api_bak/trip/[shareId]
+├ ƒ /api_bak/v1/contacts
+├ ƒ /api_bak/v1/invoices
+├ ƒ /api_bak/v1/quotes
+├ ƒ /api_bak/v1/trips
+├ ƒ /api_bak/v1/webhooks
+├ ƒ /api_bak/weather
+├ ƒ /api_bak/weather/save
+├ ƒ /api_bak/whatsapp/send
+├ ƒ /api_bak/whatsapp/webhook
+├ ○ /api-docs
+├ ○ /cgv
+├ ○ /client
+├ ○ /conciergerie
+├ ○ /crm
+├ ○ /crm/activities
+├ ○ /crm/agent-ia
+├ ○ /crm/ai
+├ ○ /crm/analytics
+├ ○ /crm/bookings
+├ ○ /crm/catalog
+├ ƒ /crm/catalog/[id]
+├ ○ /crm/changelog
+├ ƒ /crm/clients/[id]
+├ ○ /crm/collections
+├ ○ /crm/contacts
+├ ○ /crm/documents
+├ ○ /crm/integrations
+├ ○ /crm/invoices
+├ ƒ /crm/leads/[id]/proposal
+├ ○ /crm/mails
+├ ○ /crm/marketing
+├ ○ /crm/messages
+├ ○ /crm/payments
+├ ○ /crm/pipeline
+├ ○ /crm/planning
+├ ○ /crm/planning/suppliers
+├ ○ /crm/prestations-agent
+├ ○ /crm/quotes
+├ ○ /crm/settings
+├ ○ /crm/setup
+├ ○ /crm/site-builder
+├ ○ /crm/suppliers
+├ ƒ /crm/suppliers/[id]
+├ ○ /crm/tasks
+├ ○ /crm/team
+├ ○ /crm/templates
+├ ƒ /crm/templates/[id]
+├ ƒ /crm/trips/[id]
+├ ƒ /crm/trips/[id]/budget
+├ ƒ /crm/trips/[id]/itinerary
+├ ○ /crm/voyage-agent
+├ ○ /demos
+├ ○ /hub
+├ ○ /landing
+├ ○ /legal
+├ ○ /login
+├ ○ /maintenance
+├ ƒ /portal/[token]
+├ ○ /prestations-agent
+├ ○ /pricing
+├ ○ /pricing/success
+├ ƒ /quote/[shareId]
+├ ○ /signup
+├ ○ /site-admin
+├ ○ /site-admin/analytics
+├ ○ /site-admin/bug-reports
+├ ○ /site-admin/collections
+├ ○ /site-admin/prestations
+├ ○ /site-admin/templates
+├ ○ /site-admin/tenants
+├ ƒ /tracker/[tripId]
+├ ƒ /trip/[shareId]
+├ ○ /voyage-agent
+└ ○ /welcome
+
+
+ƒ Proxy (Middleware)
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+Building a Cloud Function to run this application. This is needed due to:
+ • middleware
+ • non-static component /api_bak/admin/maintenance/route
+ • non-static component /api_bak/admin/stats/route
+ • non-static component /api_bak/admin/subscriptions/route
+ • non-static component /api_bak/admin/tenants/api-keys/route
+ • and 115 other reasons, use --debug to see more
+
+Failed to find esbuild with npx which: Error: Command failed: npx which esbuild
+esbuild not found, installing...
+
+added 3 packages, and audited 856 packages in 4s
+
+196 packages are looking for funding
+  run `npm fund` for details
+
+11 vulnerabilities (8 low, 1 moderate, 2 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+
+Run `npm audit` for details.
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated lodash.isequal@4.5.0: This package is deprecated. Use require('node:util').isDeepStrictEqual instead.
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated fstream@1.0.12: This package is no longer supported.
+npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+npm warn deprecated deep-diff@1.0.2: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated popper.js@1.16.1: You can find the new Popper v2 at @popperjs/core, this package is dedicated to the legacy v1
+
+added 601 packages in 25s
+
+66 packages are looking for funding
+  run `npm fund` for details
+
+Error: Failed to list functions for datarnivore

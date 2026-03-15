@@ -1,0 +1,71 @@
+runConfig:
+  minInstances: 0
+  maxInstances: 1
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 2048
+
+env:
+  # Public Firebase config (safe to expose)
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyBUyOAoQ5Qm2VFsiD_fWFetxcX8Ugv_7-o
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: luna-travel-agent.firebaseapp.com
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: luna-travel-agent
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: luna-travel-agent.firebasestorage.app
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "455885111230"
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: 1:455885111230:web:49c935d8d2a009d3fe83ef
+
+  # Mapbox (must be value, not secret — NEXT_PUBLIC_ vars are inlined at build time)
+  - variable: NEXT_PUBLIC_MAPBOX_TOKEN
+    value: pk.eyJ1IjoiY2thcnRpZXIiLCJhIjoiY21tOWs3dG54MDNlYjJwczcydjFrdTdqaSJ9.K4o4XD3vuGhjXzWrTMKI4g
+
+  # Server-side secrets (managed via Cloud Secret Manager)
+  - variable: FIREBASE_PROJECT_ID
+    secret: FIREBASE_PROJECT_ID
+  - variable: FIREBASE_CLIENT_EMAIL
+    secret: FIREBASE_CLIENT_EMAIL
+  - variable: FIREBASE_PRIVATE_KEY
+    secret: FIREBASE_PRIVATE_KEY
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
+  - variable: AVIATIONSTACK_API_KEY
+    secret: AVIATIONSTACK_API_KEY
+  - variable: APP_GMAIL_CLIENT_ID
+    secret: APP_GMAIL_CLIENT_ID
+  - variable: APP_GMAIL_CLIENT_SECRET
+    secret: APP_GMAIL_CLIENT_SECRET
+  - variable: APP_GMAIL_REFRESH_TOKEN
+    secret: APP_GMAIL_REFRESH_TOKEN
+  - variable: STRIPE_SECRET_KEY
+    secret: STRIPE_SECRET_KEY
+  - variable: STRIPE_WEBHOOK_SECRET
+    secret: STRIPE_WEBHOOK_SECRET
+  - variable: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+    value: pk_test_51T3cdZPtMrCfknK02annrbwgfnKFrldldF4NfMpmArrb3A4NZW8pZ7rILTw8yc4vTSqSrR3tC7m7Bvm7QZfDjJTE00qbYGp4QQ
+  - variable: STRIPE_PRICE_STARTER
+    secret: STRIPE_PRICE_STARTER
+  - variable: STRIPE_PRICE_PRO
+    secret: STRIPE_PRICE_PRO
+  - variable: STRIPE_PRICE_ENTERPRISE
+    secret: STRIPE_PRICE_ENTERPRISE
+
+  # Booking.com via RapidAPI
+  - variable: RAPIDAPI_KEY
+    secret: RAPIDAPI_KEY
+
+  # WhatsApp Business API
+  - variable: WHATSAPP_TOKEN
+    secret: WHATSAPP_TOKEN
+  - variable: WHATSAPP_PHONE_ID
+    secret: WHATSAPP_PHONE_ID
+  - variable: WHATSAPP_VERIFY_TOKEN
+    secret: WHATSAPP_VERIFY_TOKEN
+
+  # Gmail OAuth
+  - variable: APP_GMAIL_REDIRECT_URI
+    secret: APP_GMAIL_REDIRECT_URI

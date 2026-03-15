@@ -1,0 +1,361 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Luna Core Flat 2026 ── */
+  --color-luna-bg: #F8FAFC;
+  --color-luna-charcoal: #2E2E2E;
+  --color-luna-text: #2E2E2E;
+  --color-luna-text-muted: #6B7280;
+  --color-luna-warm-gray: #F5F5F5;
+  --color-luna-cream: #FFFFFF;
+  --color-luna-border: #E5E7EB;
+
+  /* ── Category Palette (Flat Pastel) ── */
+  --color-cat-hotel: #E3E2F3;
+  --color-cat-activity: #D3E8E3;
+  --color-cat-transfer: #E6D2BD;
+  --color-cat-dining: #F2D9D3;
+  --color-cat-other: #F3F4F6;
+
+  /* ── Accents ── */
+  --color-luna-primary: #bcdeea;
+  --color-luna-primary-hover: #a5cfdf;
+  --color-luna-red: #da3832;
+  --color-luna-red-hover: #c22f2a;
+
+  /* ── Soft Shadows (Luna 2026) ── */
+  --shadow-luna-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+  --shadow-luna-md: 0 2px 8px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03);
+  --shadow-luna-lg: 0 4px 16px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.02);
+  --shadow-luna-xl: 0 8px 30px rgba(0,0,0,0.07), 0 2px 6px rgba(0,0,0,0.03);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Inter", ui-serif, Georgia, serif;
+}
+
+@layer base {
+  body {
+    @apply bg-luna-bg text-luna-text font-sans antialiased m-0 p-0;
+    font-size: 14px;
+    font-weight: 400;
+  }
+}
+
+@layer utilities {
+
+  /* ── Primary Button ── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-[12px] text-[14px] font-medium transition-all cursor-pointer border-none;
+    background-color: var(--color-luna-primary);
+    color: white;
+    box-shadow: var(--shadow-luna-sm);
+  }
+
+  .btn-primary:hover {
+    background-color: var(--color-luna-primary-hover);
+    box-shadow: var(--shadow-luna-md);
+  }
+
+  /* ── Secondary Button ── */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-[12px] text-[14px] font-medium transition-all cursor-pointer;
+    background-color: transparent;
+    color: #2E2E2E;
+    border: 1px solid #E5E7EB;
+  }
+
+  .btn-secondary:hover {
+    background-color: #F5F5F5;
+    box-shadow: var(--shadow-luna-sm);
+  }
+
+  /* ── Category Buttons ── */
+  .btn-cat {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-[12px] text-[14px] font-medium transition-all cursor-pointer border-none;
+    color: #2E2E2E;
+    box-shadow: var(--shadow-luna-sm);
+  }
+
+  .btn-cat:hover {
+    @apply opacity-90;
+    box-shadow: var(--shadow-luna-md);
+  }
+
+  .btn-cat-hotel {
+    background-color: #E3E2F3;
+  }
+
+  .btn-cat-activity {
+    background-color: #D3E8E3;
+  }
+
+  .btn-cat-dining {
+    background-color: #F2D9D3;
+  }
+
+  .btn-cat-transfer {
+    background-color: #E6D2BD;
+  }
+
+  /* ══════════════════════════════════════════════
+     Card Styles — Luna 2026 Soft Shadow System
+     ══════════════════════════════════════════════ */
+  .glass-card-premium {
+    @apply bg-white rounded-[16px] border border-gray-100/60;
+    box-shadow: var(--shadow-luna-md);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  .glass-card-premium:hover {
+    box-shadow: var(--shadow-luna-lg);
+  }
+
+  .text-label-sharp {
+    @apply text-[11px] font-medium uppercase tracking-wider text-gray-400;
+  }
+
+  .text-title-executive {
+    @apply text-xl font-medium tracking-tight text-luna-charcoal;
+  }
+
+  /* Force remove bold from common elements */
+  h1,
+  h2,
+  h3,
+  h4,
+  b,
+  strong {
+    font-weight: 500;
+  }
+
+  /* Legacy Mappings — now with soft shadows */
+  .btn-expert,
+  .btn-super-agent {
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-[12px] text-[14px] font-medium transition-all cursor-pointer border-none;
+    background-color: var(--color-luna-primary);
+    color: white;
+    box-shadow: var(--shadow-luna-sm);
+  }
+
+  /* ── Shadow utility classes — Soft shadows ── */
+  .shadow-luxury {
+    box-shadow: var(--shadow-luna-lg) !important;
+  }
+
+  .shadow-glass {
+    box-shadow: var(--shadow-luna-md) !important;
+  }
+
+  .shadow-premium {
+    box-shadow: var(--shadow-luna-xl) !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     CRM-Wide Soft Shadow Cascade
+     ══════════════════════════════════════════════
+     Applies soft shadows and smooth corners to
+     common patterns used across all 34 CRM pages
+     ══════════════════════════════════════════════ */
+
+  /* Cards, panels inside CRM content area (not root/sidebar) */
+  .crm-root main .bg-white {
+    border-radius: 16px;
+  }
+
+  /* Exclude the root CRM shell itself */
+  .crm-root.bg-white {
+    border-radius: 0;
+  }
+
+  /* Table wrappers */
+  .crm-root table {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .crm-root thead tr:first-child th:first-child {
+    border-top-left-radius: 12px;
+  }
+
+  .crm-root thead tr:first-child th:last-child {
+    border-top-right-radius: 12px;
+  }
+
+  /* Input fields in CRM */
+  .crm-root input[type="text"],
+  .crm-root input[type="email"],
+  .crm-root input[type="password"],
+  .crm-root input[type="number"],
+  .crm-root input[type="search"],
+  .crm-root input[type="tel"],
+  .crm-root input[type="url"],
+  .crm-root input[type="date"],
+  .crm-root select,
+  .crm-root textarea {
+    border-radius: 12px !important;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  .crm-root input:focus,
+  .crm-root select:focus,
+  .crm-root textarea:focus {
+    box-shadow: 0 0 0 3px rgba(188, 222, 234, 0.3);
+    border-color: var(--color-luna-primary) !important;
+    outline: none;
+  }
+
+  /* Modals and popups in CRM */
+  .crm-root [role="dialog"],
+  .crm-root [data-radix-popper-content-wrapper] > div {
+    border-radius: 20px !important;
+    box-shadow: var(--shadow-luna-xl) !important;
+  }
+
+  /* Dropdown menus */
+  .crm-root [role="menu"],
+  .crm-root [role="listbox"] {
+    border-radius: 14px !important;
+    box-shadow: var(--shadow-luna-lg) !important;
+    border: 1px solid rgba(229, 231, 235, 0.5) !important;
+  }
+
+  /* Badges and chips */
+  .crm-root .rounded-full {
+    box-shadow: none;
+  }
+
+  /* Tooltip styling */
+  .crm-root .recharts-tooltip-wrapper .recharts-default-tooltip {
+    border-radius: 14px !important;
+    box-shadow: var(--shadow-luna-lg) !important;
+  }
+
+  /* ── Form controls (Agent forms) ── */
+  .input-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #2E2E2E;
+    margin-bottom: 6px;
+    letter-spacing: 0.01em;
+  }
+
+  .input-underline {
+    display: block;
+    width: 100%;
+    padding: 10px 0;
+    font-size: 14px;
+    font-weight: 400;
+    color: #2E2E2E;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #E5E7EB;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-family: inherit;
+  }
+
+  .input-underline::placeholder {
+    color: #9CA3AF;
+  }
+
+  .input-underline:focus {
+    border-bottom-color: #bcdeea;
+  }
+
+  /* ══════════════════════════════════════════════
+     CRM Subtle Zoom Hover — Clickable Elements
+     ══════════════════════════════════════════════
+     Gentle scale-up on hover for all interactive
+     elements: buttons, links, inputs, selects…
+     ══════════════════════════════════════════════ */
+
+  .crm-root button,
+  .crm-root a,
+  .crm-root [role="button"],
+  .crm-root input[type="text"],
+  .crm-root input[type="email"],
+  .crm-root input[type="password"],
+  .crm-root input[type="number"],
+  .crm-root input[type="search"],
+  .crm-root input[type="tel"],
+  .crm-root input[type="url"],
+  .crm-root input[type="date"],
+  .crm-root select,
+  .crm-root textarea {
+    transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                box-shadow 0.2s ease,
+                border-color 0.2s ease,
+                background-color 0.2s ease;
+    will-change: transform;
+  }
+
+  .crm-root a:hover,
+  .crm-root [role="button"]:hover,
+  .crm-root input[type="text"]:hover,
+  .crm-root input[type="email"]:hover,
+  .crm-root input[type="password"]:hover,
+  .crm-root input[type="number"]:hover,
+  .crm-root input[type="search"]:hover,
+  .crm-root input[type="tel"]:hover,
+  .crm-root input[type="url"]:hover,
+  .crm-root input[type="date"]:hover,
+  .crm-root select:hover,
+  .crm-root textarea:hover {
+    transform: scale(1.03);
+  }
+
+  /* Zoom plus grand + Animation Terminal Text au survol pour les boutons */
+  .crm-root button:hover {
+    transform: scale(1.08); /* Zoom augmenté pour les boutons */
+  }
+
+  @keyframes terminalBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* Curseur de terminal à la fin du texte du bouton au survol */
+  .crm-root button:hover::after {
+    content: '_';
+    display: inline-block;
+    animation: terminalBlink 1s step-end infinite;
+    margin-left: 6px;
+    font-family: "Courier New", Courier, monospace;
+    font-weight: 700;
+  }
+
+  /* Sidebar Navigation Items: Overriding global prevent to apply custom zoom & terminal animation */
+  .crm-root .sidebar-item {
+    transform-origin: left center; /* Avoid clipping on the right when zooming */
+  }
+
+  .crm-root .sidebar-item:hover {
+    transform: scale(1.04) !important; /* slightly smaller zoom to prevent container overflow cut-off */
+  }
+
+  @keyframes terminalTypingReveal {
+    0% { clip-path: inset(0 100% 0 0); }
+    100% { clip-path: inset(0 0 0 0); }
+  }
+
+  .crm-root .sidebar-item .sidebar-text {
+    /* Animation on arrival (page load) - significantly slower */
+    animation: terminalTypingReveal 1.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  /* Prevent zoom on root-level layout elements (fallback) */
+  .crm-root > aside,
+  .crm-root > nav {
+    transform: none !important;
+  }
+
+  /* ── Scrollbar Hide ── */
+  .scrollbar-hide {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/WebKit */
+  }
+}

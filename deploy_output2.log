@@ -1,0 +1,25 @@
+No Firebase app associated with site datarnivore, injecting project default config.
+  You can link a Web app to a Hosting site here https://console.firebase.google.com/project/datarnivore/settings/general/web
+
+   Thank you for trying our early preview of Next.js support on Firebase Hosting.
+   During the preview, support is best-effort and breaking changes can be expected. Proceed with caution.
+   The integration is known to work with Next.js version 12 - 15.0. You may encounter errors.
+
+   Documentation: https://firebase.google.com/docs/hosting/frameworks/nextjs
+   File a bug: https://github.com/firebase/firebase-tools/issues/new?template=bug_report.md
+   Submit a feature request: https://github.com/firebase/firebase-tools/issues/new?template=feature_request.md
+
+   We'd love to learn from you. Express your interest in helping us shape the future of Firebase Hosting: https://goo.gle/41enW5X
+
+
+WARNING: Your package.json contains a custom build that is being ignored. Only the Next.js default build script (e.g, "next build") is respected. If you have a more advanced build process you should build a custom integration https://firebase.google.com/docs/hosting/express
+
+▲ Next.js 16.1.6 (Turbopack)
+
+- Environments: .env.local
+
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+
+  Creating an optimized production build ...
+

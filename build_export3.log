@@ -1,0 +1,21 @@
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 9.0s
+  Running TypeScript ...
+Failed to compile.
+
+./src/components/crm/AgentIAModal.tsx:8:42
+Type error: Cannot find module '@/app/voyage-agent/page' or its corresponding type declarations.
+
+[0m [90m  6 |[39m [36mimport[39m dynamic [36mfrom[39m [32m'next/dynamic'[39m[33m;[39m
+ [90m  7 |[39m
+[31m[1m>[22m[39m[90m  8 |[39m [36mconst[39m [33mVoyageAgent[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/app/voyage-agent/page'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })[33m;[39m
+ [90m    |[39m                                          [31m[1m^[22m[39m
+ [90m  9 |[39m [36mconst[39m [33mPrestationsAgent[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/app/prestations-agent/page'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })[33m;[39m
+ [90m 10 |[39m
+ [90m 11 |[39m type [33mAgentType[39m [33m=[39m [32m'voyage'[39m [33m|[39m [32m'prestations'[39m[33m;[39m[0m
+Next.js build worker exited with code: 1 and signal: null
+BUILD EXITED WITH 1
