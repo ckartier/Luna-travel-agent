@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import "./globals.css";
-import { LayoutContent } from "./components/LayoutContent";
+import { LayoutContent } from "@/app/components/LayoutContent";
 import { AuthProvider } from "@/src/contexts/AuthContext";
 import { AuthGuard } from "@/src/components/AuthGuard";
 import { SubscriptionGuard } from "@/src/components/SubscriptionGuard";

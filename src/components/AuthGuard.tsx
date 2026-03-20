@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { motion } from 'framer-motion';
-import { LunaLogo } from '@/app/components/LunaLogo';
+import { LunaLogo } from "../../app/components/LunaLogo";
 
 import { useVertical } from '@/src/contexts/VerticalContext';
 
