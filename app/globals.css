@@ -305,24 +305,9 @@
     transform: scale(1.03);
   }
 
-  /* Zoom plus grand + Animation Terminal Text au survol pour les boutons */
+  /* Boutons : même zoom que les autres éléments interactifs */
   .crm-root button:hover {
-    transform: scale(1.08); /* Zoom augmenté pour les boutons */
-  }
-
-  @keyframes terminalBlink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-  }
-
-  /* Curseur de terminal à la fin du texte du bouton au survol */
-  .crm-root button:hover::after {
-    content: '_';
-    display: inline-block;
-    animation: terminalBlink 1s step-end infinite;
-    margin-left: 6px;
-    font-family: "Courier New", Courier, monospace;
-    font-weight: 700;
+    transform: scale(1.03);
   }
 
   /* Sidebar Navigation Items: Overriding global prevent to apply custom zoom & terminal animation */

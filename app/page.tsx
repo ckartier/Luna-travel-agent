@@ -291,7 +291,7 @@ const PRODUCTS = [
     {
         id: 'travel', name: 'Luna Travel', tagline: 'sys.concierge_voyage',
         desc: '>> CRM IA optimisé pour les agences de voyage. Intégration pipeline B2B et génération d\'itinéraires.',
-        loginHref: '/crm/luna', crmHref: '/crm/luna',
+        loginHref: '/crm/luna?vertical=travel', crmHref: '/crm/luna?vertical=travel',
         accentColor: 'text-emerald-400', hoverBorder: 'hover:border-emerald-400/50',
         glowColor: 'rgba(16,185,129,0.15)', borderGlow: 'rgba(16,185,129,0.4)',
         features: ['[OK] Agents_IA_Voyage', '[OK] Pipeline_B2B', '[OK] Routing_J/J'],
@@ -299,7 +299,7 @@ const PRODUCTS = [
     {
         id: 'legal', name: 'Le Droit Agent', tagline: 'sys.ia_juridique',
         desc: '>> CRM Avocats. Analyse NLP performante de dossiers et base de jurisprudence temps réel.',
-        loginHref: '/crm/avocat', crmHref: '/crm/avocat',
+        loginHref: '/crm/avocat?vertical=legal', crmHref: '/crm/avocat?vertical=legal',
         accentColor: 'text-amber-400', hoverBorder: 'hover:border-amber-400/50',
         glowColor: 'rgba(245,158,11,0.15)', borderGlow: 'rgba(245,158,11,0.4)',
         features: ['[OK] Analyse_Dossiers', '[OK] Jurisprudence_RT', '[OK] Auth_Secret_Pro'],

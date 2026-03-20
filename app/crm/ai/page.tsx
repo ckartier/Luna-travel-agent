@@ -193,10 +193,10 @@ export default function SuperAgentPage() {
         color: '#8b5cf6',
       });
 
-      // 2. Create supplier bookings for each prestation
+      // 2. Create supplier bookings for each prestation + send WhatsApp
       for (const prestation of selectedPrestations) {
         if (prestation.catalogItem.supplierId) {
-          await createSupplierBooking(tenantId, {
+          const bookingId = await createSupplierBooking(tenantId, {
             supplierId: prestation.catalogItem.supplierId,
             prestationId: prestation.catalogItem.id!,
             prestationName: prestation.catalogItem.name,
@@ -206,6 +206,33 @@ export default function SuperAgentPage() {
             status: 'PROPOSED',
             rate: prestation.catalogItem.netCost,
           });
+
+          // ── AUTO-SEND WHATSAPP TO SUPPLIER ──
+          const supplier = suppliers.find(s => s.id === prestation.catalogItem.supplierId);
+          if (supplier?.phone) {
+            try {
+              const dateStr = new Date(prestation.date || tripStart).toLocaleDateString('fr-FR', {
+                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+              });
+              await fetchWithAuth('/api/whatsapp/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  to: supplier.phone,
+                  message: `😊 Bonjour ${supplier.contactName || supplier.name} !\n\nNouvelle mission pour vous 🌟\n\n🎨 *${prestation.catalogItem.name}*\n📅 *Date :* ${dateStr}\n💰 *Prix :* ${prestation.catalogItem.netCost} €\n👤 *Client :* ${selectedClient.firstName} ${selectedClient.lastName}\n\n🙏 Merci de confirmer avec les boutons ci-dessous !\n_✨ Luna CRM - On compte sur vous !_`,
+                  recipientType: 'SUPPLIER',
+                  clientName: supplier.name,
+                  clientId: supplier.id,
+                  interactiveButtons: true,
+                  bookingId,
+                  prestationName: prestation.catalogItem.name,
+                })
+              });
+              console.log('[SuperAgent] WhatsApp sent to:', supplier.name);
+            } catch (waErr) {
+              console.error('[SuperAgent] WhatsApp auto-send failed:', waErr);
+            }
+          }
         }
       }
 

@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { verifyAuth } from '@/src/lib/firebase/apiAuth';
-import { GoogleGenAI } from '@google/genai';
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
-const MODEL = 'gemini-2.5-pro';
+import { generateAIJSON } from '@/src/lib/ai/provider';
 
 /**
  * AI Text Suggestion API
@@ -44,42 +41,20 @@ export async function POST(request: Request) {
             prompt = buildGenericPrompt(context, field, lang);
         }
 
-        if (!process.env.GEMINI_API_KEY) {
+        if (!process.env.GROQ_API_KEY && !process.env.GEMINI_API_KEY) {
             // Fallback: generate a smart static suggestion based on context
             const fallback = generateFallbackText(context, field, type || 'prestation');
             return NextResponse.json({ suggestion: fallback, source: 'fallback' });
         }
 
-        const response = await ai.models.generateContent({
-            model: MODEL,
-            contents: prompt,
+        const result = await generateAIJSON(prompt, { model: 'fast' });
+        const parsed = result.data;
+
+        return NextResponse.json({
+            suggestion: parsed.text || parsed.suggestion || parsed.description || result.data.summary || '',
+            alternatives: parsed.alternatives || [],
+            source: result.provider
         });
-
-        const text = response.text || '';
-
-        // Try to extract clean JSON response
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            try {
-                const parsed = JSON.parse(jsonMatch[0]);
-                return NextResponse.json({
-                    suggestion: parsed.text || parsed.suggestion || parsed.description || text,
-                    alternatives: parsed.alternatives || [],
-                    source: 'gemini'
-                });
-            } catch {
-                // If JSON parsing fails, just return the raw text
-            }
-        }
-
-        // Clean up the text (remove markdown formatting)
-        const cleanText = text
-            .replace(/^```[\s\S]*?```$/gm, '')
-            .replace(/^\*\*.*?\*\*$/gm, '')
-            .replace(/^#+\s/gm, '')
-            .trim();
-
-        return NextResponse.json({ suggestion: cleanText, source: 'gemini' });
 
     } catch (error: any) {
         console.error('[AI Suggest] Error:', error);

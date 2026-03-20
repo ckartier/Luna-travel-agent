@@ -28,10 +28,15 @@ export default function BookingsPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [b, c, t] = await Promise.all([getBookings(tenantId!), getContacts(tenantId!), getTrips(tenantId!)]);
-      setBookings(b); setContacts(c); setTrips(t);
-    } catch (e) { console.error(e); }
-    setLoading(false);
+      // Phase 1: Load bookings first → instant render
+      const b = await getBookings(tenantId!);
+      setBookings(b);
+      setLoading(false);
+
+      // Phase 2: Load secondary data in background
+      const [c, t] = await Promise.all([getContacts(tenantId!), getTrips(tenantId!)]);
+      setContacts(c); setTrips(t);
+    } catch (e) { console.error(e); setLoading(false); }
   };
 
   const handleCreate = async () => {
@@ -199,6 +204,14 @@ export default function BookingsPage() {
             <ModalSubmitButton onClick={handleCreate}><T>Créer la réservation</T></ModalSubmitButton>
           </ModalActions>
         </Modal>
+
+        <ConfirmModal
+          open={!!deleteTarget}
+          title="Supprimer cette réservation ?"
+          message="La réservation sera supprimée définitivement."
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       </div>
     </div>
   );

@@ -6,13 +6,16 @@ import { useAuth } from '@/src/contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { LunaLogo } from '@/app/components/LunaLogo';
 
+import { useVertical } from '@/src/contexts/VerticalContext';
+
 /** Public routes that don't require authentication */
-const PUBLIC_ROUTES = ['/login', '/pricing', '/cgv', '/landing', '/trip', '/conciergerie', '/hub', '/demos', '/welcome'];
+const PUBLIC_ROUTES = ['/login', '/pricing', '/cgv', '/landing', '/landing-legal', '/trip', '/conciergerie', '/hub', '/demos', '/welcome'];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
     const { user, loading } = useAuth();
     const router = useRouter();
-    const pathname = usePathname();
+    const pathname = usePathname() || '/';
+    const { vertical } = useVertical();
 
     const isPublicRoute = pathname === '/' || PUBLIC_ROUTES.some(r => pathname.startsWith(r));
 
@@ -20,9 +23,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         if (loading) return;
 
         if (!user && !isPublicRoute) {
-            router.replace('/landing');
+            const isLegal = vertical.id === 'legal' || pathname.startsWith('/crm/avocat');
+            router.replace(isLegal ? '/landing-legal' : '/landing');
         }
-    }, [user, loading, isPublicRoute, router]);
+    }, [user, loading, isPublicRoute, router, vertical.id, pathname]);
 
     // Routes with their own custom loading screen — skip the auth loader
     const hasOwnLoader = pathname === '/' || pathname === '/hub';

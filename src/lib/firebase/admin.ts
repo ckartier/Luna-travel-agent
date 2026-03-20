@@ -21,9 +21,7 @@ if (!admin.apps.length) {
                 pk = pk.replace(/\\n/g, '\n');
             }
             
-            console.log("DEBUG: Decoded pk head:", pk.substring(0, 30));
-            console.log("DEBUG: PROJECT_ID:", process.env.FIREBASE_PROJECT_ID);
-            console.log("DEBUG: CLIENT_EMAIL:", process.env.FIREBASE_CLIENT_EMAIL);
+
             // Local Development: Use explicit service account credentials
             try {
                 admin.initializeApp({
@@ -34,7 +32,7 @@ if (!admin.apps.length) {
                     }),
                     storageBucket,
                 });
-                console.log("DEBUG: initializeApp SUCCESSFUL");
+
             } catch (initErr) {
                 console.error("DEBUG: initializeApp FAILED:", initErr);
             }

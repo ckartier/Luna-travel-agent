@@ -10,7 +10,7 @@ import { UpgradeGate } from '@/src/components/UpgradeGate';
  * If the user doesn't have access, it shows the UpgradeGate instead.
  */
 export function CRMPageGuard({ children, featureKey }: { children: ReactNode; featureKey?: string }) {
-    const pathname = usePathname();
+    const pathname = usePathname() || '/';
     const { canAccessFeature, getUpgradeSuggestion, canAccessRoute } = useAccess();
 
     // Determine feature key from prop or route

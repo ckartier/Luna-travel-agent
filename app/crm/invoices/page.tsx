@@ -11,23 +11,28 @@ import {
 import SupplierPicker from '@/src/components/crm/SupplierPicker';
 import {
   CRMInvoice, getInvoices, createInvoice, updateInvoice,
-  getContacts, CRMContact, deleteInvoice, getSuppliers, CRMSupplier
+  getContacts, CRMContact, deleteInvoice, getSuppliers, CRMSupplier,
+  logSendNotification
 } from '@/src/lib/firebase/crm';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { useVertical } from '@/src/contexts/VerticalContext';
 import { T } from '@/src/components/T';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CRMSkeleton } from '@/app/components/CRMSkeleton';
 import ConfirmModal from '@/src/components/ConfirmModal';
 import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 import { generateInvoiceEmail } from '@/src/lib/email/templates';
 
 export default function InvoicesPage() {
   const { tenantId } = useAuth();
+  const { vertical } = useVertical();
+  const isLegal = vertical.id === 'legal';
   const searchParams = useSearchParams();
   const router = useRouter();
   const [invoiceType, setInvoiceType] = useState<'CLIENT' | 'SUPPLIER'>(
-    (searchParams.get('type') as 'CLIENT' | 'SUPPLIER') || 'CLIENT'
+    (searchParams?.get('type') as 'CLIENT' | 'SUPPLIER') || 'CLIENT'
   );
 
   const [invoices, setInvoices] = useState<CRMInvoice[]>([]);
@@ -51,20 +56,21 @@ export default function InvoicesPage() {
   const loadData = useCallback(async () => {
     if (!tenantId) return;
     setLoading(true);
+    const currentVertical = isLegal ? 'legal' : 'travel';
     try {
       const [inv, cts, sups] = await Promise.all([
         getInvoices(tenantId, invoiceType),
         getContacts(tenantId),
         getSuppliers(tenantId)
       ]);
-      setInvoices(inv);
+      setInvoices(inv.filter(i => (i.vertical || 'travel') === currentVertical));
       setContacts(cts);
       setSuppliers(sups);
     } catch (e) {
       console.error(e);
     }
     setLoading(false);
-  }, [tenantId, invoiceType]);
+  }, [tenantId, invoiceType, isLegal]);
 
   useEffect(() => {
     loadData();
@@ -101,6 +107,7 @@ export default function InvoicesPage() {
       amountPaid: 0,
       currency: 'EUR',
       status: 'DRAFT',
+      vertical: isLegal ? 'legal' : 'travel',
     });
 
     setShowModal(false);
@@ -156,7 +163,7 @@ export default function InvoicesPage() {
     let bizName = 'Votre Conciergerie';
     let bizLogo = '';
     try {
-      const cfgRes = await fetch('/api/crm/site-config');
+      const cfgRes = await fetchWithAuth('/api/crm/site-config');
       const cfgData = await cfgRes.json();
       if (cfgData?.business?.name) bizName = cfgData.business.name;
       else if (cfgData?.global?.siteName) bizName = cfgData.global.siteName;
@@ -185,7 +192,7 @@ export default function InvoicesPage() {
           totalAmount: inv.totalAmount,
           amountPaid: inv.amountPaid,
           dueDate: formatDate(inv.dueDate),
-          invoiceUrl: '#',
+          invoiceUrl: `/api/crm/invoice-pdf?id=${inv.id}`,
           items: inv.items.map(it => ({ description: it.description, total: it.total })),
           agencyName: bizName,
           logoUrl: bizLogo || undefined,
@@ -214,8 +221,28 @@ export default function InvoicesPage() {
           await updateInvoice(tenantId, inv.id!, { status: 'SENT' });
           setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, status: 'SENT' as const } : i));
         }
+        // Log successful send to Firebase
+        if (tenantId) logSendNotification(tenantId, {
+          type: 'INVOICE_SENT',
+          channel,
+          recipientName: recipientName,
+          recipientType: inv.type === 'SUPPLIER' ? 'SUPPLIER' : 'CLIENT',
+          referenceId: inv.id!,
+          referenceNumber: inv.invoiceNumber,
+          success: true,
+        });
       } else {
         setSendResult({ id: inv.id!, msg: `Erreur: ${data.error || 'échec'}`, ok: false });
+        if (tenantId) logSendNotification(tenantId, {
+          type: 'INVOICE_SENT',
+          channel,
+          recipientName: recipientName,
+          recipientType: inv.type === 'SUPPLIER' ? 'SUPPLIER' : 'CLIENT',
+          referenceId: inv.id!,
+          referenceNumber: inv.invoiceNumber,
+          success: false,
+          error: data.error || 'Send failed',
+        });
       }
     } catch (e: any) {
       setSendResult({ id: inv.id!, msg: `${e.message}`, ok: false });
@@ -226,9 +253,25 @@ export default function InvoicesPage() {
 
 
   // ── NOTIFY SUPPLIER WHEN PAID ──
+  // Only notify suppliers linked to the invoice (via trip bookings or direct supplier match)
   const notifySupplierPaid = async (inv: CRMInvoice) => {
-    for (const sup of suppliers) {
-      if (!sup.phone) continue;
+    // If the invoice has an explicit supplierId, notify only that supplier
+    // Otherwise, try to find related suppliers from the invoice items descriptions
+    const targetSuppliers = inv.supplierId
+      ? suppliers.filter(s => s.id === inv.supplierId && s.phone)
+      : suppliers.filter(s => {
+          if (!s.phone) return false;
+          // Match suppliers whose name appears in invoice item descriptions
+          return inv.items.some(it => 
+            it.description.toLowerCase().includes(s.name.toLowerCase())
+          );
+        });
+
+    // Fallback: if no match found and there's a tripId, notify suppliers
+    // that have the same category as the invoice items
+    const notifyList = targetSuppliers.length > 0 ? targetSuppliers : [];
+
+    for (const sup of notifyList) {
       try {
         await fetchWithAuth('/api/whatsapp/send', {
           method: 'POST',
@@ -240,6 +283,15 @@ export default function InvoicesPage() {
             clientId: sup.id,
             recipientType: 'SUPPLIER',
           })
+        });
+        if (tenantId) logSendNotification(tenantId, {
+          type: 'PAYMENT_NOTIFICATION',
+          channel: 'WHATSAPP',
+          recipientName: sup.name,
+          recipientType: 'SUPPLIER',
+          referenceId: inv.id!,
+          referenceNumber: inv.invoiceNumber,
+          success: true,
         });
       } catch { /* silent */ }
     }
@@ -284,11 +336,7 @@ export default function InvoicesPage() {
   const accentBg = invoiceType === 'CLIENT' ? 'bg-[#bcdeea]' : 'bg-[#F2D9D3]';
   const accentText = 'text-[#2E2E2E]';
 
-  if (loading && invoices.length === 0) return (
-    <div className="fixed top-0 left-0 right-0 h-[2px] z-[9999] overflow-hidden">
-      <div className="h-full bg-luna-charcoal w-full origin-left animate-loading-bar" />
-    </div>
-  );
+  if (loading && invoices.length === 0) return <CRMSkeleton variant="table" rows={6} />;
 
   return (
     <div className="w-full h-full">
@@ -471,79 +519,143 @@ export default function InvoicesPage() {
           </div>
         </main>
 
-        {/* ── MODAL: Invoice Detail ── */}
+        {/* ── MODAL: Invoice Detail — Luna Pro ── */}
         <AnimatePresence>
-          {showDetailModal && selectedInvoice && (
+          {showDetailModal && selectedInvoice && (() => {
+            const remaining = selectedInvoice.totalAmount - selectedInvoice.amountPaid;
+            const isPaid = selectedInvoice.status === 'PAID';
+            const progressPct = selectedInvoice.totalAmount > 0 ? Math.round((selectedInvoice.amountPaid / selectedInvoice.totalAmount) * 100) : 0;
+            return (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-luna-charcoal/60 backdrop-blur-xl" onClick={() => setShowDetailModal(false)} />
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#2E2E2E]/70 backdrop-blur-2xl" onClick={() => setShowDetailModal(false)} />
               <motion.div
-                initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                initial={{ opacity: 0, y: 50, scale: 0.92 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 40, scale: 0.95 }}
-                className="bg-white rounded-[24px] w-full max-w-xl relative z-10 shadow-[0_25px_80px_rgba(0,0,0,0.12)] overflow-hidden"
+                exit={{ opacity: 0, y: 50, scale: 0.92 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                className="bg-white rounded-[28px] w-full max-w-xl relative z-10 shadow-[0_30px_100px_rgba(0,0,0,0.18)] overflow-hidden"
               >
-                <div className="p-8 text-[#2E2E2E]" style={{ backgroundColor: accentColor }}>
+                {/* ─── HEADER ─── */}
+                <div className="relative p-8 pb-6 bg-[#2E2E2E] text-white overflow-hidden">
+                  <motion.div 
+                    initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} 
+                    transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                    className="absolute bottom-0 left-0 right-0 h-[3px] origin-left"
+                    style={{ background: `linear-gradient(90deg, ${accentColor}, transparent)` }}
+                  />
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-[10px] uppercase tracking-widest opacity-60 font-bold">{selectedInvoice.invoiceNumber}</p>
-                      <h2 className="text-2xl font-normal tracking-tight mt-1">{selectedInvoice.clientName || selectedInvoice.supplierName}</h2>
-                      <p className="opacity-60 text-xs mt-2">{formatDate(selectedInvoice.issueDate)} · Échéance {formatDate(selectedInvoice.dueDate)}</p>
+                      <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                        className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-medium">
+                        {selectedInvoice.invoiceNumber}
+                      </motion.p>
+                      <motion.h2 initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                        className="text-2xl font-light tracking-tight mt-1.5">
+                        {selectedInvoice.clientName || selectedInvoice.supplierName}
+                      </motion.h2>
+                      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
+                        className="text-white/40 text-xs mt-2 flex items-center gap-2">
+                        <Calendar size={12} /> {formatDate(selectedInvoice.issueDate)} · Éch. {formatDate(selectedInvoice.dueDate)}
+                      </motion.p>
                     </div>
-                    <button onClick={() => setShowDetailModal(false)} className="p-2 hover:bg-black/5 rounded-full"><X size={20} /></button>
+                    <motion.button whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}
+                      onClick={() => setShowDetailModal(false)} className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors">
+                      <X size={18} />
+                    </motion.button>
                   </div>
-                  <div className="mt-8 flex gap-8">
-                    <div>
-                      <p className="text-[10px] opacity-40 uppercase tracking-widest font-bold">Total</p>
-                      <p className="text-3xl font-normal">{selectedInvoice.totalAmount.toLocaleString('fr-FR')} €</p>
+
+                  <div className="mt-6 grid grid-cols-3 gap-3">
+                    {[
+                      { label: 'Total', value: selectedInvoice.totalAmount, emphasis: false },
+                      { label: 'Payé', value: selectedInvoice.amountPaid, emphasis: false },
+                      { label: 'Reste', value: remaining, emphasis: true },
+                    ].map((item, i) => (
+                      <motion.div key={item.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.05 }}
+                        className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/5">
+                        <p className="text-[9px] uppercase tracking-[0.15em] text-white/30 font-medium">{item.label}</p>
+                        <p className={`text-xl tracking-tight mt-1 ${item.emphasis ? 'font-medium text-white' : 'font-light text-white/80'}`}>
+                          {item.value.toLocaleString('fr-FR')} €
+                        </p>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4">
+                    <div className="flex justify-between text-[9px] text-white/30 font-medium">
+                      <span>Progression paiement</span>
+                      <span>{progressPct}%</span>
                     </div>
-                    <div>
-                      <p className="text-[10px] opacity-40 uppercase tracking-widest font-bold">Payé</p>
-                      <p className="text-3xl font-normal">{selectedInvoice.amountPaid.toLocaleString('fr-FR')} €</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] opacity-40 uppercase tracking-widest font-bold">Reste</p>
-                      <p className="text-3xl font-bold">{(selectedInvoice.totalAmount - selectedInvoice.amountPaid).toLocaleString('fr-FR')} €</p>
+                    <div className="mt-1.5 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <motion.div initial={{ width: 0 }} animate={{ width: `${progressPct}%` }}
+                        transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: isPaid ? '#6BAF8D' : accentColor }} />
                     </div>
                   </div>
                 </div>
 
-                <div className="p-8 space-y-4">
-                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Détails de la prestation</h4>
-                  {selectedInvoice.items.map((it, i) => (
-                    <div key={i} className="flex justify-between items-center p-4 bg-gray-50 rounded-2xl">
-                      <div>
-                        <p className="text-sm font-medium text-luna-charcoal">{it.description}</p>
-                        <p className="text-xs text-gray-400">{it.quantity} x {it.unitPrice.toLocaleString('fr-FR')} € · TVA {it.taxRate}%</p>
-                      </div>
-                      <p className="text-lg font-bold text-luna-charcoal">{it.total.toLocaleString('fr-FR')} €</p>
+                {/* ─── BODY ─── */}
+                <div className="p-8 pt-6 space-y-5">
+                  <div>
+                    <h4 className="text-[10px] font-medium text-[#9CA3AF] uppercase tracking-[0.15em] mb-3">Détails de la prestation</h4>
+                    <div className="space-y-2">
+                      {selectedInvoice.items.map((it, i) => (
+                        <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.05 }}
+                          className="flex justify-between items-center p-4 bg-[#FAFAF8] rounded-2xl border border-[#E5E7EB]/50 hover:border-[#E5E7EB] transition-colors">
+                          <div>
+                            <p className="text-sm font-medium text-[#2E2E2E]">{it.description}</p>
+                            <p className="text-xs text-[#9CA3AF] mt-0.5">{it.quantity} × {it.unitPrice.toLocaleString('fr-FR')} € · TVA {it.taxRate}%</p>
+                          </div>
+                          <p className="text-base font-medium text-[#2E2E2E] tabular-nums">{it.total.toLocaleString('fr-FR')} €</p>
+                        </motion.div>
+                      ))}
                     </div>
-                  ))}
-
-                  <div className="pt-4 grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => { handleSendToClient(selectedInvoice, 'WHATSAPP'); }}
-                      className={`${accentBg} ${accentText} py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-all flex items-center justify-center gap-2`}
-                    >
-                      <MessageCircle size={16} /> WhatsApp
-                    </button>
-                    <button
-                      onClick={() => { handleSendToClient(selectedInvoice, 'EMAIL'); }}
-                      className="py-4 bg-[#2E2E2E] text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2"
-                    >
-                      <Mail size={16} /> Email
-                    </button>
                   </div>
 
-                  <button
-                    onClick={() => { handleStatusChange(selectedInvoice.id!, 'PAID'); setShowDetailModal(false); }}
-                    className={`${accentBg} ${accentText} w-full py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2`}
-                  >
-                    <CheckCircle2 size={16} /> {selectedInvoice.type === 'CLIENT' ? 'Marquer Payée (+ notifier prestataire)' : 'Marquer comme Payée'}
-                  </button>
+                  <div className="grid grid-cols-2 gap-3">
+                    <motion.button whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.98 }}
+                      onClick={() => handleSendToClient(selectedInvoice, 'WHATSAPP')}
+                      disabled={sendingId === selectedInvoice.id}
+                      className="py-4 rounded-2xl text-[10px] font-medium uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2.5 disabled:opacity-50 bg-[#FAFAF8] border border-[#E5E7EB] text-[#2E2E2E] hover:border-[#bcdeea] hover:bg-[#bcdeea]/10">
+                      {sendingId === selectedInvoice.id ? <Loader2 size={15} className="animate-spin" /> : <MessageCircle size={15} />}
+                      WhatsApp
+                    </motion.button>
+                    <motion.button whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.98 }}
+                      onClick={() => handleSendToClient(selectedInvoice, 'EMAIL')}
+                      disabled={sendingId === selectedInvoice.id}
+                      className="py-4 rounded-2xl text-[10px] font-medium uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2.5 disabled:opacity-50 bg-[#2E2E2E] text-white hover:bg-[#1a1a1a]">
+                      <Mail size={15} /> Email
+                    </motion.button>
+                  </div>
+
+                  <AnimatePresence>
+                    {sendResult && sendResult.id === selectedInvoice.id && (
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                        className={`flex items-center gap-2 px-4 py-3 rounded-xl text-xs font-medium ${sendResult.ok ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'}`}>
+                        {sendResult.ok ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                        {sendResult.msg}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {!isPaid && (
+                    <motion.button whileHover={{ scale: 1.01, y: -1 }} whileTap={{ scale: 0.98 }}
+                      onClick={() => { handleStatusChange(selectedInvoice.id!, 'PAID'); setShowDetailModal(false); }}
+                      className="w-full py-4 rounded-2xl text-[10px] font-medium uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2.5 bg-emerald-500 text-white hover:bg-emerald-600 shadow-[0_4px_16px_rgba(16,185,129,0.2)]">
+                      <CheckCircle2 size={16} />
+                      {selectedInvoice.type === 'CLIENT' ? 'Marquer Payée (+ notifier prestataire)' : 'Marquer comme Payée'}
+                    </motion.button>
+                  )}
+                  {isPaid && (
+                    <div className="flex items-center justify-center gap-2 py-3 text-emerald-500 text-xs font-medium">
+                      <CheckCircle2 size={16} /> Facture réglée
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </div>
-          )}
+            );
+          })()}
         </AnimatePresence>
 
         {/* ── MODAL: Create Invoice ── */}
@@ -623,6 +735,14 @@ export default function InvoicesPage() {
             </div>
           )}
         </AnimatePresence>
+
+        <ConfirmModal
+          open={!!deleteTarget}
+          title="Supprimer cette facture ?"
+          message="La facture sera supprimée définitivement."
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       </div>
     </div>
   );

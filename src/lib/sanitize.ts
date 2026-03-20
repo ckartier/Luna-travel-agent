@@ -8,7 +8,7 @@ import DOMPurify from 'dompurify';
  * Allows styling elements (for GrapesJS / editor output) but strips scripts.
  */
 export function sanitizeHtml(dirty: string): string {
-    if (typeof window === 'undefined') return dirty; // SSR fallback
+    if (typeof window === 'undefined') return ''; // SSR: strip all HTML to prevent XSS (DOMPurify requires DOM)
     return DOMPurify.sanitize(dirty, {
         USE_PROFILES: { html: true, svg: true },
         ADD_TAGS: ['style'],               // Allow <style> for GrapesJS CSS

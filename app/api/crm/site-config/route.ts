@@ -127,6 +127,14 @@ const DEFAULT_SITE_CONFIG = {
             subtitle: "Décrivez-nous votre rêve. Nos experts transformeront votre vision en un voyage d'exception, organisé dans les moindres détails.",
         },
     ],
+    dividers: {
+        divider1: { title: "L'Art de Recevoir.", image: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?q=80&w=2000' },
+        divider2: { title: "L'Excellence à la Française.", image: '/images/Conciergerie/paris-eiffel-sunset.png' },
+    },
+    footer: {
+        copyright: '© 2026 Luna Conciergerie',
+        description: '',
+    },
 };
 
 // ── GET: Read site config ──
@@ -157,6 +165,7 @@ export async function GET() {
             global: { ...DEFAULT_SITE_CONFIG.global, ...(data.global || {}) },
             nav: { ...DEFAULT_SITE_CONFIG.nav, ...(data.nav || {}) },
             business: { ...DEFAULT_SITE_CONFIG.business, ...(data.business || {}) },
+            dividers: { ...DEFAULT_SITE_CONFIG.dividers, ...(data.dividers || {}) },
         };
         return NextResponse.json(merged);
     } catch (error: any) {
@@ -182,7 +191,7 @@ export async function PUT(request: Request) {
         await adminDb.collection('tenants').doc(tenantId).collection('site_config').doc('main').set({
             ...body,
             updatedAt: FieldValue.serverTimestamp(),
-        });
+        }, { merge: true });
 
         return NextResponse.json({ success: true });
     } catch (error: any) {

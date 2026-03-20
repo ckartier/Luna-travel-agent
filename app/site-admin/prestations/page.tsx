@@ -58,9 +58,15 @@ export default function AdminPrestationsPage() {
             const fd = new FormData();
             fd.append('file', file);
             try {
-                const res = await fetchWithAuth('/api/crm/upload', { method: 'POST', body: fd });
-                if (res.ok) { const { url } = await res.json(); setPhotoURLs(prev => [...prev, url]); }
-            } catch {
+                const res = await fetchWithAuth('/api/crm/upload', {
+                    method: 'POST',
+                    body: fd,
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Erreur upload');
+                setPhotoURLs(prev => [...prev, data.url]);
+            } catch (err) {
+                console.error('Upload error:', err);
                 const reader = new FileReader();
                 reader.onload = (ev) => { if (ev.target?.result) setPhotoURLs(prev => [...prev, ev.target!.result as string]); };
                 reader.readAsDataURL(file);
@@ -79,20 +85,19 @@ export default function AdminPrestationsPage() {
         }
 
         setUploadingVideo(true);
-        const fd = new FormData();
-        fd.append('file', file);
-
         try {
+            const fd = new FormData();
+            fd.append('file', file);
             const res = await fetchWithAuth('/api/crm/upload', {
                 method: 'POST',
-                body: fd
+                body: fd,
             });
-            if (!res.ok) throw new Error('Upload failed');
-            const { url } = await res.json();
-            setFormData(prev => ({ ...prev, video: url }));
-        } catch (error) {
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Erreur upload');
+            setFormData(prev => ({ ...prev, video: data.url }));
+        } catch (error: any) {
             console.error('Erreur upload vidéo:', error);
-            alert('Erreur lors du téléchargement de la vidéo');
+            alert(`Erreur upload: ${error?.message || 'Erreur inconnue'}`);
         } finally {
             setUploadingVideo(false);
             if (videoRef.current) videoRef.current.value = '';

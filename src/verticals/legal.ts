@@ -38,6 +38,7 @@ export const legalVertical: VerticalConfig = {
             links: [
                 { name: { fr: 'Dashboard', en: 'Dashboard', es: 'Panel' }, href: '/crm', icon: 'LayoutDashboard', featureKey: 'dashboard' },
                 { name: { fr: 'Boîte de Réception', en: 'Inbox', es: 'Bandeja de entrada' }, href: '/crm/mails', icon: 'Mail', featureKey: 'mails' },
+                { name: { fr: 'Templates Courrier', en: 'Email Templates', es: 'Plantillas de Correo' }, href: '/crm/mails/templates', icon: 'FileText', featureKey: 'mails' },
                 { name: { fr: 'Pipeline', en: 'Pipeline', es: 'Pipeline' }, href: '/crm/pipeline', icon: 'Trello', featureKey: 'pipeline' },
                 { name: { fr: 'Agenda', en: 'Agenda', es: 'Agenda' }, href: '/crm/planning', icon: 'Calendar', featureKey: 'planning' },
                 { name: { fr: 'Clients', en: 'Clients', es: 'Clientes' }, href: '/crm/contacts', icon: 'Users', featureKey: 'contacts' },
@@ -48,7 +49,8 @@ export const legalVertical: VerticalConfig = {
             collapsible: true,
             links: [
                 { name: { fr: 'Dossiers', en: 'Cases', es: 'Expedientes' }, href: '/crm/dossiers', icon: 'Briefcase', featureKey: 'bookings' },
-                { name: { fr: 'Collaborateurs', en: 'Associates', es: 'Asociados' }, href: '/crm/suppliers', icon: 'Scale', featureKey: 'suppliers' },
+                { name: { fr: 'Jurisprudence', en: 'Case Law', es: 'Jurisprudencia' }, href: '/crm/jurisprudence', icon: 'ScrollText', featureKey: 'website-editor' },
+                { name: { fr: 'Documents', en: 'Documents', es: 'Documentos' }, href: '/crm/documents', icon: 'FileText', featureKey: 'documents' },
             ],
         },
         {
@@ -64,11 +66,12 @@ export const legalVertical: VerticalConfig = {
             label: { fr: 'Gestion', en: 'Management', es: 'Gestión' },
             collapsible: true,
             links: [
-                { name: { fr: 'Base Documentaire', en: 'Document Library', es: 'Base Documental' }, href: '/crm/catalog', icon: 'BookOpen', featureKey: 'catalog' },
+                { name: { fr: 'Collaborateurs', en: 'Associates', es: 'Asociados' }, href: '/crm/suppliers', icon: 'Scale', featureKey: 'suppliers' },
+                { name: { fr: 'Banque', en: 'Banking', es: 'Banco' }, href: '/crm/banking', icon: 'Landmark', featureKey: 'payments' },
                 { name: { fr: 'Site Builder & Modèles', en: 'Site Builder & Templates', es: 'Constructor & Modelos' }, href: '/crm/site-builder', icon: 'Layout', featureKey: 'website-editor' },
-                { name: { fr: 'Jurisprudence', en: 'Case Law', es: 'Jurisprudencia' }, href: '/crm/jurisprudence', icon: 'ScrollText', featureKey: 'website-editor' },
                 { name: { fr: 'Équipe', en: 'Team', es: 'Equipo' }, href: '/crm/team', icon: 'UsersRound', featureKey: 'team' },
                 { name: { fr: 'Analytics', en: 'Analytics', es: 'Analítica' }, href: '/crm/analytics', icon: 'BarChart3', featureKey: 'analytics' },
+                { name: { fr: 'Intégrations', en: 'Integrations', es: 'Integraciones' }, href: '/crm/integrations', icon: 'Plug', featureKey: 'integrations' },
                 { name: { fr: 'Installation', en: 'Setup', es: 'Instalación' }, href: '/crm/setup', icon: 'Wrench' },
             ],
         },

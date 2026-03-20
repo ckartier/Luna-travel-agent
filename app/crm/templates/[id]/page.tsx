@@ -6,13 +6,14 @@ import {
     ArrowLeft, Save, Check, Loader2, Eye, RefreshCw, Wand2,
     ImagePlus, AlertCircle, ChevronDown, FileText, Paintbrush,
     LayoutGrid, ExternalLink, Palette, Sparkles, Upload, X, Image as ImageIcon, Crop, Download,
-    Navigation, Type, Bold, Italic, Bot
+    Navigation, Type, Bold, Italic, Bot, Plus, Trash2, Code
 } from 'lucide-react';
 import Link from 'next/link';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
 import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 import { invalidateSiteConfigCache } from '@/src/hooks/useSiteConfig';
+import { T } from '@/src/components/T';
 // ═══ Constants ═══
 
 const FONT_OPTIONS = [
@@ -52,6 +53,14 @@ const EFFECT_OPTIONS = [
     { id: 'glassmorphism', label: 'Glassmorphism' },
     { id: 'shadow-hover', label: 'Shadow Hover' },
     { id: 'glow', label: 'Glow' },
+    { id: 'gradient-shimmer', label: '✨ Gradient Shimmer' },
+    { id: 'neon-border', label: '💡 Neon Border' },
+    { id: 'float', label: '🎈 Float' },
+    { id: 'blur-reveal', label: '🌫 Blur Reveal' },
+    { id: 'grain', label: '📷 Film Grain' },
+    { id: 'morph-border', label: '🔮 Morph Border' },
+    { id: 'spotlight', label: '🔦 Spotlight' },
+    { id: 'text-gradient', label: '🌈 Text Gradient' },
 ];
 
 const HEADING_SIZE_OPTIONS = [
@@ -87,6 +96,8 @@ const BLOCK_META: Record<string, { label: string; desc: string }> = {
     history: { label: 'Notre Histoire', desc: 'Section à propos avec image' },
 };
 
+const DEFAULT_SECTION_ORDER = ['hero', 'collections', 'divider1', 'catalog', 'divider2', 'form', 'history'];
+
 const TEMPLATE_NAMES: Record<string, string> = {
     elegance: 'Élégance', moderne: 'Moderne', immersif: 'Immersif', prestige: 'Prestige',
 };
@@ -102,23 +113,23 @@ export default function TemplateEditorPage() {
     useEffect(() => {
         const handler = (e: MessageEvent) => {
             if (e.data?.type === 'editor-focus-section' && e.data.section) {
-                const sectionMap: Record<string, string> = {
+                const section = e.data.section as string;
+                // Support built-in sections AND custom_* blocks
+                const builtIn: Record<string, string> = {
                     hero: 'hero', collections: 'collections', divider1: 'divider1',
                     catalog: 'catalog', divider2: 'divider2', form: 'form',
-                    history: 'history'
+                    history: 'history', nav: 'nav', footer: 'footer'
                 };
-                const sectionId = sectionMap[e.data.section];
+                const sectionId = builtIn[section] || (section.startsWith('custom_') ? section : null);
                 if (sectionId) {
                     setTab('contenu');
                     setTimeout(() => {
                         const el = document.getElementById(`editor-section-${sectionId}`);
                         if (el) {
                             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            // Open section if collapsed
                             const btn = el.querySelector('button');
                             const content = el.querySelector('[data-section-content]');
                             if (btn && !content) btn.click();
-                            // Highlight
                             setHighlightedSection(sectionId);
                             setTimeout(() => setHighlightedSection(null), 2000);
                         }
@@ -134,8 +145,37 @@ export default function TemplateEditorPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
+    const [pendingAutoSave, setPendingAutoSave] = useState(false);
     const [tab, setTab] = useState<Tab>('contenu');
     const [previewKey, setPreviewKey] = useState(0);
+
+    const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
+    const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null);
+
+    // Build the current sectionOrder: stored order + any new custom blocks appended
+    const getSectionOrder = (): string[] => {
+        const stored = config?.sectionOrder || DEFAULT_SECTION_ORDER;
+        const customIds = (config?.blocks || []).filter((b: any) => b.id?.startsWith('custom_')).map((b: any) => b.id);
+        // Ensure all custom blocks appear (append missing ones)
+        const allIds = [...stored];
+        customIds.forEach((cid: string) => { if (!allIds.includes(cid)) allIds.push(cid); });
+        // Remove IDs that no longer exist (deleted custom blocks)
+        return allIds.filter((id: string) => DEFAULT_SECTION_ORDER.includes(id) || customIds.includes(id));
+    };
+    const sectionOrder = config ? getSectionOrder() : DEFAULT_SECTION_ORDER;
+
+    const handleSectionDrop = (dropId: string) => {
+        if (!draggedSectionId || draggedSectionId === dropId) return;
+        const order = [...sectionOrder];
+        const dragIdx = order.indexOf(draggedSectionId);
+        const dropIdx = order.indexOf(dropId);
+        if (dragIdx === -1 || dropIdx === -1) return;
+        order.splice(dragIdx, 1);
+        order.splice(dropIdx, 0, draggedSectionId);
+        setConfig((prev: any) => ({ ...prev, sectionOrder: order }));
+        setDraggedSectionId(null);
+        setDragOverSectionId(null);
+    };
 
     // AI
     const [aiPrompt, setAiPrompt] = useState('');
@@ -146,11 +186,33 @@ export default function TemplateEditorPage() {
 
     useEffect(() => {
         setLoading(true);
-        fetch('/api/crm/site-config')
+        fetchWithAuth('/api/crm/site-config')
             .then(r => r.json())
             .then(data => { setConfig(data); setLoadedConfig(JSON.parse(JSON.stringify(data))); setLoading(false); setPreviewKey(k => k + 1); })
             .catch(() => setLoading(false));
-    }, [id]);
+    }, []);
+
+    // When switching template tabs, DON'T remount iframe — just send new config via postMessage
+    // This avoids the race condition where API fetch overwrites the editor's template override
+    const prevIdRef = useRef(id);
+    useEffect(() => {
+        if (prevIdRef.current !== id) {
+            prevIdRef.current = id;
+            // Send updated config to existing iframe (no reload needed)
+            const iframe = document.querySelector('iframe');
+            if (iframe && (iframe as HTMLIFrameElement).contentWindow && config) {
+                const payload = { ...config, template: id };
+                (iframe as HTMLIFrameElement).contentWindow!.postMessage({ type: 'editor-update-config', config: payload }, '*');
+                // Retry after 500ms in case iframe is still processing
+                setTimeout(() => {
+                    const iframe2 = document.querySelector('iframe');
+                    if (iframe2 && (iframe2 as HTMLIFrameElement).contentWindow && config) {
+                        (iframe2 as HTMLIFrameElement).contentWindow!.postMessage({ type: 'editor-update-config', config: payload }, '*');
+                    }
+                }, 500);
+            }
+        }
+    }, [id, config]);
 
     // Dirty state: true if user changed anything since last load/save
     const isDirty = config && loadedConfig && JSON.stringify(config) !== JSON.stringify(loadedConfig);
@@ -161,9 +223,38 @@ export default function TemplateEditorPage() {
         setConfig((p: any) => ({ ...p, global: { ...p.global, [key]: val } }));
     };
     const updateBlock = (type: string, key: string, val: any) => {
+        setConfig((p: any) => {
+            const exists = (p.blocks || []).some((b: any) => b.type === type);
+            if (!exists) {
+                return { ...p, blocks: [...(p.blocks || []), { id: type, type, [key]: val }] };
+            }
+            return {
+                ...p,
+                blocks: (p.blocks || []).map((b: any) => b.type === type ? { ...b, [key]: val } : b),
+            };
+        });
+    };
+    const addCustomBlock = (layoutType: string = 'image-right', defaultTitle: string = 'Nouveau Bloc', cols: string = '1') => {
+        const id = `custom_${Date.now()}`;
         setConfig((p: any) => ({
             ...p,
-            blocks: (p.blocks || []).map((b: any) => b.type === type ? { ...b, [key]: val } : b),
+            blocks: [...(p.blocks || []), {
+                id, type: id, order: (p.blocks || []).length,
+                visible: true, title: defaultTitle, subtitle: '', text: '',
+                image: '', images: [] as string[], buttonText: '', buttonUrl: '',
+                button2Text: '', button2Url: '',
+                layout: layoutType, textAlign: 'left', columns: cols, htmlCode: '',
+                headingColor: '', bgColor: '', textColor: '',
+                buttonColor: '', buttonStyle: 'solid',
+                overlayOpacity: '50', sectionHeight: 'auto',
+                effect: '', animation: '', animationSpeed: 'normal',
+            }],
+        }));
+    };
+    const removeCustomBlock = (blockId: string) => {
+        setConfig((p: any) => ({
+            ...p,
+            blocks: (p.blocks || []).filter((b: any) => b.id !== blockId),
         }));
     };
     const updateBusiness = (key: string, val: string) => {
@@ -172,7 +263,7 @@ export default function TemplateEditorPage() {
     const updateDivider = (divId: string, key: string, val: string) => {
         setConfig((p: any) => ({ ...p, dividers: { ...p.dividers, [divId]: { ...(p.dividers?.[divId] || {}), [key]: val } } }));
     };
-    const updateFooter = (key: string, val: string) => {
+    const updateFooter = (key: string, val: any) => {
         setConfig((p: any) => ({ ...p, footer: { ...p.footer, [key]: val } }));
     };
     const updateNav = (key: string, val: any) => {
@@ -191,6 +282,9 @@ export default function TemplateEditorPage() {
         setSaving(true);
         try {
             const payload = { ...config, template: id };
+            const heroBlock = (payload.blocks || []).find((b: any) => b.type === 'hero');
+            console.log('[SAVE] Hero block videoUrl:', heroBlock?.videoUrl, '| global.heroVideoUrl:', payload.global?.heroVideoUrl);
+            console.log('[SAVE] Full blocks count:', (payload.blocks || []).length);
             await fetchWithAuth('/api/crm/site-config', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -204,6 +298,14 @@ export default function TemplateEditorPage() {
         } catch (e) { console.error(e); }
         setSaving(false);
     };
+
+    // Auto-save when triggered (e.g. after video upload)
+    useEffect(() => {
+        if (pendingAutoSave && config && !saving) {
+            setPendingAutoSave(false);
+            handleSave();
+        }
+    }, [pendingAutoSave, config]);
 
     // AI Generate
     const handleAiGenerate = async () => {
@@ -226,10 +328,14 @@ export default function TemplateEditorPage() {
     // Send config to iframe for real-time preview
     useEffect(() => {
         const iframe = document.querySelector('iframe');
+        console.log('[EDITOR] postMessage attempt:', { hasIframe: !!iframe, hasContentWindow: !!iframe?.contentWindow, hasConfig: !!config, collectionsColor: config?.global?.collectionsHeadingColor });
         if (iframe && iframe.contentWindow && config) {
-            iframe.contentWindow.postMessage({ type: 'editor-update-config', config }, '*');
+            // Always override template with current editor tab so preview reflects selected template
+            const payload = { ...config, template: id };
+            iframe.contentWindow.postMessage({ type: 'editor-update-config', config: payload }, '*');
+            console.log('[EDITOR] postMessage SENT with template:', id, 'config.global:', JSON.stringify(config.global).substring(0, 200));
         }
-    }, [config]);
+    }, [config, id]);
 
     // Apply AI image to target
     const applyAiImage = () => {
@@ -245,6 +351,151 @@ export default function TemplateEditorPage() {
         }
         setAiImageUrl(null);
         setAiPrompt('');
+    };
+
+    const renderSharedBlockOptions = (blockType: string, isCustom: boolean) => {
+        const block = config.blocks?.find((b: any) => b.type === blockType) || { type: blockType };
+        const layoutOptions = isCustom ? ['image-right', 'image-left', 'image-top', 'image-bg', 'text-only', 'gallery', 'slider', 'columns', 'html'] : ['default', 'image-right', 'image-left', 'image-top', 'image-bg', 'text-only', 'gallery', 'slider', 'columns', 'html'];
+        const layoutLabels = isCustom ? ['Image à droite', 'Image à gauche', 'Image au-dessus', 'Image en fond', 'Texte seul', 'Galerie grille', 'Slider défilant', 'Cartes en colonnes', 'Widget externe (HTML)'] : ['Composant Standard (Défaut)', 'Image à droite', 'Image à gauche', 'Image au-dessus', 'Image en fond', 'Texte seul', 'Galerie grille', 'Slider défilant', 'Cartes en colonnes', 'Widget externe (HTML)'];
+
+        return (
+            <>
+                {/* ── Contenu ── */}
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-300 mt-1 mb-2">Contenu</p>
+                <Field label="Titre" value={block.title || ''} onChange={v => updateBlock(blockType, 'title', v)} />
+                <Field label="Sous-titre" value={block.subtitle || ''} onChange={v => updateBlock(blockType, 'subtitle', v)} />
+                <FieldArea label="Texte" value={block.text || ''} onChange={v => updateBlock(blockType, 'text', v)} />
+                <ImageField label="Image principale" value={block.image || ''} onChange={v => updateBlock(blockType, 'image', v)} />
+                <p className="text-[9px] font-bold uppercase tracking-wider text-gray-300 mt-3 mb-1">Galerie / Slider (max 6)</p>
+                {(block.images || []).map((img: string, idx: number) => (
+                    <div key={idx} className="flex items-center gap-2 mb-1">
+                        <ImageField label={`Image ${idx + 2}`} value={img} onChange={v => {
+                            const newImgs = [...(block.images || [])];
+                            newImgs[idx] = v;
+                            updateBlock(blockType, 'images', newImgs as any);
+                        }} />
+                        <button onClick={() => {
+                            const newImgs = [...(block.images || [])].filter((_: any, i: number) => i !== idx);
+                            updateBlock(blockType, 'images', newImgs as any);
+                        }} className="shrink-0 w-6 h-6 rounded bg-red-50 text-red-400 hover:bg-red-100 flex items-center justify-center text-xs">✕</button>
+                    </div>
+                ))}
+                {(block.images || []).length < 6 && (
+                    <button onClick={() => {
+                        const newImgs = [...(block.images || []), ''];
+                        updateBlock(blockType, 'images', newImgs as any);
+                        // Auto-switch to gallery layout if not already gallery or slider
+                        if (block.layout !== 'gallery' && block.layout !== 'slider') {
+                            updateBlock(blockType, 'layout', 'gallery');
+                        }
+                    }} className="text-[10px] font-semibold text-[#5a8fa3] hover:text-[#4a7f93] transition-colors">+ Ajouter une image à la galerie</button>
+                )}
+
+                {/* ── Boutons ── */}
+                <div className="my-2 border-t border-gray-100" />
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-300 mb-2">Boutons</p>
+                <div className="grid grid-cols-2 gap-2">
+                    <Field label="Bouton 1 — Texte" value={block.buttonText || ''} onChange={v => updateBlock(blockType, 'buttonText', v)} placeholder="Découvrir →" />
+                    <Field label="Bouton 1 — Lien" value={block.buttonUrl || ''} onChange={v => updateBlock(blockType, 'buttonUrl', v)} placeholder="https://..." />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                    <Field label="Bouton 2 — Texte" value={block.button2Text || ''} onChange={v => updateBlock(blockType, 'button2Text', v)} placeholder="En savoir plus" />
+                    <Field label="Bouton 2 — Lien" value={block.button2Url || ''} onChange={v => updateBlock(blockType, 'button2Url', v)} placeholder="https://..." />
+                </div>
+                <SelectField label="Style boutons" value={block.buttonStyle || 'solid'} options={['solid', 'outline', 'ghost']} optionLabels={['Plein', 'Contour', 'Transparent']} onChange={v => updateBlock(blockType, 'buttonStyle', v)} />
+
+                {/* ── Layout & Style ── */}
+                <div className="my-2 border-t border-gray-100" />
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-300 mb-2">Couleurs</p>
+                <div className="grid grid-cols-2 gap-2">
+                    <ColorField label="Texte" value={block.textColor || ''} onChange={v => updateBlock(blockType, 'textColor', v)} />
+                    <ColorField label="Titre" value={block.headingColor || ''} onChange={v => updateBlock(blockType, 'headingColor', v)} />
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                    <ColorField label="Fond" value={block.bgColor || ''} onChange={v => updateBlock(blockType, 'bgColor', v)} />
+                    {block.buttonText && <ColorField label="Bouton" value={block.buttonColor || ''} onChange={v => updateBlock(blockType, 'buttonColor', v)} />}
+                </div>
+
+                <div className="my-2 border-t border-gray-100" />
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-300 mb-2">Mise en page</p>
+                <SelectField label="Layout" value={block.layout || (isCustom ? 'image-right' : 'default')} options={layoutOptions} optionLabels={layoutLabels} onChange={v => updateBlock(blockType, 'layout', v)} />
+                <SelectField label="Colonnes" value={block.columns || '1'} options={['1', '2', '3', '4']} optionLabels={['1 colonne', '2 colonnes', '3 colonnes', '4 colonnes']} onChange={v => {
+                    updateBlock(blockType, 'columns', v);
+                    // Auto-switch to columns layout when user picks >1
+                    const count = parseInt(v);
+                    if (count > 1 && block.layout !== 'columns') {
+                        updateBlock(blockType, 'layout', 'columns');
+                    }
+                    // Auto-create column items if needed
+                    const items = block.columnItems || [];
+                    if (items.length < count) {
+                        const newItems = [...items];
+                        while (newItems.length < count) {
+                            newItems.push({ title: `Colonne ${newItems.length + 1}`, text: '', image: '', buttonText: '', buttonUrl: '' });
+                        }
+                        updateBlock(blockType, 'columnItems', newItems as any);
+                    }
+                }} />
+                {/* Column card editors — only visible when layout is columns */}
+                {(block.layout === 'columns') && parseInt(block.columns || '1') > 1 && (block.columnItems || []).map((col: any, idx: number) => (
+                    <div key={idx} className="p-3 mt-2 bg-[#f8fafc] rounded-lg border border-gray-100 space-y-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#5a8fa3]">Colonne {idx + 1}</p>
+                        <Field label="Titre" value={col.title || ''} onChange={v => {
+                            const items = [...(block.columnItems || [])]; items[idx] = { ...items[idx], title: v };
+                            updateBlock(blockType, 'columnItems', items as any);
+                        }} />
+                        <FieldArea label="Texte" value={col.text || ''} onChange={v => {
+                            const items = [...(block.columnItems || [])]; items[idx] = { ...items[idx], text: v };
+                            updateBlock(blockType, 'columnItems', items as any);
+                        }} />
+                        <ImageField label="Image" value={col.image || ''} onChange={v => {
+                            const items = [...(block.columnItems || [])]; items[idx] = { ...items[idx], image: v };
+                            updateBlock(blockType, 'columnItems', items as any);
+                        }} />
+                        <div className="grid grid-cols-2 gap-1">
+                            <Field label="Bouton texte" value={col.buttonText || ''} onChange={v => {
+                                const items = [...(block.columnItems || [])]; items[idx] = { ...items[idx], buttonText: v };
+                                updateBlock(blockType, 'columnItems', items as any);
+                            }} placeholder="CTA →" />
+                            <Field label="Bouton lien" value={col.buttonUrl || ''} onChange={v => {
+                                const items = [...(block.columnItems || [])]; items[idx] = { ...items[idx], buttonUrl: v };
+                                updateBlock(blockType, 'columnItems', items as any);
+                            }} placeholder="https://..." />
+                        </div>
+                    </div>
+                ))}
+                
+                {block.layout === 'html' && (
+                    <div className="mt-4 p-3 bg-gray-50 border border-gray-100 rounded-lg">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#5a8fa3] mb-2 flex items-center gap-1.5"><Code size={13} /> Code HTML, Iframe ou Widget</p>
+                        <textarea value={block.htmlCode || ''} onChange={e => updateBlock(blockType, 'htmlCode', e.target.value)} className="w-full h-48 p-3 text-[11px] font-mono bg-[#1E1E1E] text-[#D4D4D4] rounded-lg border-0 outline-none focus:ring-2 focus:ring-[#5a8fa3] resize-y" placeholder={`<iframe src="..."></iframe>\n\n<!-- Ou code JS de votre widget -->`} spellCheck={false} />
+                        <p className="text-[10px] text-gray-400 mt-2">Collez ici le code de votre widget (Tripadvisor, formulaire externe, iframe, etc.). Le code sera injecté tel quel sur le site.</p>
+                    </div>
+                )}
+                <SelectField label="Alignement texte" value={block.textAlign || 'left'} options={['left', 'center', 'right']} optionLabels={['Gauche', 'Centré', 'Droite']} onChange={v => updateBlock(blockType, 'textAlign', v)} />
+                <SelectField label="Hauteur section" value={block.sectionHeight || 'auto'} options={['auto', 'small', 'medium', 'large', 'fullscreen']} optionLabels={['Auto', 'Petite', 'Moyenne', 'Grande', 'Plein écran']} onChange={v => updateBlock(blockType, 'sectionHeight', v)} />
+                {block.layout === 'image-bg' && (
+                    <SelectField label="Obscurité overlay" value={block.overlayOpacity || '50'} options={['20', '30', '40', '50', '60', '70', '80']} optionLabels={['20%', '30%', '40%', '50%', '60%', '70%', '80%']} onChange={v => updateBlock(blockType, 'overlayOpacity', v)} />
+                )}
+
+                {/* ── Effets ── */}
+                <div className="my-2 border-t border-gray-100" />
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-300 mb-2">Effets</p>
+                <SelectField label="Effet visuel" value={block.effect || ''} options={EFFECT_OPTIONS.map(e => e.id)} optionLabels={EFFECT_OPTIONS.map(e => e.label)} onChange={v => updateBlock(blockType, 'effect', v)} />
+                <SelectField label="Animation entrée" value={block.animation || ''} options={ANIMATION_OPTIONS.map(a => a.id)} optionLabels={ANIMATION_OPTIONS.map(a => a.label)} onChange={v => updateBlock(blockType, 'animation', v)} />
+                <SelectField label="Vitesse" value={block.animationSpeed || 'normal'} options={ANIMATION_SPEED_OPTIONS.map(a => a.id)} optionLabels={ANIMATION_SPEED_OPTIONS.map(a => a.label)} onChange={v => updateBlock(blockType, 'animationSpeed', v)} />
+
+                {/* ── Delete ── */}
+                {isCustom && block.id && (
+                    <>
+                        <div className="my-2 border-t border-gray-100" />
+                        <button onClick={() => removeCustomBlock(block.id)} className="flex items-center gap-2 px-3 py-2 text-[11px] font-semibold text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all w-full justify-center">
+                            <Trash2 size={13} /> Supprimer ce bloc
+                        </button>
+                    </>
+                )}
+            </>
+        );
     };
 
     if (loading || !config) {
@@ -265,11 +516,12 @@ export default function TemplateEditorPage() {
             <div className="h-[48px] bg-white border-b border-gray-100/80 flex items-center justify-end px-5 shrink-0 z-10">
                 <div className="flex items-center gap-3">
                     <Link href="/conciergerie" target="_blank"
-                        className="flex items-center gap-2 px-3 py-1.5 text-[12px] font-medium text-gray-400 rounded-md hover:bg-gray-50 hover:text-gray-600 transition-all">
+                        className="flex items-center gap-2 px-3 py-1.5 text-[12px] font-medium text-gray-400 rounded-md hover:bg-gray-50 hover:text-gray-600 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
                         <Eye size={16} /> Voir le site <ExternalLink size={12} className="opacity-30" />
                     </Link>
+
                     <button onClick={() => setPreviewKey(k => k + 1)}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] font-medium text-gray-400 rounded-md hover:bg-gray-50 hover:text-gray-600 transition-all">
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] font-medium text-gray-400 rounded-md hover:bg-gray-50 hover:text-gray-600 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
                         <RefreshCw size={15} />
                     </button>
                     <div className="h-5 w-px bg-gray-200/50" />
@@ -306,15 +558,8 @@ export default function TemplateEditorPage() {
                             {Object.entries(TEMPLATE_NAMES).map(([key, name]) => (
                                 <button
                                     key={key}
-                                    onClick={async () => {
+                                    onClick={() => {
                                         if (key !== id) {
-                                            try {
-                                                await fetchWithAuth('/api/crm/site-config', {
-                                                    method: 'PUT',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({ ...config, template: key }),
-                                                });
-                                            } catch (e) { console.error(e); }
                                             router.push(`/crm/templates/${key}`);
                                         }
                                     }}
@@ -336,7 +581,6 @@ export default function TemplateEditorPage() {
                             { id: 'contenu' as Tab, label: 'Contenu', icon: FileText },
                             { id: 'design' as Tab, label: 'Design', icon: Paintbrush },
                             { id: 'blocs' as Tab, label: 'Blocs', icon: LayoutGrid },
-                            { id: 'ia' as Tab, label: 'IA', icon: Bot },
                         ]).map(t => (
                             <button key={t.id} onClick={() => setTab(t.id)}
                                 className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.05em] whitespace-nowrap transition-all duration-200 border-b-2 -mb-px ${
@@ -367,59 +611,130 @@ export default function TemplateEditorPage() {
                                     <Field label="Texte bouton CTA" value={config.nav?.ctaText || 'Espace Client'} onChange={v => updateNav('ctaText', v)} placeholder="Espace Client" />
                                 </Section>
 
-                                <Section title="Hero" sectionId="hero" highlighted={highlightedSection === 'hero'}>
-                                    <Field label="Titre" value={blocks.find((b: any) => b.type === 'hero')?.title || ''} onChange={v => updateBlock('hero', 'title', v)} />
-                                    <Field label="Sous-titre" value={blocks.find((b: any) => b.type === 'hero')?.subtitle || ''} onChange={v => updateBlock('hero', 'subtitle', v)} />
-                                    <FieldArea label="Description" value={blocks.find((b: any) => b.type === 'hero')?.description || ''} onChange={v => updateBlock('hero', 'description', v)} />
-                                    <Field label="Texte du bouton" value={blocks.find((b: any) => b.type === 'hero')?.buttonText || ''} onChange={v => updateBlock('hero', 'buttonText', v)} placeholder="Découvrir →" />
-                                    <VideoField label="Vidéo de fond" value={blocks.find((b: any) => b.type === 'hero')?.videoUrl || ''} onChange={v => updateBlock('hero', 'videoUrl', v)} />
-                                    <ImageField label="Image de fond" value={config.global?.heroImage || ''} onChange={v => updateGlobal('heroImage', v)} aspectRatio="16/9" />
-                                </Section>
+                                {/* ── ALL SECTIONS — ordered by sectionOrder, all draggable ── */}
+                                {sectionOrder.map((sectionId: string) => {
+                                    const isCustom = sectionId.startsWith('custom_');
+                                    const customBlock = isCustom ? blocks.find((b: any) => b.id === sectionId) : null;
+                                    
+                                    // Section title
+                                    const sectionTitles: Record<string, string> = {
+                                        hero: 'Hero', collections: 'Collections', divider1: '↕ Divider 1 — Parallaxe',
+                                        catalog: 'Prestations & Services', divider2: '↕ Divider 2 — Parallaxe',
+                                        history: 'Notre Histoire', form: 'Formulaire de Contact',
+                                    };
+                                    const title = isCustom ? `✦ ${customBlock?.title || 'Bloc Custom'}` : (sectionTitles[sectionId] || sectionId);
 
-                                <Section title="Collections" sectionId="collections" highlighted={highlightedSection === 'collections'}>
-                                    <Field label="Titre" value={blocks.find((b: any) => b.type === 'collections')?.title || ''} onChange={v => updateBlock('collections', 'title', v)} />
-                                    <Field label="Sous-titre" value={blocks.find((b: any) => b.type === 'collections')?.subtitle || ''} onChange={v => updateBlock('collections', 'subtitle', v)} />
-                                    <p className="text-[11px] text-amber-500 italic">⚡ Les destinations sont synchronisées avec le CRM</p>
-                                </Section>
+                                    // Section content renderer
+                                    const renderSectionContent = () => {
+                                        switch (sectionId) {
+                                            case 'hero':
+                                                return <>
+                                                    {renderSharedBlockOptions('hero', false)}
+                                                    <VideoField label="Vidéo de fond" value={blocks.find((b: any) => b.type === 'hero')?.videoUrl || ''} onChange={v => {
+                                                        console.log('[EDITOR] Hero videoUrl changed to:', v ? v.substring(0, 80) + '...' : '(empty)');
+                                                        updateBlock('hero', 'videoUrl', v);
+                                                        // When clearing the video, also clear the global fallback to prevent the old video from reappearing
+                                                        if (!v) updateGlobal('heroVideoUrl', '');
+                                                        // Auto-save after video upload so it persists to Firebase immediately
+                                                        if (v) setPendingAutoSave(true);
+                                                    }} />
+                                                    <ImageField label="Ou Image de site via config global" value={config.global?.heroImage || ''} onChange={v => updateGlobal('heroImage', v)} aspectRatio="16/9" />
+                                                </>;
+                                            case 'collections':
+                                                return <>
+                                                    {renderSharedBlockOptions('collections', false)}
+                                                    <p className="text-[11px] text-amber-500 italic mt-2">⚡ Les destinations sont synchronisées avec le CRM</p>
+                                                </>;
+                                            case 'divider1':
+                                                return <>
+                                                    <Field label="Titre" value={config.dividers?.divider1?.title || "L'Art de Recevoir."} onChange={v => updateDivider('divider1', 'title', v)} />
+                                                    <FieldArea label="Texte" value={config.dividers?.divider1?.text || ''} onChange={v => updateDivider('divider1', 'text', v)} />
+                                                    <ImageField label="Image de fond" value={config.dividers?.divider1?.image || ''} onChange={v => updateDivider('divider1', 'image', v)} aspectRatio="21/9" />
+                                                </>;
+                                            case 'catalog':
+                                                return <>
+                                                    {renderSharedBlockOptions('catalog', false)}
+                                                    <p className="text-[11px] text-amber-500 italic mt-2">⚡ Le catalogue est synchronisé avec le CRM</p>
+                                                </>;
+                                            case 'divider2':
+                                                return <>
+                                                    <Field label="Titre" value={config.dividers?.divider2?.title || "L'Excellence à la Française."} onChange={v => updateDivider('divider2', 'title', v)} />
+                                                    <FieldArea label="Texte" value={config.dividers?.divider2?.text || ''} onChange={v => updateDivider('divider2', 'text', v)} />
+                                                    <ImageField label="Image de fond" value={config.dividers?.divider2?.image || ''} onChange={v => updateDivider('divider2', 'image', v)} aspectRatio="21/9" />
+                                                </>;
+                                            case 'history':
+                                                return renderSharedBlockOptions('history', false);
+                                            case 'form':
+                                                return renderSharedBlockOptions('form', false);
+                                            default:
+                                                if (isCustom) return renderSharedBlockOptions(sectionId, true);
+                                                return null;
+                                        }
+                                    };
 
-                                <Section title="↕ Divider 1 — Parallaxe" sectionId="divider1" highlighted={highlightedSection === 'divider1'}>
-                                    <Field label="Titre" value={config.dividers?.divider1?.title || "L'Art de Recevoir."} onChange={v => updateDivider('divider1', 'title', v)} />
-                                    <ImageField label="Image de fond" value={config.dividers?.divider1?.image || ''} onChange={v => updateDivider('divider1', 'image', v)} aspectRatio="21/9" />
-                                </Section>
-
-                                <Section title="Prestations & Services" sectionId="catalog" highlighted={highlightedSection === 'catalog'}>
-                                    <Field label="Titre" value={blocks.find((b: any) => b.type === 'catalog')?.title || ''} onChange={v => updateBlock('catalog', 'title', v)} />
-                                    <Field label="Sous-titre" value={blocks.find((b: any) => b.type === 'catalog')?.subtitle || ''} onChange={v => updateBlock('catalog', 'subtitle', v)} />
-                                    <p className="text-[11px] text-amber-500 italic">⚡ Le catalogue est synchronisé avec le CRM</p>
-                                </Section>
-
-                                <Section title="↕ Divider 2 — Parallaxe" sectionId="divider2" highlighted={highlightedSection === 'divider2'}>
-                                    <Field label="Titre" value={config.dividers?.divider2?.title || "L'Excellence à la Française."} onChange={v => updateDivider('divider2', 'title', v)} />
-                                    <ImageField label="Image de fond" value={config.dividers?.divider2?.image || ''} onChange={v => updateDivider('divider2', 'image', v)} aspectRatio="21/9" />
-                                </Section>
-
-                                <Section title="Notre Histoire" sectionId="history" highlighted={highlightedSection === 'history'}>
-                                    <Field label="Titre" value={blocks.find((b: any) => b.type === 'history')?.title || ''} onChange={v => updateBlock('history', 'title', v)} />
-                                    <FieldArea label="Texte" value={blocks.find((b: any) => b.type === 'history')?.text || ''} onChange={v => updateBlock('history', 'text', v)} />
-                                    <ImageField label="Image" value={blocks.find((b: any) => b.type === 'history')?.image || ''} onChange={v => updateBlock('history', 'image', v)} />
-                                </Section>
-
-                                <Section title="Formulaire de Contact" sectionId="form" highlighted={highlightedSection === 'form'}>
-                                    <Field label="Titre" value={blocks.find((b: any) => b.type === 'form')?.title || ''} onChange={v => updateBlock('form', 'title', v)} />
-                                    <Field label="Sous-titre" value={blocks.find((b: any) => b.type === 'form')?.subtitle || ''} onChange={v => updateBlock('form', 'subtitle', v)} />
-                                </Section>
+                                    return (
+                                        <div key={sectionId} className="relative">
+                                            {/* Drop indicator line */}
+                                            {dragOverSectionId === sectionId && draggedSectionId !== sectionId && (
+                                                <div className="absolute -top-1 left-4 right-4 h-0.5 bg-[#5a8fa3] rounded-full z-10 shadow-[0_0_6px_rgba(90,143,163,0.5)]" />
+                                            )}
+                                            <div className={`${draggedSectionId === sectionId ? 'opacity-40 scale-[0.98]' : 'opacity-100'} transition-all duration-200`}>
+                                                <Section
+                                                    title={`⋮⋮ ${title}`}
+                                                    sectionId={sectionId}
+                                                    highlighted={highlightedSection === sectionId}
+                                                    draggable={true}
+                                                    onDragStart={(e: any) => {
+                                                        e.dataTransfer.effectAllowed = 'move';
+                                                        setDraggedSectionId(sectionId);
+                                                    }}
+                                                    onDragOver={(e: any) => {
+                                                        e.preventDefault();
+                                                        e.dataTransfer.dropEffect = 'move';
+                                                        if (dragOverSectionId !== sectionId) setDragOverSectionId(sectionId);
+                                                    }}
+                                                    onDragEnd={() => {
+                                                        setDraggedSectionId(null);
+                                                        setDragOverSectionId(null);
+                                                    }}
+                                                    onDrop={(e: any) => {
+                                                        e.preventDefault();
+                                                        handleSectionDrop(sectionId);
+                                                    }}
+                                                >
+                                                    {renderSectionContent()}
+                                                </Section>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
 
                                 <Section title="Informations Entreprise" sectionId="business" highlighted={highlightedSection === 'business'}>
                                     <Field label="Nom" value={config.business?.name || ''} onChange={v => updateBusiness('name', v)} />
                                     <Field label="Email" value={config.business?.email || ''} onChange={v => updateBusiness('email', v)} />
                                     <Field label="Téléphone" value={config.business?.phone || ''} onChange={v => updateBusiness('phone', v)} />
                                     <Field label="WhatsApp" value={config.business?.whatsapp || ''} onChange={v => updateBusiness('whatsapp', v)} />
-                                    <Field label="Instagram" value={config.business?.instagram || ''} onChange={v => updateBusiness('instagram', v)} placeholder="@votre_compte" />
+                                    <Field label="Instagram" value={config.business?.instagram || ''} onChange={v => updateBusiness('instagram', v)} placeholder="https://..." />
+                                    <Field label="Facebook" value={config.business?.facebook || ''} onChange={v => updateBusiness('facebook', v)} placeholder="https://..." />
+                                    <Field label="TikTok" value={config.business?.tiktok || ''} onChange={v => updateBusiness('tiktok', v)} placeholder="https://..." />
                                 </Section>
 
                                 <Section title="Footer" sectionId="footer" highlighted={highlightedSection === 'footer'}>
+                                    <Field label="Titre colonne 'Contact'" value={config.footer?.colContactTitle || ''} onChange={v => updateFooter('colContactTitle', v)} placeholder="Contact" />
                                     <Field label="Texte de copyright" value={config.footer?.copyright || ''} onChange={v => updateFooter('copyright', v)} placeholder="© 2026 Votre Agence" />
-                                    <FieldArea label="Description footer" value={config.footer?.description || ''} onChange={v => updateFooter('description', v)} />
+                                    <FieldArea label="Description longue" value={config.footer?.description || ''} onChange={v => updateFooter('description', v)} />
+
+                                    <div className="my-4 border-t border-gray-100" />
+                                    <Field label="Titre colonne 1" value={config.footer?.col1Title || ''} onChange={v => updateFooter('col1Title', v)} placeholder="Voyages" />
+                                    <LinkListEditor label="Liens colonne 1" links={config.footer?.col1Links || []} onChange={v => updateFooter('col1Links', v)} />
+
+                                    <div className="my-4 border-t border-gray-100" />
+                                    <Field label="Titre colonne 2" value={config.footer?.col2Title || ''} onChange={v => updateFooter('col2Title', v)} placeholder="Services" />
+                                    <LinkListEditor label="Liens colonne 2" links={config.footer?.col2Links || []} onChange={v => updateFooter('col2Links', v)} />
+
+                                    <div className="my-4 border-t border-gray-100" />
+                                    <Field label="Titre colonne 3" value={config.footer?.col3Title || ''} onChange={v => updateFooter('col3Title', v)} placeholder="À Propos" />
+                                    <LinkListEditor label="Liens colonne 3" links={config.footer?.col3Links || []} onChange={v => updateFooter('col3Links', v)} />
                                 </Section>
                             </div>
                         )}
@@ -433,9 +748,12 @@ export default function TemplateEditorPage() {
                                     <ColorField label="Accent" value={config.global?.accentColor || '#E2C8A9'} onChange={v => updateGlobal('accentColor', v)} />
                                     <div className="my-2 border-t border-gray-100" />
                                     <ColorField label="Couleur des titres" value={config.global?.headingColor || '#2E2E2E'} onChange={v => updateGlobal('headingColor', v)} />
+                                    <ColorField label="Titre Collections" value={config.global?.collectionsHeadingColor || config.global?.headingColor || '#2E2E2E'} onChange={v => updateGlobal('collectionsHeadingColor', v)} />
+                                    <ColorField label="Titre Prestations" value={config.global?.catalogHeadingColor || config.global?.headingColor || '#2E2E2E'} onChange={v => updateGlobal('catalogHeadingColor', v)} />
                                     <ColorField label="Couleur du texte" value={config.global?.textColor || '#2E2E2E'} onChange={v => updateGlobal('textColor', v)} />
                                     <ColorField label="Fond" value={config.global?.bgColor || '#ffffff'} onChange={v => updateGlobal('bgColor', v)} />
                                     <ColorField label="Bouton CTA" value={config.global?.ctaColor || '#2E2E2E'} onChange={v => updateGlobal('ctaColor', v)} />
+                                    <ColorField label="Modal & panier" value={config.global?.modalColor || '#2E2E2E'} onChange={v => updateGlobal('modalColor', v)} />
                                 </Section>
 
                                 <Section title="✏️ Typographie">
@@ -491,6 +809,61 @@ export default function TemplateEditorPage() {
                                         </div>
                                     );
                                 })}
+
+                                {/* Custom blocks */}
+                                {blocks.filter((b: any) => b.id?.startsWith('custom_')).map((block: any) => {
+                                    const visible = block.visible !== false;
+                                    return (
+                                        <div key={block.id} className={`p-4 rounded-xl border transition-all ${visible ? 'bg-white border-gray-100 shadow-sm' : 'bg-gray-50/50 border-gray-100/50 opacity-60'}`}>
+                                            <div className="flex items-center justify-between mb-1">
+                                                <div>
+                                                    <p className="text-[14px] font-bold text-[#2E2E2E]">✦ {block.title || 'Bloc Custom'}</p>
+                                                    <p className="text-[11px] text-gray-400">Section personnalisée</p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button onClick={() => removeCustomBlock(block.id)}
+                                                        className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
+                                                        <Trash2 size={13} />
+                                                    </button>
+                                                    <button onClick={() => updateBlock(block.type, 'visible', !visible)}
+                                                        className={`w-10 h-5 rounded-full relative transition-all duration-300 ${visible ? 'bg-[#5a8fa3]' : 'bg-gray-200'}`}>
+                                                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${visible ? 'left-[22px]' : 'left-0.5'}`} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            {visible && (
+                                                <div className="mt-3 pt-3 border-t border-gray-50 space-y-3">
+                                                    <SelectField label="Animation" value={block.animation || ''} options={ANIMATION_OPTIONS.map(a => a.id)} optionLabels={ANIMATION_OPTIONS.map(a => a.label)} onChange={v => updateBlock(block.type, 'animation', v)} />
+                                                    <SelectField label="Vitesse" value={block.animationSpeed || 'normal'} options={ANIMATION_SPEED_OPTIONS.map(a => a.id)} optionLabels={ANIMATION_SPEED_OPTIONS.map(a => a.label)} onChange={v => updateBlock(block.type, 'animationSpeed', v)} />
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+
+                                {/* Add custom block buttons */}
+                                <div className="grid grid-cols-2 gap-2 mt-6">
+                                    <button onClick={() => addCustomBlock('image-right', 'Texte & Image')}
+                                        className="w-full flex items-center justify-center gap-2 py-3.5 border border-gray-200 rounded-xl text-[11px] font-semibold text-gray-500 hover:border-[#5a8fa3] hover:text-[#5a8fa3] hover:bg-[#5a8fa3]/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
+                                        <Plus size={14} /> Image / Texte
+                                    </button>
+                                    <button onClick={() => addCustomBlock('gallery', 'Nouvelle Galerie')}
+                                        className="w-full flex items-center justify-center gap-2 py-3.5 border border-gray-200 rounded-xl text-[11px] font-semibold text-gray-500 hover:border-[#5a8fa3] hover:text-[#5a8fa3] hover:bg-[#5a8fa3]/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
+                                        <Plus size={14} /> Galerie
+                                    </button>
+                                    <button onClick={() => addCustomBlock('slider', 'Nouveau Slider')}
+                                        className="w-full flex items-center justify-center gap-2 py-3.5 border border-gray-200 rounded-xl text-[11px] font-semibold text-gray-500 hover:border-[#5a8fa3] hover:text-[#5a8fa3] hover:bg-[#5a8fa3]/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
+                                        <Plus size={14} /> Slider
+                                    </button>
+                                    <button onClick={() => addCustomBlock('columns', 'Nouvelle Grille', '3')}
+                                        className="w-full flex items-center justify-center gap-2 py-3.5 border border-gray-200 rounded-xl text-[11px] font-semibold text-gray-500 hover:border-[#5a8fa3] hover:text-[#5a8fa3] hover:bg-[#5a8fa3]/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
+                                        <Plus size={14} /> Grille (1-4 col)
+                                    </button>
+                                    <button onClick={() => addCustomBlock('html', 'Widget / Emded Externe')}
+                                        className="col-span-2 w-full flex items-center justify-center gap-2 py-3.5 border-2 border-dashed border-gray-200 rounded-xl text-[12px] font-bold text-gray-400 hover:border-[#5a8fa3] hover:text-[#5a8fa3] hover:bg-[#5a8fa3]/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
+                                        <Plus size={16} /> Ajouter Widget / Code Externe
+                                    </button>
+                                </div>
                             </div>
                         )}
 
@@ -534,14 +907,14 @@ export default function TemplateEditorPage() {
                                     <label className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-1 block">Décrivez l&apos;image</label>
                                     <textarea value={aiPrompt} onChange={e => setAiPrompt(e.target.value)}
                                         placeholder="Ex: Un hôtel de luxe à Bali au coucher du soleil avec piscine à débordement..."
-                                        className="w-full h-20 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[11px] text-gray-700 placeholder:text-gray-300 resize-none focus:outline-none focus:border-[#5a8fa3] focus:ring-2 focus:ring-[#5a8fa3]/10 transition-all" />
+                                        className="w-full h-20 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[11px] text-gray-700 placeholder:text-gray-300 resize-none focus:outline-none focus:border-[#5a8fa3] focus:ring-2 focus:ring-[#5a8fa3]/10 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm" />
                                 </div>
 
                                 {/* Quick prompts */}
                                 <div className="flex flex-wrap gap-1.5">
                                     {['Plage tropicale', 'Hôtel de luxe', 'Safari africain', 'Yacht', 'Villa Bali', 'Montagne enneigée'].map(q => (
                                         <button key={q} onClick={() => setAiPrompt(q)}
-                                            className="px-2.5 py-1 text-[9px] font-medium bg-gray-100 text-gray-500 rounded-lg hover:bg-[#b9dae9]/20 hover:text-[#2E2E2E] transition-all">
+                                            className="px-2.5 py-1 text-[9px] font-medium bg-gray-100 text-gray-500 rounded-lg hover:bg-[#b9dae9]/20 hover:text-[#2E2E2E] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
                                             {q}
                                         </button>
                                     ))}
@@ -573,7 +946,7 @@ export default function TemplateEditorPage() {
                                                 <Check size={12} /> {aiTarget === 'block' ? 'Copier URL' : `Appliquer au ${aiTarget === 'hero' ? 'Header' : 'Histoire'}`}
                                             </button>
                                             <button onClick={() => { setAiImageUrl(null); }}
-                                                className="flex items-center justify-center gap-1.5 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-[11px] font-semibold hover:bg-gray-50 transition-all">
+                                                className="flex items-center justify-center gap-1.5 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-[11px] font-semibold hover:bg-gray-50 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
                                                 Régénérer
                                             </button>
                                         </div>
@@ -590,7 +963,33 @@ export default function TemplateEditorPage() {
 
                 {/* RIGHT: Preview */}
                 <div className="flex-1 bg-[#F8FAFC] relative flex flex-col">
-                    <iframe key={previewKey} src="/conciergerie" className="w-full flex-1 border-0" title="Preview" />
+                    <iframe
+                        id="preview-iframe"
+                        key={previewKey}
+                        src="/conciergerie"
+                        className="w-full flex-1 border-0"
+                        title="Preview"
+                        onLoad={(e) => {
+                            // Send config to iframe after it's fully loaded (fixes timing issue)
+                            const iframeEl = e.currentTarget;
+                            if (iframeEl.contentWindow && config) {
+                                // Always include current template tab override
+                                const payload = { ...config, template: id };
+                                iframeEl.contentWindow.postMessage({ type: 'editor-update-config', config: payload }, '*');
+                                // Retry after delays to win the race against the API fetch in the iframe
+                                setTimeout(() => {
+                                    if (iframeEl.contentWindow) {
+                                        iframeEl.contentWindow.postMessage({ type: 'editor-update-config', config: payload }, '*');
+                                    }
+                                }, 300);
+                                setTimeout(() => {
+                                    if (iframeEl.contentWindow) {
+                                        iframeEl.contentWindow.postMessage({ type: 'editor-update-config', config: payload }, '*');
+                                    }
+                                }, 800);
+                            }
+                        }}
+                    />
                 </div>
             </div>
         </div>
@@ -599,18 +998,56 @@ export default function TemplateEditorPage() {
 
 // ═══ UI Components ═══
 
-function Section({ title, children, sectionId, highlighted }: { title: string; children: React.ReactNode; sectionId?: string; highlighted?: boolean }) {
-    const [open, setOpen] = useState(true);
+function Section({ title, children, sectionId, highlighted, draggable, onDragStart, onDragOver, onDragEnd, onDrop, className }: { title: string; children: React.ReactNode; sectionId?: string; highlighted?: boolean; draggable?: boolean; onDragStart?: any; onDragOver?: any; onDragEnd?: any; onDrop?: any; className?: string }) {
+    const [open, setOpen] = useState(false);
+    const handleToggle = () => {
+        setOpen(!open);
+        // Scroll preview to this section
+        if (sectionId && !open) {
+            const iframe = document.getElementById('preview-iframe') as HTMLIFrameElement;
+            if (iframe?.contentWindow) {
+                iframe.contentWindow.postMessage({ type: 'editor-scroll-to', section: sectionId }, '*');
+            }
+        }
+    };
     return (
         <div id={sectionId ? `editor-section-${sectionId}` : undefined}
-            className={`rounded-xl overflow-hidden transition-all duration-300 ${
+            draggable={draggable}
+            onDragStart={onDragStart}
+            onDragOver={onDragOver}
+            onDragEnd={onDragEnd}
+            onDrop={onDrop}
+            className={`rounded-xl overflow-hidden transition-all duration-300 ${className || ''} ${draggable ? 'cursor-grab active:cursor-grabbing hover:shadow-lg hover:-translate-y-1' : ''} ${
                 highlighted ? 'ring-2 ring-[#5a8fa3]/30 shadow-lg shadow-[#5a8fa3]/10' : ''
-            } ${open ? 'bg-white shadow-sm border border-gray-100/60' : 'bg-transparent'}`}>
-            <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50/50 transition-colors">
+            } ${open ? 'bg-white shadow-sm border border-gray-100/60' : 'bg-white/60 hover:bg-white border border-gray-100/40 shadow-sm'}`}>
+            <button onClick={handleToggle} className={`w-full flex items-center justify-between px-4 py-3 transition-colors ${draggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer hover:bg-gray-50/50'}`}>
                 <span className="text-[14px] font-bold text-[#2E2E2E] tracking-wide">{title}</span>
                 <ChevronDown size={15} className={`text-gray-300 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
             </button>
             {open && <div data-section-content className="px-4 pb-4 space-y-3">{children}</div>}
+        </div>
+    );
+}
+
+function LinkListEditor({ label, links = [], onChange }: { label: string; links: { label: string; href: string }[]; onChange: (v: any[]) => void }) {
+    return (
+        <div className="space-y-2 mb-4">
+            <p className="text-[12px] font-semibold text-[#2E2E2E] mb-2">{label}</p>
+            {links.map((link, i) => (
+                <div key={i} className="flex gap-2 relative">
+                    <input type="text" value={link.label} onChange={e => {
+                        const newLinks = [...links]; newLinks[i].label = e.target.value; onChange(newLinks);
+                    }} className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-[13px] outline-none focus:border-[#5a8fa3] transition-colors" placeholder="Label" />
+                    <input type="text" value={link.href} onChange={e => {
+                        const newLinks = [...links]; newLinks[i].href = e.target.value; onChange(newLinks);
+                    }} className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-[13px] font-mono outline-none focus:border-[#5a8fa3] transition-colors" placeholder="URL" />
+                    <button onClick={() => {
+                        onChange(links.filter((_, idx) => idx !== i));
+                    }} className="shrink-0 px-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors">✕</button>
+                    {/* Add drag handles later if needed */}
+                </div>
+            ))}
+            <button onClick={() => onChange([...links, { label: '', href: '' }])} className="text-[11px] font-bold text-[#5a8fa3] hover:underline mt-1">+ Ajouter un lien</button>
         </div>
     );
 }
@@ -620,7 +1057,7 @@ function Field({ label, value, onChange, placeholder }: { label: string; value: 
         <div>
             <label className="text-[11px] font-bold uppercase tracking-[0.12em] text-gray-400/80 mb-1 block">{label}</label>
             <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-                className="w-full px-3 py-2 bg-[#fafbfc] border border-gray-200/60 rounded-lg text-[12px] text-[#2E2E2E] placeholder:text-gray-300 focus:outline-none focus:border-[#b9dae9] focus:bg-white focus:shadow-sm transition-all" />
+                className="w-full px-3 py-2 bg-[#fafbfc] border border-gray-200/60 rounded-lg text-[12px] text-[#2E2E2E] placeholder:text-gray-300 focus:outline-none focus:border-[#b9dae9] focus:bg-white focus:shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm" />
         </div>
     );
 }
@@ -630,19 +1067,26 @@ function FieldArea({ label, value, onChange }: { label: string; value: string; o
         <div>
             <label className="text-[11px] font-bold uppercase tracking-[0.12em] text-gray-400/80 mb-1 block">{label}</label>
             <textarea value={value} onChange={e => onChange(e.target.value)} rows={3}
-                className="w-full px-3 py-2 bg-[#fafbfc] border border-gray-200/60 rounded-lg text-[12px] text-[#2E2E2E] resize-none focus:outline-none focus:border-[#b9dae9] focus:bg-white focus:shadow-sm transition-all" />
+                className="w-full px-3 py-2 bg-[#fafbfc] border border-gray-200/60 rounded-lg text-[12px] text-[#2E2E2E] resize-none focus:outline-none focus:border-[#b9dae9] focus:bg-white focus:shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm" />
         </div>
     );
 }
 
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+    // Normalize: always ensure exactly one # prefix
+    const normalizeColor = (raw: string) => {
+        const stripped = raw.replace(/^#+/, ''); // Remove all leading #
+        return stripped ? `#${stripped}` : value; // Add exactly one, or keep current if empty
+    };
+    const normalizedValue = value?.startsWith('#') ? value : `#${value || '000000'}`;
     return (
         <div className="flex items-center gap-2.5">
-            <input type="color" value={value} onChange={e => onChange(e.target.value)} className="w-7 h-7 rounded-md border border-gray-200/60 cursor-pointer p-0.5 bg-white" />
+            <input type="color" value={normalizedValue} onChange={e => onChange(e.target.value)} className="w-7 h-7 rounded-md border border-gray-200/60 cursor-pointer p-0.5 bg-white" />
             <div className="flex-1">
                 <label className="text-[9px] font-bold uppercase tracking-[0.15em] text-gray-400/80 block">{label}</label>
-                <input type="text" value={value} onChange={e => onChange(e.target.value)}
-                    className="w-full px-2 py-1 bg-[#fafbfc] border border-gray-200/60 rounded text-[11px] text-gray-500 font-mono focus:outline-none focus:border-[#b9dae9] transition-all" />
+                <input type="text" value={value} onChange={e => onChange(normalizeColor(e.target.value))}
+                    onBlur={e => onChange(normalizeColor(e.target.value))}
+                    className="w-full px-2 py-1 bg-[#fafbfc] border border-gray-200/60 rounded text-[11px] text-gray-500 font-mono focus:outline-none focus:border-[#b9dae9] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm" />
             </div>
         </div>
     );
@@ -653,7 +1097,7 @@ function SelectField({ label, value, options, optionLabels, onChange }: { label:
         <div>
             <label className="text-[11px] font-bold uppercase tracking-[0.12em] text-gray-400/80 mb-1 block">{label}</label>
             <select value={value} onChange={e => onChange(e.target.value)}
-                className="w-full px-3 py-2 bg-[#fafbfc] border border-gray-200/60 rounded-lg text-[12px] text-[#2E2E2E] focus:outline-none focus:border-[#b9dae9] focus:bg-white appearance-none cursor-pointer transition-all">
+                className="w-full px-3 py-2 bg-[#fafbfc] border border-gray-200/60 rounded-lg text-[12px] text-[#2E2E2E] focus:outline-none focus:border-[#b9dae9] focus:bg-white appearance-none cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
                 {options.map((opt, i) => (
                     <option key={opt} value={opt}>{optionLabels?.[i] || opt}</option>
                 ))}
@@ -790,11 +1234,11 @@ function ImageField({ label, value, onChange, aspectRatio = '4/3' }: { label: st
                     </div>
                     <div className="mt-4 flex items-center gap-3">
                         <button onClick={() => setCropSrc(null)}
-                            className="px-5 py-2.5 bg-white/10 border border-white/20 text-white rounded-xl text-[11px] font-bold hover:bg-white/20 transition-all">
+                            className="px-5 py-2.5 bg-white/10 border border-white/20 text-white rounded-xl text-[11px] font-bold hover:bg-white/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
                             Annuler
                         </button>
                         <button onClick={handleSkipCrop}
-                            className="px-5 py-2.5 bg-white/20 border border-white/20 text-white rounded-xl text-[11px] font-bold hover:bg-white/30 transition-all">
+                            className="px-5 py-2.5 bg-white/20 border border-white/20 text-white rounded-xl text-[11px] font-bold hover:bg-white/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
                             Sans recadrage
                         </button>
                         <button onClick={handleCropConfirm} disabled={cropping}
@@ -811,15 +1255,15 @@ function ImageField({ label, value, onChange, aspectRatio = '4/3' }: { label: st
                     <img src={value} alt="" className={aspectRatio === 'auto' ? 'max-h-16 object-contain' : 'w-full object-cover'} style={aspectRatio !== 'auto' ? { aspectRatio } : undefined} />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-300 flex items-center justify-center gap-1.5 flex-wrap px-3 opacity-0 group-hover:opacity-100">
                         <button onClick={() => fileRef.current?.click()}
-                            className="flex items-center gap-1 px-2.5 py-1.5 bg-white/95 rounded-lg text-[9px] font-bold text-[#2E2E2E] shadow-lg hover:bg-white transition-all">
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-white/95 rounded-lg text-[9px] font-bold text-[#2E2E2E] shadow-lg hover:bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
                             <Upload size={11} /> Upload
                         </button>
                         <button onClick={() => { setMode('ai'); onChange(''); }}
-                            className="flex items-center gap-1 px-2.5 py-1.5 bg-[#2E2E2E] rounded-lg text-[9px] font-bold text-white shadow-lg hover:bg-[#1a1a1a] transition-all">
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-[#2E2E2E] rounded-lg text-[9px] font-bold text-white shadow-lg hover:bg-[#1a1a1a] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
                             <Bot size={11} /> IA
                         </button>
                         <button onClick={() => { setCropSrc(value); setCrop({ x: 0, y: 0 }); setZoom(1); }}
-                            className="flex items-center gap-1 px-2.5 py-1.5 bg-white/95 rounded-lg text-[9px] font-bold text-[#2E2E2E] shadow-lg hover:bg-white transition-all">
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-white/95 rounded-lg text-[9px] font-bold text-[#2E2E2E] shadow-lg hover:bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
                             <Crop size={11} /> Crop
                         </button>
                         <a href={value} download target="_blank" rel="noopener noreferrer"
@@ -827,7 +1271,7 @@ function ImageField({ label, value, onChange, aspectRatio = '4/3' }: { label: st
                             <Download size={11} /> DL
                         </a>
                         <button onClick={() => onChange('')}
-                            className="flex items-center gap-1 px-2.5 py-1.5 bg-red-500/90 rounded-lg text-[9px] font-bold text-white shadow-lg hover:bg-red-600 transition-all">
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-red-500/90 rounded-lg text-[9px] font-bold text-white shadow-lg hover:bg-red-600 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
                             <X size={11} />
                         </button>
                     </div>
@@ -878,7 +1322,7 @@ function ImageField({ label, value, onChange, aspectRatio = '4/3' }: { label: st
                                             <Check size={12} /> Appliquer
                                         </button>
                                         <button onClick={() => setAiPreview(null)}
-                                            className="flex items-center justify-center gap-1.5 py-2 border border-gray-200 text-gray-600 rounded-xl text-[10px] font-bold hover:bg-gray-50 transition-all">
+                                            className="flex items-center justify-center gap-1.5 py-2 border border-gray-200 text-gray-600 rounded-xl text-[10px] font-bold hover:bg-gray-50 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
                                             Régénérer
                                         </button>
                                     </div>
@@ -889,11 +1333,11 @@ function ImageField({ label, value, onChange, aspectRatio = '4/3' }: { label: st
                                 <>
                                     <textarea value={aiPrompt} onChange={e => setAiPrompt(e.target.value)}
                                         placeholder="Ex: Hôtel de luxe à Bali au coucher du soleil..."
-                                        className="w-full h-16 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[10px] text-gray-700 placeholder:text-gray-300 resize-none focus:outline-none focus:border-[#5a8fa3] focus:ring-1 focus:ring-[#5a8fa3]/10 transition-all" />
+                                        className="w-full h-16 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[10px] text-gray-700 placeholder:text-gray-300 resize-none focus:outline-none focus:border-[#5a8fa3] focus:ring-1 focus:ring-[#5a8fa3]/10 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm" />
                                     <div className="flex flex-wrap gap-1">
                                         {['Plage tropicale', 'Hôtel de luxe', 'Safari', 'Yacht', 'Montagne'].map(q => (
                                             <button key={q} onClick={() => setAiPrompt(q)}
-                                                className="px-2 py-0.5 text-[8px] font-medium bg-gray-100 text-gray-500 rounded-md hover:bg-[#b9dae9]/20 hover:text-[#2E2E2E] transition-all">
+                                                className="px-2 py-0.5 text-[8px] font-medium bg-gray-100 text-gray-500 rounded-md hover:bg-[#b9dae9]/20 hover:text-[#2E2E2E] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
                                                 {q}
                                             </button>
                                         ))}
@@ -977,7 +1421,7 @@ function VideoField({ label, value, onChange }: { label: string; value: string; 
                     onBlur={handleUrlApply}
                     onKeyDown={e => { if (e.key === 'Enter') handleUrlApply(); }}
                     placeholder="/video.mp4 ou URL complète"
-                    className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white focus:border-[#5a8fa3] focus:ring-1 focus:ring-[#5a8fa3]/20 outline-none transition-all"
+                    className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white focus:border-[#5a8fa3] focus:ring-1 focus:ring-[#5a8fa3]/20 outline-none transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm"
                 />
                 <button
                     onClick={() => fileRef.current?.click()}
@@ -992,7 +1436,9 @@ function VideoField({ label, value, onChange }: { label: string; value: string; 
             {/* Video preview */}
             {value && (
                 <div className="relative group rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-gray-50 flex flex-col items-center justify-center p-2 min-h-[128px]">
-                    <video key={value} src={value} className="w-full max-h-48 object-contain rounded" controls />
+                    <video key={value} className="w-full max-h-48 object-contain rounded" controls muted playsInline>
+                        <source src={value} type="video/mp4" />
+                    </video>
                     <div className="absolute inset-0 bg-black/60 flex-wrap items-center justify-center gap-2 p-4 opacity-0 group-hover:opacity-100 transition-opacity flex">
                         <button onClick={() => fileRef.current?.click()}
                             className="px-2.5 py-1.5 bg-white/20 rounded-lg text-[10px] font-bold text-white hover:bg-white/30 transition-all flex items-center gap-1.5 backdrop-blur-sm">

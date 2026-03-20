@@ -9,6 +9,7 @@ import { useAuth } from '@/src/contexts/AuthContext';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ConfirmModal from '@/src/components/ConfirmModal';
+import { T } from '@/src/components/T';
 
 export default function DocumentsPage() {
   const { user, userProfile, tenantId } = useAuth();
@@ -28,11 +29,15 @@ export default function DocumentsPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [docs, cts] = await Promise.all([getAllDocuments(tenantId!), getContacts(tenantId!)]);
+      // Phase 1: Load documents first → instant render
+      const docs = await getAllDocuments(tenantId!);
       setDocuments(docs);
+      setLoading(false);
+
+      // Phase 2: Load contacts in background (for upload modal)
+      const cts = await getContacts(tenantId!);
       setContacts(cts);
-    } catch (e) { console.error(e); }
-    setLoading(false);
+    } catch (e) { console.error(e); setLoading(false); }
   };
 
   const handleUpload = async (file: File) => {
@@ -116,11 +121,11 @@ export default function DocumentsPage() {
       <div className="max-w-[1600px] mx-auto w-full space-y-8  pb-20">
         <div className="flex justify-between items-center mb-6 relative z-10">
           <div>
-            <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight">Coffre-fort Documents</h1>
-            <p className="text-sm text-[#6B7280] mt-1 font-medium">Stockez et gérez les documents de vos clients en toute sécurité.</p>
+            <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight"><T>Coffre-fort Documents</T></h1>
+            <p className="text-sm text-[#6B7280] mt-1 font-medium"><T>Stockez et gérez les documents de vos clients en toute sécurité.</T></p>
           </div>
           <button onClick={() => setShowUpload(true)} className="bg-luna-charcoal hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl text-sm font-normal transition-all flex items-center gap-2 ">
-            <Upload size={16} /> Uploader
+            <Upload size={16} /> <T>Uploader</T>
           </button>
         </div>
 
@@ -135,6 +140,8 @@ export default function DocumentsPage() {
           </div>
         )}
 
+
+
         {/* Filters */}
         <div className="flex gap-3 mb-6">
           <div className="relative flex-1 max-w-xs">
@@ -144,7 +151,7 @@ export default function DocumentsPage() {
           </div>
           <select value={selectedType} onChange={e => setSelectedType(e.target.value)}
             className="px-3 py-2 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none focus:outline-none focus:border-luna-charcoal">
-            <option value="ALL">Tous les types</option>
+            <option value="ALL"><T>Tous les types</T></option>
             <option value="PASSPORT">Passeport</option>
             <option value="VISA">Visa</option>
             <option value="CONTRACT">Contrat</option>
@@ -157,7 +164,7 @@ export default function DocumentsPage() {
         {filteredDocs.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <Shield size={40} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm">Aucun document. Uploadez votre premier fichier.</p>
+            <p className="text-sm"><T>Aucun document. Uploadez votre premier fichier.</T></p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -193,34 +200,34 @@ export default function DocumentsPage() {
               <div className="p-8 pb-5 bg-luna-charcoal text-white">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h2 className="text-lg font-light tracking-tight">Uploader un document</h2>
+                    <h2 className="text-lg font-light tracking-tight"><T>Uploader un document</T></h2>
                     <p className="text-[#b9dae9] text-xs mt-1 font-medium">Coffre-fort sécurisé Luna</p>
                   </div>
                 </div>
               </div>
               <div className="p-8">
-              <select value={newDoc.clientId} onChange={e => setNewDoc(p => ({ ...p, clientId: e.target.value }))}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-3 focus:outline-none focus:border-luna-charcoal">
-                <option value="">Sélectionner un client</option>
-                {contacts.map(c => <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>)}
-              </select>
-              <input value={newDoc.name} onChange={e => setNewDoc(p => ({ ...p, name: e.target.value }))}
-                placeholder="Nom du document" className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-3 focus:outline-none focus:border-luna-charcoal" />
-              <select value={newDoc.type} onChange={e => setNewDoc(p => ({ ...p, type: e.target.value as any }))}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-3 focus:outline-none focus:border-luna-charcoal">
-                <option value="PASSPORT">Passeport</option><option value="VISA">Visa</option>
-                <option value="CONTRACT">Contrat</option><option value="TICKET">Billet</option><option value="OTHER">Autre</option>
-              </select>
-              <input type="date" value={newDoc.expiryDate} onChange={e => setNewDoc(p => ({ ...p, expiryDate: e.target.value }))}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-4 focus:outline-none focus:border-luna-charcoal" placeholder="Date d'expiration (optionnel)" />
-              <input ref={fileRef} type="file" className="hidden" onChange={e => { if (e.target.files?.[0]) handleUpload(e.target.files[0]); }} />
-              <div className="flex gap-3">
-                <button onClick={() => setShowUpload(false)} className="flex-1 px-4 py-3 rounded-2xl border border-gray-100 bg-gray-50 text-sm font-normal text-gray-600 hover:bg-gray-100 transition-all">Annuler</button>
-                <button onClick={() => fileRef.current?.click()} disabled={!newDoc.clientId || !newDoc.name || uploading}
-                  className="flex-1 px-4 py-3 rounded-2xl bg-luna-charcoal hover:bg-gray-800 text-white text-sm font-normal transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-                  {uploading ? <><Loader2 size={14} className="animate-spin" /> Envoi...</> : <><Upload size={14} /> Choisir fichier</>}
-                </button>
-              </div>
+                <select value={newDoc.clientId} onChange={e => setNewDoc(p => ({ ...p, clientId: e.target.value }))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-3 focus:outline-none focus:border-luna-charcoal">
+                  <option value=""><T>Sélectionner un client</T></option>
+                  {contacts.map(c => <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>)}
+                </select>
+                <input value={newDoc.name} onChange={e => setNewDoc(p => ({ ...p, name: e.target.value }))}
+                  placeholder="Nom du document" className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-3 focus:outline-none focus:border-luna-charcoal" />
+                <select value={newDoc.type} onChange={e => setNewDoc(p => ({ ...p, type: e.target.value as any }))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-3 focus:outline-none focus:border-luna-charcoal">
+                  <option value="PASSPORT">Passeport</option><option value="VISA">Visa</option>
+                  <option value="CONTRACT">Contrat</option><option value="TICKET">Billet</option><option value="OTHER">Autre</option>
+                </select>
+                <input type="date" value={newDoc.expiryDate} onChange={e => setNewDoc(p => ({ ...p, expiryDate: e.target.value }))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50/50 text-sm focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all outline-none mb-4 focus:outline-none focus:border-luna-charcoal" placeholder="Date d'expiration (optionnel)" />
+                <input ref={fileRef} type="file" className="hidden" onChange={e => { if (e.target.files?.[0]) handleUpload(e.target.files[0]); }} />
+                <div className="flex gap-3">
+                  <button onClick={() => setShowUpload(false)} className="flex-1 px-4 py-3 rounded-2xl border border-gray-100 bg-gray-50 text-sm font-normal text-gray-600 hover:bg-gray-100 transition-all"><T>Annuler</T></button>
+                  <button onClick={() => fileRef.current?.click()} disabled={!newDoc.clientId || !newDoc.name || uploading}
+                    className="flex-1 px-4 py-3 rounded-2xl bg-luna-charcoal hover:bg-gray-800 text-white text-sm font-normal transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                    {uploading ? <><Loader2 size={14} className="animate-spin" /> Envoi...</> : <><Upload size={14} /> Choisir fichier</>}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -38,7 +38,25 @@ export async function verifyAPIKey(req: NextRequest): Promise<APIAuthResult | Re
     }
 
     try {
-        // Search all tenants for matching API key
+        // O(1) indexed lookup via api_keys_index collection
+        // Document ID = SHA-256 hash of the key → { tenantId, keyName, active }
+        const crypto = await import('crypto');
+        const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
+        const indexDoc = await adminDb.collection('api_keys_index').doc(keyHash).get();
+        
+        if (indexDoc.exists) {
+            const data = indexDoc.data()!;
+            if (data.active !== false) {
+                return { tenantId: data.tenantId, keyName: data.keyName || 'API Key' };
+            }
+            return NextResponse.json(
+                { error: 'API key is disabled.' },
+                { status: 401, headers: apiHeaders() }
+            );
+        }
+
+        // Fallback: legacy O(n) scan for keys not yet indexed
+        // This ensures backward compatibility during migration
         const tenantsSnap = await adminDb.collection('tenants').get();
 
         for (const tenantDoc of tenantsSnap.docs) {
@@ -50,6 +68,14 @@ export async function verifyAPIKey(req: NextRequest): Promise<APIAuthResult | Re
                 const matchingKey = keys.find((k: any) => k.key === apiKey && k.active !== false);
 
                 if (matchingKey) {
+                    // Backfill index for next time (fire-and-forget)
+                    adminDb.collection('api_keys_index').doc(keyHash).set({
+                        tenantId: tenantDoc.id,
+                        keyName: matchingKey.name || 'API Key',
+                        active: true,
+                        indexedAt: new Date().toISOString(),
+                    }).catch(() => {}); // Best-effort
+                    
                     return {
                         tenantId: tenantDoc.id,
                         keyName: matchingKey.name || 'API Key',
@@ -76,12 +102,29 @@ export async function verifyAPIKey(req: NextRequest): Promise<APIAuthResult | Re
 /**
  * Standard API response headers (CORS + JSON)
  */
-export function apiHeaders(): Record<string, string> {
+export function apiHeaders(reqOrigin?: string | null): Record<string, string> {
+    // Restrict CORS to known origins only (prevents cross-origin API key abuse)
+    const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+        .split(',')
+        .map(o => o.trim())
+        .filter(Boolean);
+    
+    // Always allow same-origin and localhost in dev
+    const defaultOrigins = [
+        process.env.NEXT_PUBLIC_APP_URL,
+        'http://localhost:3000',
+        'https://luna-travel.com',
+    ].filter(Boolean) as string[];
+    
+    const allAllowed = [...new Set([...defaultOrigins, ...allowedOrigins])];
+    const origin = reqOrigin && allAllowed.some(o => reqOrigin.startsWith(o)) ? reqOrigin : allAllowed[0] || '';
+
     return {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
+        'Vary': 'Origin',
     };
 }
 

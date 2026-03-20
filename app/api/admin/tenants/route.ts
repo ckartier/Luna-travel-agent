@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/src/lib/firebase/admin';
+import { verifyAdmin } from '@/src/lib/firebase/apiAuth';
 
 /**
  * GET /api/admin/tenants
  * Returns all tenants with aggregated stats (contacts, trips, quotes, invoices, revenue, api keys)
- * Used by /site-admin/tenants dashboard
+ * Used by /site-admin/tenants dashboard — Admin+ only
  */
-export async function GET() {
+export async function GET(request: Request) {
+    const auth = await verifyAdmin(request);
+    if (auth instanceof Response) return auth;
+
     try {
         const tenantsSnap = await adminDb.collection('tenants').get();
         const tenants = [];

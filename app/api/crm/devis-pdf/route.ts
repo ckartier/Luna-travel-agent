@@ -100,10 +100,8 @@ export async function POST(req: NextRequest) {
         doc.text('PROPOSITION DE VOYAGE SUR MESURE', pw / 2, 70, { align: 'center' });
 
         // Destination
-        doc.setFontSize(42);
-        doc.setTextColor(C.white);
-        doc.setFont('helvetica', 'bold');
-        doc.text(data.destination.toUpperCase(), pw / 2, 135, { align: 'center' });
+        const displayDest = (data.destination || 'Voyage').toUpperCase();
+        doc.text(displayDest, pw / 2, 135, { align: 'center' });
 
         // Subtitle
         doc.setFontSize(12);
@@ -406,12 +404,12 @@ export async function POST(req: NextRequest) {
         // Track devis PDF generation
         if (tenantId) trackAPIUsage(tenantId, 'devisPdf');
 
-        // Output
         const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+        const safeDest = (data.destination || 'Voyage').replace(/\s+/g, '_');
         return new NextResponse(pdfBuffer, {
             headers: {
                 'Content-Type': 'application/pdf',
-                'Content-Disposition': `attachment; filename="Devis_${data.destination.replace(/\s+/g, '_')}_${data.refNumber}.pdf"`,
+                'Content-Disposition': `attachment; filename="Devis_${safeDest}_${data.refNumber}.pdf"`,
             },
         });
     } catch (error) {

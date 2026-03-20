@@ -29,7 +29,7 @@ import {
     Map,
     Palette,
 } from 'lucide-react';
-import { LunaLogo } from '@/app/components/LunaLogo';
+
 import { useAuth } from '@/src/contexts/AuthContext';
 import { useTranslation } from '@/src/hooks/useTranslation';
 import { useVertical } from '@/src/contexts/VerticalContext';
@@ -59,28 +59,78 @@ interface NavSection {
     links: NavLink[];
 }
 
+// ═══ LEGAL CRM — hardcoded sidebar (no vertical context needed) ═══
+const LEGAL_PATHS = ['/crm/avocat', '/crm/dossiers', '/crm/jurisprudence'];
+
+const LEGAL_SIDEBAR: NavSection[] = [
+    {
+        label: '',
+        collapsible: false,
+        links: [
+            { name: 'Dashboard', href: '/crm/avocat', icon: LayoutDashboard, featureKey: 'dashboard' },
+            { name: 'Boîte de Réception', href: '/crm/mails', icon: Mail, featureKey: 'mails' },
+            { name: 'Pipeline', href: '/crm/pipeline', icon: Trello, featureKey: 'pipeline' },
+            { name: 'Agenda', href: '/crm/planning', icon: Calendar, featureKey: 'planning' },
+            { name: 'Clients', href: '/crm/contacts', icon: Users, featureKey: 'contacts' },
+        ],
+    },
+    {
+        label: 'Dossiers',
+        collapsible: true,
+        links: [
+            { name: 'Dossiers', href: '/crm/dossiers', icon: getIcon('Briefcase'), featureKey: 'bookings' },
+            { name: 'Jurisprudence', href: '/crm/jurisprudence', icon: getIcon('ScrollText'), featureKey: 'dashboard' },
+            { name: 'Documents', href: '/crm/documents', icon: FileText, featureKey: 'dashboard' },
+        ],
+    },
+    {
+        label: 'Finance',
+        collapsible: true,
+        links: [
+            { name: 'Honoraires', href: '/crm/quotes', icon: FileSignature, featureKey: 'quotes' },
+            { name: 'Factures', href: '/crm/invoices', icon: FileText, featureKey: 'invoices' },
+            { name: 'Paiements', href: '/crm/payments', icon: CreditCard, featureKey: 'payments' },
+        ],
+    },
+    {
+        label: 'Gestion',
+        collapsible: true,
+        links: [
+            { name: 'Collaborateurs', href: '/crm/suppliers', icon: getIcon('Scale'), featureKey: 'suppliers' },
+            { name: 'Banque', href: '/crm/banking', icon: getIcon('Landmark'), featureKey: 'payments' },
+            { name: 'Équipe', href: '/crm/team', icon: UsersRound, featureKey: 'team' },
+            { name: 'Analytics', href: '/crm/analytics', icon: BarChart3, featureKey: 'analytics' },
+            { name: 'Paramètres', href: '/crm/settings', icon: Settings, featureKey: 'settings' },
+        ],
+    },
+];
+
 interface CRMSidebarProps {
 }
 
 export function CRMSidebar({}: CRMSidebarProps) {
-    const pathname = usePathname();
+    const pathname = usePathname() || '/';
     const [mobileOpen, setMobileOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
     const { user, userProfile, isSuperAdmin, role } = useAuth();
     const { canAccess, canAccessFeature, hasModule, plan } = useAccess();
     const { t } = useTranslation();
-    const { vertical, vt } = useVertical();
+    const { vertical, vt, switchVertical } = useVertical();
     const [collapsedSections, setCollapsedSections] = useState<Set<number>>(new Set());
 
     const [customLogo, setCustomLogo] = useState<string | null>(null);
 
-    // Fetch custom logo from site-config
+    // ═══ DETECT CRM MODE — Legal or Travel ═══
+    const isLegal = vertical?.id === 'legal' || LEGAL_PATHS.some(r => pathname.startsWith(r));
+
+    // Fetch custom logo from site-config (travel only)
     useEffect(() => {
+        if (isLegal) return;
         fetch('/api/crm/site-config')
             .then(r => r.json())
             .then(data => { if (data?.global?.logo) setCustomLogo(data.global.logo); })
             .catch(() => {});
-    }, []);
+    }, [isLegal]);
 
     const toggleSection = (idx: number) => {
         setCollapsedSections(prev => {
@@ -95,19 +145,21 @@ export function CRMSidebar({}: CRMSidebarProps) {
     const displayName = userProfile?.displayName || user?.displayName || 'Utilisateur';
     const email = userProfile?.email || user?.email || '';
 
-    // ═══ VERTICAL-DRIVEN NAVIGATION ═══
-    const allSections: NavSection[] = vertical.sidebar.map(section => ({
-        label: typeof section.label === 'string' ? section.label : vt(section.label),
-        collapsible: section.collapsible,
-        links: section.links.map(link => ({
-            name: vt(link.name),
-            href: link.href,
-            icon: getIcon(link.icon),
-            featureKey: link.featureKey,
-        })),
-    }));
-    const accent = vertical.accentColor || '#5a8fa3';
-    const accentLight = vertical.accentColorLight || '#bcdeea';
+    // ═══ NAVIGATION — Legal uses hardcoded sidebar, Travel uses vertical config ═══
+    const allSections: NavSection[] = isLegal
+        ? LEGAL_SIDEBAR
+        : vertical.sidebar.map(section => ({
+            label: typeof section.label === 'string' ? section.label : vt(section.label),
+            collapsible: section.collapsible,
+            links: section.links.map(link => ({
+                name: vt(link.name),
+                href: link.href,
+                icon: getIcon(link.icon),
+                featureKey: link.featureKey,
+            })),
+        }));
+    const accent = isLegal ? '#A07850' : (vertical.accentColor || '#5a8fa3');
+    const accentLight = isLegal ? '#E8D5C0' : (vertical.accentColorLight || '#bcdeea');
 
     const sidebarContent = (
         <>
@@ -119,16 +171,18 @@ export function CRMSidebar({}: CRMSidebarProps) {
                     </button>
                 </div>
 
-                {/* Logo — custom or default Luna (hidden for legal vertical) */}
-                <div className="pt-6 pb-8 flex justify-center">
-                    {vertical.id === 'legal' ? (
-                        <span className="text-[15px] font-semibold tracking-[0.15em] uppercase text-[#2E2E2E]" style={{ letterSpacing: '0.2em' }}>
-                            {vertical.branding.appName}
+                {/* Logo — LUNA LEGAL for legal CRM, custom/vertical for travel */}
+                <div className="pt-6 pb-8 flex justify-center text-center">
+                    {isLegal ? (
+                        <span className="text-[15px] font-semibold uppercase text-[#2E2E2E]" style={{ letterSpacing: '0.2em' }}>
+                            LUNA LEGAL
                         </span>
                     ) : customLogo ? (
                         <img src={customLogo} alt="Logo" className="h-5 w-auto object-contain brightness-0" onError={() => setCustomLogo(null)} />
                     ) : (
-                        <LunaLogo size={20} className="brightness-0" />
+                        <span className="text-[15px] font-semibold uppercase text-[#2E2E2E]" style={{ letterSpacing: '0.2em' }}>
+                            {vertical.branding.appName}
+                        </span>
                     )}
                 </div>
 
@@ -180,11 +234,11 @@ export function CRMSidebar({}: CRMSidebarProps) {
                             <span
                                 className="uppercase tracking-[0.15em] text-[13px] font-semibold transition-colors"
                                 style={{ color: pathname === '/crm/agent-ia' ? accent : '#2E2E2E' }}
-                            >{vt(vertical.aiAgent.name)}</span>
+                            >{isLegal ? 'Agent Juridique' : vt(vertical.aiAgent.name)}</span>
                             <span
                                 className="text-[9px] tracking-wider transition-colors"
                                 style={{ color: pathname === '/crm/agent-ia' ? `${accent}99` : '#6B728099' }}
-                            >{vt(vertical.aiAgent.subtitle)}</span>
+                            >{isLegal ? 'Droit & Jurisprudence' : vt(vertical.aiAgent.subtitle)}</span>
                         </div>
                     </Link>
                 </div>
@@ -206,6 +260,13 @@ export function CRMSidebar({}: CRMSidebarProps) {
                                 0 0 18px 6px ${accentLight}88,
                                 0 0 40px 14px ${accent}25;
                         }
+                    }
+                    .sidebar-item-active {
+                        animation: sidebarActiveIn 0.35s cubic-bezier(0.4,0,0.2,1) forwards;
+                    }
+                    @keyframes sidebarActiveIn {
+                        0% { opacity: 0.6; transform: scale(0.97); }
+                        100% { opacity: 1; transform: scale(1); }
                     }
                 `}</style>
 
@@ -250,14 +311,14 @@ export function CRMSidebar({}: CRMSidebarProps) {
                                                     onClick={() => setMobileOpen(false)}
                                                     className={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 group border ${
                                                         isActive
-                                                            ? 'font-medium shadow-sm'
+                                                            ? 'font-medium shadow-sm sidebar-item-active'
                                                             : isLocked
                                                                 ? 'text-[#C4B199] hover:text-[#B89B7A] hover:bg-amber-50/30 font-normal border-transparent'
                                                                 : 'text-[#6B7280] hover:text-[#2E2E2E] hover:bg-black/[0.03] font-normal border-transparent'
                                                     }`}
                                                     style={isActive ? {
-                                                        backgroundColor: `${accentLight}CC`,
-                                                        borderColor: `${accent}44`,
+                                                        backgroundColor: accentLight,
+                                                        borderColor: `${accent}55`,
                                                         color: '#2E2E2E',
                                                     } : undefined}
                                                 >
@@ -349,7 +410,7 @@ export function CRMSidebar({}: CRMSidebarProps) {
                 {/* ═══ TOGGLE TAB — languette ═══ */}
                 <button
                     onClick={() => setCollapsed(c => !c)}
-                    className="absolute top-1/2 -translate-y-1/2 z-[60] flex items-center justify-center transition-all duration-300 group"
+                    className="absolute top-[65%] -translate-y-1/2 z-[60] flex items-center justify-center transition-all duration-300 group"
                     style={{
                         right: collapsed ? '-16px' : '-14px',
                         width: '28px',

@@ -6,6 +6,64 @@ import { notifySupplierBooking } from '@/src/lib/whatsapp/api';
 
 const getStripe = () => new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-01-27.acacia' as any });
 
+// ═══ PLAN LIMITS (mirror of tenant.ts for server-side use) ═══
+type TenantPlan = 'starter' | 'site_builder' | 'crm' | 'all_in_one' | 'pro' | 'enterprise';
+
+const PLAN_LIMITS: Record<TenantPlan, { maxContacts: number; maxTripsPerMonth: number; maxTeamMembers: number; aiQueriesPerDay: number }> = {
+    starter:      { maxContacts: 100,  maxTripsPerMonth: 10,  maxTeamMembers: 1,  aiQueriesPerDay: 5 },
+    site_builder: { maxContacts: 0,    maxTripsPerMonth: 0,   maxTeamMembers: 1,  aiQueriesPerDay: 5 },
+    crm:          { maxContacts: 500,  maxTripsPerMonth: 50,  maxTeamMembers: 5,  aiQueriesPerDay: 30 },
+    all_in_one:   { maxContacts: 2000, maxTripsPerMonth: 200, maxTeamMembers: 15, aiQueriesPerDay: 100 },
+    pro:          { maxContacts: 2000, maxTripsPerMonth: 200, maxTeamMembers: 15, aiQueriesPerDay: 100 },
+    enterprise:   { maxContacts: -1,   maxTripsPerMonth: -1,  maxTeamMembers: -1, aiQueriesPerDay: -1 },
+};
+
+const PLAN_ID_MAP: Record<string, TenantPlan> = {
+    'site_builder': 'site_builder',
+    'crm': 'crm',
+    'all_in_one': 'all_in_one',
+    'enterprise': 'enterprise',
+    'starter': 'starter',
+    'pro': 'all_in_one',
+};
+
+/**
+ * Find tenant by user email and sync plan + limits.
+ */
+async function syncTenantPlan(email: string, planId: string, stripeCustomerId?: string | null) {
+    const tenantPlan: TenantPlan = PLAN_ID_MAP[planId] || 'starter';
+    const limits = PLAN_LIMITS[tenantPlan];
+
+    // Find user doc by email
+    const usersSnap = await adminDb.collection('users').where('email', '==', email).limit(1).get();
+    if (usersSnap.empty) {
+        console.log(`[Webhook] No user found for email ${email}, skipping tenant sync`);
+        return;
+    }
+
+    const userDoc = usersSnap.docs[0];
+    const tenantId = userDoc.data().tenantId || userDoc.id;
+
+    const tenantRef = adminDb.collection('tenants').doc(tenantId);
+    const tenantSnap = await tenantRef.get();
+    if (!tenantSnap.exists) {
+        console.log(`[Webhook] Tenant ${tenantId} not found, skipping sync`);
+        return;
+    }
+
+    const updateData: Record<string, any> = {
+        plan: tenantPlan,
+        limits,
+        updatedAt: FieldValue.serverTimestamp(),
+    };
+    if (stripeCustomerId) {
+        updateData['settings.stripeCustomerId'] = stripeCustomerId;
+    }
+
+    await tenantRef.update(updateData);
+    console.log(`[Webhook] Tenant ${tenantId} synced → plan=${tenantPlan}, limits=${JSON.stringify(limits)}`);
+}
+
 export async function POST(request: Request) {
     const body = await request.text();
     const sig = request.headers.get('stripe-signature');
@@ -21,6 +79,16 @@ export async function POST(request: Request) {
         console.error('Webhook signature verification failed:', err.message);
         return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
+
+    // ─── Idempotency Check: prevent duplicate event processing ───
+    const eventRef = adminDb.collection('processed_events').doc(event.id);
+    const existing = await eventRef.get();
+    if (existing.exists) {
+        console.log(`[Webhook] Skipping duplicate event: ${event.id}`);
+        return NextResponse.json({ received: true, duplicate: true });
+    }
+    // Mark as processed immediately (before handling, to prevent race conditions)
+    await eventRef.set({ type: event.type, processedAt: new Date().toISOString() });
 
     switch (event.type) {
         case 'checkout.session.completed': {
@@ -206,7 +274,7 @@ export async function POST(request: Request) {
                 break;
             }
 
-            // ── SaaS Subscription (existing logic) ──
+            // ── SaaS Subscription ──
             if (email) {
                 await adminDb.collection('subscriptions').doc(email).set({
                     email,
@@ -218,6 +286,13 @@ export async function POST(request: Request) {
                     activatedAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp(),
                 });
+
+                // ── Sync tenant plan + limits ──
+                try {
+                    await syncTenantPlan(email, planId, session.customer as string);
+                } catch (syncErr) {
+                    console.error('[Webhook] Tenant sync error:', syncErr);
+                }
             }
             break;
         }
@@ -229,10 +304,18 @@ export async function POST(request: Request) {
             try {
                 const stripeCustomer = await getStripe().customers.retrieve(customer);
                 if (!stripeCustomer.deleted && 'email' in stripeCustomer && stripeCustomer.email) {
-                    await adminDb.collection('subscriptions').doc(stripeCustomer.email).set(
+                    const cancelledEmail = stripeCustomer.email;
+                    await adminDb.collection('subscriptions').doc(cancelledEmail).set(
                         { status: 'cancelled', updatedAt: FieldValue.serverTimestamp() },
                         { merge: true }
                     );
+
+                    // ── Downgrade tenant to starter ──
+                    try {
+                        await syncTenantPlan(cancelledEmail, 'starter');
+                    } catch (syncErr) {
+                        console.error('[Webhook] Tenant downgrade error:', syncErr);
+                    }
                 }
             } catch (e) { console.error(e); }
             break;

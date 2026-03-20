@@ -12,6 +12,7 @@ import {
     getLeads, CRMLead
 } from '@/src/lib/firebase/crm';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { useVertical } from '@/src/contexts/VerticalContext';
 import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 import { generateQuoteEmail } from '@/src/lib/email/templates';
 import { T } from '@/src/components/T';
@@ -22,6 +23,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function QuotesPage() {
     const { tenantId } = useAuth();
+    const { vertical } = useVertical();
+    const isLegal = vertical.id === 'legal';
     const router = useRouter();
     const [quotes, setQuotes] = useState<CRMQuote[]>([]);
     const [contacts, setContacts] = useState<CRMContact[]>([]);
@@ -32,11 +35,12 @@ export default function QuotesPage() {
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [showModal, setShowModal] = useState(false);
     const [selectedQuote, setSelectedQuote] = useState<CRMQuote | null>(null);
+    const [editingQuote, setEditingQuote] = useState<CRMQuote | null>(null);
 
     // Create Quote State
     const [newQuote, setNewQuote] = useState({ clientId: '', tripId: '', taxRate: 20 });
     const [quoteItems, setQuoteItems] = useState<{ id: string, description: string, quantity: number, netCost: number, unitPrice: number, selected: boolean }[]>([
-        { id: '1', description: 'Prestation voyage', quantity: 1, netCost: 0, unitPrice: 0, selected: true }
+        { id: '1', description: '', quantity: 1, netCost: 0, unitPrice: 0, selected: true }
     ]);
 
     const [sendModal, setSendModal] = useState<{ open: boolean, quote: CRMQuote | null, contact: CRMContact | null }>({ open: false, quote: null, contact: null });
@@ -47,11 +51,19 @@ export default function QuotesPage() {
     const loadData = async () => {
         if (!tenantId) return;
         setLoading(true);
+        const currentVertical = isLegal ? 'legal' : 'travel';
         try {
-            const [qts, cts, trps, lds] = await Promise.all([getQuotes(tenantId), getContacts(tenantId), getTrips(tenantId), getLeads(tenantId)]);
-            setQuotes(qts); setContacts(cts); setTrips(trps); setLeads(lds);
-        } catch (e) { console.error(e); }
-        setLoading(false);
+            // Phase 1: Load quotes first → instant render (filtered by vertical)
+            const allQuotes = await getQuotes(tenantId);
+            setQuotes(allQuotes.filter(q => (q.vertical || 'travel') === currentVertical));
+            setLoading(false);
+
+            // Phase 2: Load secondary data in background (non-blocking, filtered by vertical)
+            const [cts, trps, lds] = await Promise.all([getContacts(tenantId), getTrips(tenantId), getLeads(tenantId)]);
+            setContacts(cts);
+            setTrips(trps.filter(t => (t.vertical || 'travel') === currentVertical));
+            setLeads(lds.filter(l => (l.vertical || 'travel') === currentVertical));
+        } catch (e) { console.error(e); setLoading(false); }
     };
 
     const handleTripSelect = async (tripId: string) => {
@@ -77,6 +89,20 @@ export default function QuotesPage() {
         }
     };
 
+    const openEditModal = (quote: CRMQuote) => {
+        setEditingQuote(quote);
+        setNewQuote({ clientId: quote.clientId, tripId: quote.tripId || '', taxRate: quote.items?.[0]?.taxRate || 20 });
+        setQuoteItems((quote.items || []).map((it, i) => ({
+            id: i.toString(),
+            description: it.description,
+            quantity: it.quantity || 1,
+            netCost: it.netCost || 0,
+            unitPrice: it.unitPrice,
+            selected: true
+        })));
+        setShowModal(true);
+    };
+
     const handleCreate = async () => {
         if (!newQuote.clientId || !tenantId) return;
         const contact = contacts.find(c => c.id === newQuote.clientId);
@@ -95,24 +121,40 @@ export default function QuotesPage() {
             taxRate: newQuote.taxRate
         }));
 
-        await createQuote(tenantId, {
-            quoteNumber: `QUO-${Date.now().toString().slice(-6)}`,
-            tripId: newQuote.tripId || '',
-            clientId: newQuote.clientId,
-            clientName: contact ? `${contact.firstName} ${contact.lastName}` : 'Client',
-            issueDate: new Date().toISOString().split('T')[0],
-            validUntil: new Date(Date.now() + 30 * 24 * 3600000).toISOString().split('T')[0],
-            items: finalizedItems,
-            subtotal,
-            taxTotal,
-            totalAmount: subtotal + taxTotal,
-            currency: 'EUR',
-            status: 'DRAFT',
-        });
+        if (editingQuote?.id) {
+            // UPDATE existing quote
+            await updateQuote(tenantId, editingQuote.id, {
+                clientId: newQuote.clientId,
+                clientName: contact ? `${contact.firstName} ${contact.lastName}` : editingQuote.clientName,
+                tripId: newQuote.tripId || '',
+                items: finalizedItems,
+                subtotal,
+                taxTotal,
+                totalAmount: subtotal + taxTotal,
+            });
+        } else {
+            // CREATE new quote
+            await createQuote(tenantId, {
+                quoteNumber: `QUO-${Date.now().toString().slice(-6)}`,
+                tripId: newQuote.tripId || '',
+                clientId: newQuote.clientId,
+                clientName: contact ? `${contact.firstName} ${contact.lastName}` : 'Client',
+                issueDate: new Date().toISOString().split('T')[0],
+                validUntil: new Date(Date.now() + 30 * 24 * 3600000).toISOString().split('T')[0],
+                items: finalizedItems,
+                subtotal,
+                taxTotal,
+                totalAmount: subtotal + taxTotal,
+                currency: 'EUR',
+                status: 'DRAFT',
+                vertical: isLegal ? 'legal' : 'travel',
+            });
+        }
 
         setShowModal(false);
+        setEditingQuote(null);
         setNewQuote({ clientId: '', tripId: '', taxRate: 20 });
-        setQuoteItems([{ id: '1', description: 'Prestation voyage', quantity: 1, netCost: 0, unitPrice: 0, selected: true }]);
+        setQuoteItems([{ id: '1', description: isLegal ? 'Prestation juridique' : 'Prestation voyage', quantity: 1, netCost: 0, unitPrice: 0, selected: true }]);
         loadData();
     };
 
@@ -166,7 +208,7 @@ export default function QuotesPage() {
             let businessName = 'Votre Conciergerie';
             let businessLogo = '';
             try {
-                const cfgRes = await fetch('/api/crm/site-config');
+                const cfgRes = await fetchWithAuth('/api/crm/site-config');
                 const cfgData = await cfgRes.json();
                 if (cfgData?.business?.name) businessName = cfgData.business.name;
                 else if (cfgData?.global?.siteName) businessName = cfgData.global.siteName;
@@ -338,6 +380,10 @@ export default function QuotesPage() {
                                             </Link>
                                         );
                                     })()}
+                                    <button onClick={() => openEditModal(selectedQuote!)}
+                                        className="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-xl flex items-center justify-center gap-2">
+                                        <Wand2 size={16} /> Modifier le Devis
+                                    </button>
                                     <button onClick={() => setSelectedQuote(null)} className="w-full py-3 text-gray-400 text-[10px] font-bold uppercase tracking-widest hover:text-gray-600 transition-colors">Désélectionner</button>
                                 </div>
                             </div>
@@ -356,10 +402,10 @@ export default function QuotesPage() {
                 <main className="flex-1 space-y-8">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div className="space-y-1">
-                            <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight"><T>Devis</T></h1>
-                            <p className="text-sm text-[#6B7280] mt-1 font-medium">Gérez vos propositions tarifaires et maximisez vos marges agents.</p>
+                            <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight">{isLegal ? 'Honoraires' : <T>Devis</T>}</h1>
+                            <p className="text-sm text-[#6B7280] mt-1 font-medium">{isLegal ? 'Gérez vos propositions d\'honoraires et factures pro-forma.' : 'Gérez vos propositions tarifaires et maximisez vos marges agents.'}</p>
                         </div>
-                        <button onClick={() => setShowModal(true)} className="px-8 py-4 bg-luna-charcoal text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-2xl shadow-gray-200 hover:bg-gray-800 transition-all flex items-center gap-2">
+                        <button onClick={() => { setEditingQuote(null); setNewQuote({ clientId: '', tripId: '', taxRate: 20 }); setQuoteItems([{ id: '1', description: '', quantity: 1, netCost: 0, unitPrice: 0, selected: true }]); setShowModal(true); }} className="px-8 py-4 bg-luna-charcoal text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-2xl shadow-gray-200 hover:bg-gray-800 transition-all flex items-center gap-2">
                             <Plus size={18} /> Créer un Devis
                         </button>
                     </div>
@@ -446,7 +492,7 @@ export default function QuotesPage() {
                                 <div className="p-10 md:p-12 pb-6 bg-luna-charcoal text-white">
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                         <div>
-                                            <h2 className="text-3xl font-light tracking-tight">Nouveau Devis Executive</h2>
+                                            <h2 className="text-3xl font-light tracking-tight">{editingQuote ? 'Modifier le Devis' : 'Nouveau Devis Executive'}</h2>
                                             <p className="text-[#b9dae9] text-xs mt-1 font-medium">Générez une proposition sur-mesure avec contrôle de marge</p>
                                         </div>
                                         <button onClick={() => setShowModal(false)} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-all"><X size={24} /></button>
@@ -463,7 +509,7 @@ export default function QuotesPage() {
                                                 </select>
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Associer à un Voyage</label>
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">{isLegal ? 'Associer à un Dossier' : 'Associer à un Voyage'}</label>
                                                 <select value={newQuote.tripId} onChange={e => handleTripSelect(e.target.value)} className="w-full px-5 py-4 bg-gray-50 rounded-[22px] border-none text-sm focus:ring-2 focus:ring-emerald-200 font-sans font-medium">
                                                     <option value="">Indépendant</option>
                                                     {trips.map(t => <option key={t.id} value={t.id!}>{t.title || t.destination}</option>)}
@@ -497,7 +543,7 @@ export default function QuotesPage() {
                                         </div>
 
                                         <div className="pt-8 flex gap-4">
-                                            <button onClick={handleCreate} disabled={!newQuote.clientId} className="flex-1 py-5 bg-luna-charcoal text-white rounded-[24px] text-[10px] font-bold uppercase tracking-widest shadow-2xl shadow-gray-200 hover:bg-black transition-all">Générer la Proposition Finale</button>
+                                            <button onClick={handleCreate} disabled={!newQuote.clientId} className="flex-1 py-5 bg-luna-charcoal text-white rounded-[24px] text-[10px] font-bold uppercase tracking-widest shadow-2xl shadow-gray-200 hover:bg-black transition-all">{editingQuote ? 'Enregistrer les Modifications' : 'Générer la Proposition Finale'}</button>
                                         </div>
                                     </div>
                                 </div>
@@ -506,39 +552,98 @@ export default function QuotesPage() {
                     )}
                 </AnimatePresence>
 
-                {/* Send Modal — Luna Branded */}
+                {/* Send Modal — Luna Pro */}
                 <AnimatePresence>
-                    {sendModal.open && (
+                    {sendModal.open && (() => {
+                        const q = sendModal.quote;
+                        const c = sendModal.contact;
+                        return (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-luna-charcoal/60 backdrop-blur-xl" onClick={() => setSendModal({ open: false, quote: null, contact: null })} />
-                            <motion.div initial={{ opacity: 0, y: 50, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 50, scale: 0.95 }} className="bg-white rounded-[24px] w-full max-w-md relative z-10 shadow-2xl overflow-hidden">
-                                {/* Luna Header */}
-                                <div className="p-10 pb-6 bg-luna-charcoal text-white">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#2E2E2E]/70 backdrop-blur-2xl" onClick={() => setSendModal({ open: false, quote: null, contact: null })} />
+                            <motion.div
+                                initial={{ opacity: 0, y: 50, scale: 0.92 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 50, scale: 0.92 }}
+                                transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                                className="bg-white rounded-[28px] w-full max-w-md relative z-10 shadow-[0_30px_100px_rgba(0,0,0,0.18)] overflow-hidden"
+                            >
+                                {/* ─── Header ─── */}
+                                <div className="relative p-8 pb-6 bg-[#2E2E2E] text-white overflow-hidden">
+                                    <motion.div
+                                        initial={{ scaleX: 0 }} animate={{ scaleX: 1 }}
+                                        transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                                        className="absolute bottom-0 left-0 right-0 h-[3px] origin-left bg-gradient-to-r from-[#bcdeea] to-transparent"
+                                    />
                                     <div className="flex justify-between items-start">
                                         <div>
-                                            <h2 className="text-2xl font-light tracking-tight">Transmission Devis</h2>
-                                            <p className="text-[#b9dae9] text-xs mt-1 font-medium">Envoyez la proposition à <strong className="text-white">{sendModal.contact?.firstName} {sendModal.contact?.lastName}</strong></p>
+                                            <motion.h2 initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                                                className="text-2xl font-light tracking-tight">Transmission Devis</motion.h2>
+                                            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
+                                                className="text-white/40 text-xs mt-1.5 font-medium">
+                                                Envoyer à <span className="text-white/80">{c?.firstName} {c?.lastName}</span>
+                                            </motion.p>
                                         </div>
-                                        <button onClick={() => setSendModal({ open: false, quote: null, contact: null })} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-all"><X size={20} /></button>
+                                        <motion.button whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}
+                                            onClick={() => setSendModal({ open: false, quote: null, contact: null })}
+                                            className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors">
+                                            <X size={18} />
+                                        </motion.button>
                                     </div>
+
+                                    {/* ─── Quote summary ─── */}
+                                    {q && (
+                                        <div className="mt-5 grid grid-cols-2 gap-3">
+                                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                                                className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                                                <p className="text-[9px] uppercase tracking-[0.15em] text-white/30 font-medium">Montant</p>
+                                                <p className="text-xl font-light text-white/90 tracking-tight mt-1">{q.totalAmount.toLocaleString('fr-FR')} €</p>
+                                            </motion.div>
+                                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+                                                className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                                                <p className="text-[9px] uppercase tracking-[0.15em] text-white/30 font-medium">Validité</p>
+                                                <p className="text-sm font-light text-white/70 mt-1">{q.validUntil}</p>
+                                            </motion.div>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="p-10 pt-8 space-y-3">
-                                    <button onClick={() => handleSendQuote('WHATSAPP')} disabled={sending} className="w-full py-5 bg-[#5a8fa3] text-white rounded-[24px] text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-[#4a7f93] transition-all shadow-xl shadow-[#bcdeea]/15 disabled:opacity-50">
-                                        <MessageCircle size={20} /> Via WhatsApp Business
-                                    </button>
-                                    <button onClick={() => handleSendQuote('EMAIL')} disabled={sending} className="w-full py-5 bg-indigo-500 text-white rounded-[24px] text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-indigo-600 transition-all shadow-xl shadow-indigo-100 disabled:opacity-50">
-                                        <Mail size={20} /> Via Email Professionnel
-                                    </button>
-                                    <div className="pt-3 border-t border-gray-100">
-                                        <button onClick={() => { if (sendModal.quote?.id) window.open(`/api/crm/quote-pdf?id=${sendModal.quote.id}`, '_blank'); }} className="w-full py-5 bg-[#b9dae9] text-[#2E2E2E] rounded-[24px] text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-[#a8cdd8] transition-all shadow-lg">
-                                            <Globe size={20} /> Télécharger PDF Premium
-                                        </button>
+
+                                {/* ─── Actions ─── */}
+                                <div className="p-8 pt-6 space-y-3">
+                                    <motion.button
+                                        whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.98 }}
+                                        onClick={() => handleSendQuote('WHATSAPP')} disabled={sending}
+                                        className="w-full py-4 rounded-2xl text-[10px] font-medium uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2.5 disabled:opacity-50 bg-[#FAFAF8] border border-[#E5E7EB] text-[#2E2E2E] hover:border-[#bcdeea] hover:bg-[#bcdeea]/10"
+                                    >
+                                        {sending ? <Loader2 size={16} className="animate-spin" /> : <MessageCircle size={16} />}
+                                        Via WhatsApp Business
+                                    </motion.button>
+                                    <motion.button
+                                        whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.98 }}
+                                        onClick={() => handleSendQuote('EMAIL')} disabled={sending}
+                                        className="w-full py-4 rounded-2xl text-[10px] font-medium uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2.5 disabled:opacity-50 bg-[#2E2E2E] text-white hover:bg-[#1a1a1a]"
+                                    >
+                                        <Mail size={16} /> Via Email Professionnel
+                                    </motion.button>
+
+                                    <div className="pt-3 border-t border-[#E5E7EB]">
+                                        <motion.button
+                                            whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
+                                            onClick={() => { if (q?.id) window.open(`/api/crm/quote-pdf?id=${q.id}`, '_blank'); }}
+                                            className="w-full py-4 rounded-2xl text-[10px] font-medium uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2.5 bg-[#bcdeea]/15 text-[#2E2E2E] hover:bg-[#bcdeea]/25 border border-[#bcdeea]/20"
+                                        >
+                                            <Globe size={16} /> Télécharger PDF Premium
+                                        </motion.button>
                                     </div>
-                                    <button onClick={() => setSendModal({ open: false, quote: null, contact: null })} className="w-full py-3 text-gray-400 text-[10px] font-bold uppercase tracking-widest hover:text-gray-600 transition-colors">Annuler</button>
+
+                                    <button onClick={() => setSendModal({ open: false, quote: null, contact: null })}
+                                        className="w-full py-3 text-[#9CA3AF] text-[10px] font-medium uppercase tracking-[0.15em] hover:text-[#6B7280] transition-colors">
+                                        Annuler
+                                    </button>
                                 </div>
                             </motion.div>
                         </div>
-                    )}
+                        );
+                    })()}
                 </AnimatePresence>
             </div>
         </div>

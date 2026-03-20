@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, Check, Zap, Globe, Shield, Search, Bell, FileText, BarChart3, Users, Calendar, LucideIcon } from 'lucide-react';
+import { T } from '@/src/components/T';
 
 interface ChangelogFeature {
     icon: LucideIcon;
@@ -70,8 +71,8 @@ export default function ChangelogPage() {
                         <Sparkles size={18} className="text-[#5a8fa3]" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-light tracking-tight text-[#2E2E2E]">Quoi de neuf</h1>
-                        <p className="text-xs text-gray-400">Dernières mises à jour et améliorations</p>
+                        <h1 className="text-2xl font-light tracking-tight text-[#2E2E2E]"><T>Quoi de neuf</T></h1>
+                        <p className="text-xs text-gray-400"><T>Dernières mises à jour et améliorations</T></p>
                     </div>
                 </div>
             </motion.div>

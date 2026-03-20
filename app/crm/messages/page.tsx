@@ -5,6 +5,7 @@ import { Send, Loader2, MessageSquare, Search, Plus, Phone, Check, CheckCheck, C
 import { CRMMessage, CRMContact, getAllMessages, createMessage, markMessageRead, getContacts } from '@/src/lib/firebase/crm';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
+import { T } from '@/src/components/T';
 
 interface Conversation {
   clientId: string;
@@ -60,6 +61,7 @@ export default function MessagesInboxPage() {
   const loadData = async () => {
     setLoading(true);
     try {
+      // Phase 1: Load messages first → instant conversation list
       const [msgs, cts] = await Promise.all([getAllMessages(tenantId!), getContacts(tenantId!)]);
       setContacts(cts);
 
@@ -213,7 +215,7 @@ export default function MessagesInboxPage() {
         <div className="px-5 pt-5 pb-4">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-normal text-luna-charcoal tracking-tight">Messages</h2>
+              <h2 className="text-xl font-normal text-luna-charcoal tracking-tight"><T>Messages</T></h2>
               <p className="text-[12px] text-gray-400 font-normal mt-0.5">{conversations.length} conversation{conversations.length !== 1 ? 's' : ''}</p>
             </div>
             <button
@@ -240,7 +242,7 @@ export default function MessagesInboxPage() {
           {filteredConvs.length === 0 ? (
             <div className="px-5 py-12 text-center">
               <MessageSquare size={32} className="mx-auto mb-3 text-gray-200" />
-              <p className="text-sm text-[#6B7280] mt-1 font-medium">Aucune conversation</p>
+              <p className="text-sm text-[#6B7280] mt-1 font-medium"><T>Aucune conversation</T></p>
               <p className="text-[12px] text-gray-300 mt-1">Cliquez + pour démarrer</p>
             </div>
           ) : filteredConvs.map(conv => {
@@ -404,7 +406,7 @@ export default function MessagesInboxPage() {
               <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <MessageSquare size={28} className="text-gray-300" />
               </div>
-              <p className="text-sm font-normal text-gray-400">Sélectionnez une conversation</p>
+              <p className="text-sm font-normal text-gray-400"><T>Sélectionnez une conversation</T></p>
               <p className="text-[12px] text-gray-300 mt-1">Ou créez-en une nouvelle avec le bouton +</p>
             </div>
           </div>
@@ -417,7 +419,7 @@ export default function MessagesInboxPage() {
           <div className="bg-white rounded-[24px] w-full max-w-md shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
             {/* Luna Header */}
             <div className="p-7 pb-4 bg-luna-charcoal text-white">
-              <h2 className="text-xl font-light tracking-tight">Nouvelle Conversation</h2>
+              <h2 className="text-xl font-light tracking-tight"><T>Nouvelle Conversation</T></h2>
               <p className="text-[#b9dae9] text-xs mt-1 font-medium">Choisissez un canal pour démarrer</p>
             </div>
             <div className="p-7 pt-5">
@@ -473,7 +475,7 @@ export default function MessagesInboxPage() {
             ) : (
               contacts.length === 0 ? (
                 <div className="py-8 text-center">
-                  <p className="text-sm text-[#6B7280] mt-1 font-medium">Aucun contact trouvé</p>
+                  <p className="text-sm text-[#6B7280] mt-1 font-medium"><T>Aucun contact trouvé</T></p>
                   <p className="text-[12px] text-gray-300 mt-1">Ajoutez d&apos;abord un contact dans le CRM</p>
                 </div>
               ) : (

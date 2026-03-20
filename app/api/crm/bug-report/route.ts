@@ -43,7 +43,7 @@ Génère un rapport structuré en français avec:
 Utilise des emojis et un format Markdown propre.`;
 
             try {
-                const result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+                const result = await ai.models.generateContent({ model: 'gemini-3.1-flash', contents: prompt });
                 return NextResponse.json({ analysis: result.text || 'Analyse indisponible.' });
             } catch {
                 return NextResponse.json({ analysis: `## Rapport automatique\n\n${reports.length} bugs signalés. Analyse IA indisponible — vérifiez GEMINI_API_KEY.` });

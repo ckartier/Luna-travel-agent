@@ -1,6 +1,14 @@
 /**
  * In-memory rate limiter for API routes.
- * Production: replace with Redis / Upstash for multi-instance support.
+ * 
+ * ⚠️ PRODUCTION WARNING: This uses a process-local Map(). In multi-instance
+ * deployments (Vercel, Cloud Run, etc.), each instance has its own counter.
+ * Effective rate limiting requires a shared store (Redis, Upstash, etc.).
+ * 
+ * TODO: Replace with @upstash/ratelimit for serverless-compatible rate limiting:
+ *   import { Ratelimit } from "@upstash/ratelimit";
+ *   import { Redis } from "@upstash/redis";
+ *   const ratelimit = new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(30, "60 s") });
  */
 
 interface RateLimitEntry {

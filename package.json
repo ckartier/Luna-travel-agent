@@ -13,6 +13,7 @@
   "dependencies": {
     "@google-cloud/text-to-speech": "^6.4.0",
     "@google/genai": "1.43.0",
+    "@puckeditor/core": "^0.21.1",
     "@stripe/stripe-js": "^8.9.0",
     "@types/dompurify": "^3.0.5",
     "clsx": "^2.1.1",
@@ -24,6 +25,7 @@
     "framer-motion": "^12.35.2",
     "googleapis": "^171.4.0",
     "jspdf": "^4.2.0",
+    "kokoro-js": "^1.2.1",
     "leaflet": "^1.9.4",
     "lightningcss": "^1.27.1",
     "lucide-react": "^0.576.0",
@@ -38,7 +40,7 @@
     "recharts": "^3.7.0",
     "stripe": "^20.4.0",
     "tailwind-merge": "^3.5.0",
-    "xlsx": "^0.18.5",
+    "zod": "^4.3.6",
     "zustand": "^5.0.11"
   },
   "devDependencies": {

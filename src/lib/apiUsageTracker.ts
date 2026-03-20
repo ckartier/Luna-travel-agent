@@ -17,11 +17,12 @@ import { FieldValue } from 'firebase-admin/firestore';
  * }
  */
 
-export type APIName = 'gemini' | 'firecrawl' | 'whatsapp' | 'gmail' | 'imageGen' | 'mapbox' | 'devisPdf';
+export type APIName = 'gemini' | 'groq' | 'firecrawl' | 'whatsapp' | 'gmail' | 'imageGen' | 'mapbox' | 'devisPdf';
 
 // Cost per unit (€) - approximate
 export const API_COSTS: Record<APIName, number> = {
     gemini: 0.015,       // ~0.015€ per request (blended)
+    groq: 0,             // Free tier
     firecrawl: 0.04,     // ~0.04€ per scrape
     whatsapp: 0.05,      // ~0.05€ per message
     gmail: 0,            // Free (Google Workspace)
@@ -33,6 +34,7 @@ export const API_COSTS: Record<APIName, number> = {
 // Monthly soft limits
 export const API_LIMITS: Record<APIName, number> = {
     gemini: 1500,
+    groq: 14400,         // ~30 req/min = 14400/8h workday
     firecrawl: 500,
     whatsapp: 1000,
     gmail: 2000,

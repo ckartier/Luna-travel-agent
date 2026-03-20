@@ -40,6 +40,10 @@ export function middleware(request: NextRequest) {
   if (pathname === '/api/crm/site-config' && request.method === 'GET') {
     return NextResponse.next();
   }
+  // Upload route: skip middleware to avoid 10MB body size limit (route has its own verifyAuth)
+  if (pathname === '/api/crm/upload') {
+    return NextResponse.next();
+  }
   
   const isPublicApi = publicPaths.some(p => pathname.startsWith(p));
   if (isPublicApi) {
@@ -73,7 +77,8 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/api/:path*',
+    // Exclude /api/crm/upload from middleware to avoid 10MB body truncation
+    '/api/((?!crm/upload).*)',
     '/crm/:path*',
     '/site-admin/:path*',
   ],

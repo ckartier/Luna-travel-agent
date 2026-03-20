@@ -348,7 +348,7 @@ export default function MailsPage() {
       let customLogoUrl: string | undefined;
       let agencyName: string | undefined;
       try {
-        const cfgRes = await fetch('/api/crm/site-config');
+        const cfgRes = await fetchWithAuth('/api/crm/site-config');
         const cfgData = await cfgRes.json();
         if (cfgData?.global?.logo) customLogoUrl = cfgData.global.logo;
         if (cfgData?.business?.name) agencyName = cfgData.business.name;

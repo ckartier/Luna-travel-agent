@@ -24,7 +24,7 @@ export default function SignupPage() {
     const [step, setStep] = useState<'form' | 'creating'>('form');
     const router = useRouter();
     const searchParams = useSearchParams();
-    const isLegal = searchParams.get('vertical') === 'legal';
+    const isLegal = searchParams?.get('vertical') === 'legal';
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();

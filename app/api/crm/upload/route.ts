@@ -15,9 +15,9 @@ export async function POST(request: Request) {
         }
 
         // Validate file type
-        const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'];
+        const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'application/pdf'];
         if (!validTypes.includes(file.type)) {
-            return NextResponse.json({ error: 'Invalid file type. Use JPEG, PNG, WebP, GIF, SVG, MP4, WebM, MOV.' }, { status: 400 });
+            return NextResponse.json({ error: 'Invalid file type. Use JPEG, PNG, WebP, GIF, SVG, MP4, WebM, MOV, PDF.' }, { status: 400 });
         }
 
         // Validate file size (max 100MB for video, 25MB for images)
@@ -67,3 +67,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: error.message || 'Upload failed' }, { status: 500 });
     }
 }
+
+// App Router route segment config
+export const maxDuration = 60; // Allow up to 60s for video uploads
+export const dynamic = 'force-dynamic';

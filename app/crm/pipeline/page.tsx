@@ -26,6 +26,9 @@ import {
   Map,
   Palette,
   ClipboardList,
+  Sparkles,
+  Loader2,
+  Briefcase,
 } from "lucide-react";
 import {
   getLeads,
@@ -38,10 +41,12 @@ import {
   createQuoteFromLead,
   createInvoice,
   CRMLead,
+  computeLeadScore,
 } from "@/src/lib/firebase/crm";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/src/contexts/AuthContext";
+import { useVertical } from "@/src/contexts/VerticalContext";
 import { T, useAutoTranslate } from "@/src/components/T";
 
 const STAGES = ["NOUVEAU", "IA EN COURS", "DEVIS ENVOYÉ", "GAGNÉ"] as const;
@@ -97,6 +102,8 @@ const formatCreatedAt = (ts: any): string => {
 export default function CRMPipeline() {
   const router = useRouter();
   const { tenantId } = useAuth();
+  const { vertical } = useVertical();
+  const isLegal = vertical.id === 'legal';
   const at = useAutoTranslate();
   const [deals, setDeals] = useState<any[]>([]);
   const [editDeal, setEditDeal] = useState<any>(null);
@@ -105,6 +112,8 @@ export default function CRMPipeline() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [wonModal, setWonModal] = useState<{ deal: any } | null>(null);
   const [collapsedCols, setCollapsedCols] = useState<Record<string, boolean>>({});
+  const [aiScores, setAiScores] = useState<Record<string, any>>({});
+  const [scoringId, setScoringId] = useState<string | null>(null);
   const [newDeal, setNewDeal] = useState({
     clientName: "",
     destination: "",
@@ -142,6 +151,7 @@ export default function CRMPipeline() {
         budget: newDeal.budget,
         pax: newDeal.pax,
         status: "NEW",
+        vertical: isLegal ? 'legal' : 'travel',
       });
       setIsModalOpen(false);
       setNewDeal({
@@ -162,8 +172,10 @@ export default function CRMPipeline() {
     setLoading(true);
     try {
       const leads = await getLeads(tenantId);
+      const currentVertical = isLegal ? 'legal' : 'travel';
+      const filteredLeads = leads.filter(l => (l.vertical || 'travel') === currentVertical);
       setDeals(
-        leads.map((l) => ({
+        filteredLeads.map((l) => ({
           id: l.id,
           client: l.clientName || "Client Inconnu",
           destination: l.destination || "Non définie",
@@ -298,7 +310,7 @@ export default function CRMPipeline() {
 
       // Auto-create follow-up activity
       await createActivity(tenantId!, {
-        title: `Organiser le voyage ${d.destination} pour ${d.client}`,
+        title: isLegal ? `Organiser le dossier ${d.destination} pour ${d.client}` : `Organiser le voyage ${d.destination} pour ${d.client}`,
         time: "Cette semaine",
         type: "meeting",
         status: "PENDING",
@@ -499,8 +511,20 @@ export default function CRMPipeline() {
                             ? 'bg-amber-50 text-amber-600 border border-amber-200/50'
                             : 'bg-sky-50 text-sky-600 border border-sky-200/50'
                             }`}>
-                            <span className="flex items-center gap-1">{isDealPrestation(deal) ? <><Palette size={11} /> Prestation</> : <><Plane size={11} /> <T>Nouveau Voyage</T></>}</span>
+                            <span className="flex items-center gap-1">{isDealPrestation(deal) ? <><Palette size={11} /> Prestation</> : <><Plane size={11} /> {isLegal ? 'Nouveau Dossier' : <T>Nouveau Voyage</T>}</>}</span>
                           </span>
+                          {/* Lead Score Badge */}
+                          {(() => {
+                            const score = computeLeadScore(deal as any);
+                            const color = score >= 70 ? 'bg-emerald-50 text-emerald-600 border-emerald-200/50' : score >= 40 ? 'bg-amber-50 text-amber-600 border-amber-200/50' : 'bg-red-50 text-red-500 border-red-200/50';
+                            const emoji = score >= 70 ? '🟢' : score >= 40 ? '🟡' : '🔴';
+                            return (
+                              <span className={`text-[8px] font-bold px-2 py-0.5 rounded-md border ${color}`}
+                                title={`Score de conversion: ${score}/100`}>
+                                {emoji} {score}
+                              </span>
+                            );
+                          })()}
                         </div>
                       </div>
 
@@ -754,6 +778,71 @@ export default function CRMPipeline() {
                         </div>
                       </details>
 
+                      {/* ── Gemini AI Score ── */}
+                      <div className="mb-3 pt-3 border-t border-gray-100">
+                        {aiScores[deal.id] ? (
+                          <div className="bg-gradient-to-br from-indigo-50/80 to-purple-50/60 rounded-xl p-3 border border-indigo-100/50">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[9px] font-bold uppercase tracking-widest text-indigo-400 flex items-center gap-1">
+                                <Sparkles size={10} /> Score Gemini
+                              </span>
+                              <span className={`text-[18px] font-black ${
+                                aiScores[deal.id].score >= 70 ? 'text-emerald-600' :
+                                aiScores[deal.id].score >= 40 ? 'text-amber-600' : 'text-red-500'
+                              }`}>{aiScores[deal.id].score}<span className="text-[10px] font-normal text-gray-400">/100</span></span>
+                            </div>
+                            {aiScores[deal.id].factors?.slice(0, 3).map((f: any, i: number) => (
+                              <div key={i} className="flex items-start gap-1.5 mb-1">
+                                <span className={`text-[9px] mt-0.5 ${f.impact === 'positif' ? 'text-emerald-500' : f.impact === 'négatif' ? 'text-red-400' : 'text-gray-400'}`}>
+                                  {f.impact === 'positif' ? '▲' : f.impact === 'négatif' ? '▼' : '●'}
+                                </span>
+                                <span className="text-[10px] text-gray-600 leading-tight">{f.label}</span>
+                              </div>
+                            ))}
+                            {aiScores[deal.id].recommendation && (
+                              <p className="text-[10px] text-indigo-600 mt-2 font-medium italic leading-tight">💡 {aiScores[deal.id].recommendation}</p>
+                            )}
+                            <p className="text-[8px] text-gray-400 mt-1.5">Confiance: {aiScores[deal.id].confidence || 'moyenne'}</p>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              setScoringId(deal.id);
+                              try {
+                                const res = await fetch('/api/crm/ai-insights', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    type: 'lead-scoring',
+                                    data: {
+                                      clientName: deal.clientName || deal.name,
+                                      destination: deal.destination,
+                                      budget: deal.budget,
+                                      dates: deal.dates,
+                                      pax: deal.pax,
+                                      source: deal.source,
+                                      status: deal.status,
+                                      notes: deal.notes,
+                                      messageCount: deal.messageCount || 0,
+                                    },
+                                  }),
+                                });
+                                if (res.ok) {
+                                  const result = await res.json();
+                                  setAiScores(prev => ({ ...prev, [deal.id]: result }));
+                                }
+                              } catch (err) { console.error('AI scoring error:', err); }
+                              setScoringId(null);
+                            }}
+                            disabled={scoringId === deal.id}
+                            className="w-full py-2 text-center bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 text-indigo-600 border border-indigo-200/50 text-[11px] rounded-xl transition-all font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 disabled:opacity-50"
+                          >
+                            {scoringId === deal.id ? <><Loader2 size={12} className="animate-spin" /> Analyse Gemini...</> : <><Sparkles size={12} /> Scorer avec Gemini</>}
+                          </button>
+                        )}
+                      </div>
+
                       {/* Quick access links */}
                       <div className="mb-4 pt-3 border-t border-gray-100 flex flex-wrap gap-2 mt-auto">
                         {/* Agent button — routes to correct agent based on deal type */}
@@ -767,17 +856,17 @@ export default function CRMPipeline() {
                           {isDealPrestation(deal) ? (
                             <><ShoppingBag size={12} /> {deal.agentResults ? 'Relancer' : 'Agent Presta'}</>
                           ) : (
-                            <><Bot size={12} /> {deal.agentResults ? 'Relancer' : 'Agent Voyage'}</>
+                            <><Bot size={12} /> {deal.agentResults ? 'Relancer' : isLegal ? 'Agent Juridique' : 'Agent Voyage'}</>
                           )}
                         </Link>
-                        {/* Link to trip if won */}
+                        {/* Link to trip/dossier if won */}
                         {deal.tripId && (
                           <Link
-                            href={`/crm/trips/${deal.tripId}/itinerary`}
+                            href={isLegal ? `/crm/dossiers` : `/crm/trips/${deal.tripId}/itinerary`}
                             className="flex-1 py-2 text-center bg-[#bcdeea]/20 hover:bg-[#bcdeea]/40 text-[#2E2E2E] border border-[#bcdeea]/30 text-[11px] rounded-xl transition-all font-bold uppercase tracking-wider"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <Map size={13} className="inline mr-1" /> Voyage
+                            {isLegal ? <><Briefcase size={13} className="inline mr-1" /> Dossier</> : <><Map size={13} className="inline mr-1" /> Voyage</>}
                           </Link>
                         )}
                       </div>
@@ -980,7 +1069,7 @@ export default function CRMPipeline() {
                 <div className="p-6">
                   <p className="text-luna-text-muted text-sm mb-5">
                     Voulez-vous créer automatiquement un{" "}
-                    <strong>voyage dans le Planning</strong> et une{" "}
+                    <strong>{isLegal ? 'dossier dans le Planning' : 'voyage dans le Planning'}</strong> et une{" "}
                     <strong>tâche de suivi</strong> ?
                   </p>
                   <div className="bg-[#bcdeea]/10 rounded-xl p-4 mb-5 border border-[#bcdeea]/20 space-y-2 text-sm">
@@ -996,7 +1085,7 @@ export default function CRMPipeline() {
                     <div className="flex items-center gap-2 text-[#2E2E2E]">
                       <Calendar size={14} />{" "}
                       <span>
-                        Tâche : <strong>Organiser le voyage</strong>
+                        Tâche : <strong>{isLegal ? 'Organiser le dossier' : 'Organiser le voyage'}</strong>
                       </span>
                     </div>
                   </div>
@@ -1019,6 +1108,14 @@ export default function CRMPipeline() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        <ConfirmModal
+          open={!!deleteTarget}
+          title={`Supprimer ${deleteTarget?.name || 'ce lead'} ?`}
+          message="Le lead sera supprimé définitivement du pipeline."
+          onConfirm={confirmDeleteDeal}
+          onCancel={() => setDeleteTarget(null)}
+        />
       </div>
     </div>
   );

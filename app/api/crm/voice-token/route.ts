@@ -26,6 +26,6 @@ export async function POST(request: Request) {
     // Native-audio models (gemini-2.5-flash-native-audio-*) do NOT support tools.
     return NextResponse.json({
         apiKey,
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
     });
 }

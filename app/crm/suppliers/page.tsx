@@ -5,7 +5,7 @@ import {
     Plus, Search, Star, Phone, Mail, Globe, MapPin, Edit3, Trash2, X, Heart,
     Filter, CreditCard, ShieldCheck, UserCheck, MessageCircle, ChevronRight, Activity,
     Briefcase, Languages, Check, Wallet, Sparkles, Users, Loader2,
-    Hotel, UtensilsCrossed, Compass, Landmark, Car, Package, type LucideIcon
+    Hotel, UtensilsCrossed, Compass, Landmark, Car, Package, Scale, Gavel, Building2, FileText, type LucideIcon
 } from 'lucide-react';
 import {
     CRMSupplier, SupplierCategory, getSuppliers, createSupplier,
@@ -16,6 +16,10 @@ import { T } from '@/src/components/T';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import ConfirmModal from '@/src/components/ConfirmModal';
+import { CRMSkeleton } from '@/app/components/CRMSkeleton';
+import { CRMEmptyState } from '@/app/components/CRMEmptyState';
+import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
+import { useVertical } from '@/src/contexts/VerticalContext';
 
 const CATEGORIES: { value: SupplierCategory; label: string; icon: LucideIcon; color: string; bgColor: string }[] = [
     { value: 'HÉBERGEMENT', label: 'Hébergement', icon: Hotel, color: 'text-[#2E2E2E]', bgColor: '#E3E2F3' },
@@ -38,10 +42,24 @@ const CLASSIC_LANGUAGES = [
     { code: 'JA', label: 'Japonais' },
 ];
 
-const getCategoryMeta = (cat: SupplierCategory) => CATEGORIES.find(c => c.value === cat) || CATEGORIES[6];
+// ═══ LEGAL VERTICAL CATEGORIES ═══
+const LEGAL_CATEGORIES: { value: SupplierCategory; label: string; icon: LucideIcon; color: string; bgColor: string }[] = [
+    { value: 'GUIDE', label: 'Avocat Collaborateur', icon: Scale, color: 'text-[#2E2E2E]', bgColor: '#EDE0D4' },
+    { value: 'HÉBERGEMENT', label: 'Expert Judiciaire', icon: ShieldCheck, color: 'text-[#2E2E2E]', bgColor: '#E3E2F3' },
+    { value: 'RESTAURANT', label: 'Huissier / Commissaire', icon: Gavel, color: 'text-[#2E2E2E]', bgColor: '#F2D9D3' },
+    { value: 'TRANSPORT', label: 'Greffe / Tribunal', icon: Building2, color: 'text-[#2E2E2E]', bgColor: '#D3E8E3' },
+    { value: 'CULTURE', label: 'Notaire', icon: FileText, color: 'text-[#2E2E2E]', bgColor: '#E6D2BD' },
+    { value: 'ACTIVITÉ', label: 'Médiateur / Arbitre', icon: Users, color: 'text-[#2E2E2E]', bgColor: '#bcdeea' },
+    { value: 'AUTRE', label: 'Autre', icon: Package, color: 'text-[#2E2E2E]', bgColor: '#F3F4F6' },
+];
+
+const getCategoryMeta = (cat: SupplierCategory, isLegal = false) => (isLegal ? LEGAL_CATEGORIES : CATEGORIES).find(c => c.value === cat) || (isLegal ? LEGAL_CATEGORIES : CATEGORIES).at(-1)!;
 
 export default function SuppliersPage() {
     const { tenantId } = useAuth();
+    const { vertical } = useVertical();
+    const isLegal = vertical.id === 'legal';
+    const activeCategories = isLegal ? LEGAL_CATEGORIES : CATEGORIES;
     const [suppliers, setSuppliers] = useState<CRMSupplier[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -65,10 +83,13 @@ export default function SuppliersPage() {
         setLoading(true);
         try {
             const data = await getSuppliers(tenantId);
-            setSuppliers(data);
+            // Filter by vertical: suppliers without a vertical field default to 'travel'
+            const verticalId = vertical.id;
+            const filtered = data.filter(s => (s.vertical || 'travel') === verticalId);
+            setSuppliers(filtered);
         } catch (err) { console.error(err); }
         setLoading(false);
-    }, [tenantId]);
+    }, [tenantId, vertical.id]);
 
     useEffect(() => { loadData(); }, [loadData]);
 
@@ -81,6 +102,7 @@ export default function SuppliersPage() {
                 tags: [],
                 isFavorite: false,
                 isLunaFriend: true, // All manually created = Luna Friends
+                vertical: vertical.id, // Tag with current CRM vertical
                 createdAt: new Date(),
                 updatedAt: new Date()
             } as any);
@@ -152,7 +174,7 @@ export default function SuppliersPage() {
         setBatchProgress({ done: 0, total: targets.length });
         for (let i = 0; i < targets.length; i++) {
             try {
-                const res = await fetch('/api/crm/scrape-supplier', {
+                const res = await fetchWithAuth('/api/crm/scrape-supplier', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: targets[i].website }),
@@ -171,15 +193,7 @@ export default function SuppliersPage() {
     // Stats
     const lunaFriendsCount = suppliers.filter(s => s.isLunaFriend).length;
 
-    if (loading && suppliers.length === 0) return (
-        <div className="fixed top-0 left-0 right-0 h-[2px] z-[9999] overflow-hidden">
-            <div className="h-full bg-luna-charcoal w-full origin-left animate-loading-bar" />
-            <style jsx>{`
-                    @keyframes loading-bar { 0% { transform: translateX(-100%); } 50% { transform: translateX(-20%); } 100% { transform: translateX(0%); } }
-                    .animate-loading-bar { animation: loading-bar 1.5s ease-in-out infinite; }
-                `}</style>
-        </div>
-    );
+    if (loading && suppliers.length === 0) return <CRMSkeleton variant="cards" rows={6} />;
 
     return (
         <div className="w-full h-full">
@@ -243,7 +257,7 @@ export default function SuppliersPage() {
                         </button>
 
                         {/* Category filters */}
-                        {CATEGORIES.map(c => {
+                        {activeCategories.map(c => {
                             const Icon = c.icon;
                             return (
                                 <button key={c.value} onClick={() => setFilterCat(c.value)} className={`flex items-center gap-2 px-5 py-3.5 rounded-[12px] text-[12px] font-medium tracking-wide transition-all border whitespace-nowrap ${filterCat === c.value ? 'text-[#2E2E2E] border-transparent scale-[1.02]' : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#bcdeea]'}`} style={filterCat === c.value ? { backgroundColor: c.bgColor } : {}}>
@@ -262,17 +276,16 @@ export default function SuppliersPage() {
                         ))}
                     </AnimatePresence>
                     {filtered.length === 0 && (
-                        <div className="col-span-full py-24 text-center">
-                            <Users size={48} className="mx-auto text-gray-200 mb-4" />
-                            <h4 className="text-lg font-normal text-gray-400 uppercase tracking-tighter mb-2">
-                                {filterCat === 'LUNA_FRIENDS' ? 'Aucun Luna Friend trouvé' : 'Aucun prestataire trouvé'}
-                            </h4>
-                            <p className="text-sm text-[#6B7280] mt-1 font-medium">
-                                {filterCat === 'LUNA_FRIENDS'
+                        <div className="col-span-full">
+                            <CRMEmptyState
+                                icon={Users}
+                                title={filterCat === 'LUNA_FRIENDS' ? 'Aucun Luna Friend trouvé' : 'Aucun prestataire trouvé'}
+                                description={filterCat === 'LUNA_FRIENDS'
                                     ? 'Créez votre premier prestataire manuellement pour le voir ici.'
-                                    : 'Essayez avec un autre filtre ou ajoutez un nouveau prestataire.'
-                                }
-                            </p>
+                                    : 'Essayez avec un autre filtre ou ajoutez un nouveau prestataire.'}
+                                actionLabel="Nouveau Prestataire"
+                                onAction={() => setShowModal(true)}
+                            />
                         </div>
                     )}
                 </div>
@@ -293,12 +306,12 @@ export default function SuppliersPage() {
                                     <div className="flex justify-between items-start">
                                         <div className="space-y-2">
                                             <div className="flex items-center gap-3">
-                                                <h2 className="text-3xl font-light leading-tight tracking-tight"><T>Nouveau Prestataire</T></h2>
+                                                <h2 className="text-3xl font-light leading-tight tracking-tight">{isLegal ? 'Nouveau Collaborateur' : <T>Nouveau Prestataire</T>}</h2>
                                                 <span className="px-4 py-1.5 bg-[#bcdeea]/20 text-[#5a8fa3] rounded-2xl text-[9px] font-semibold uppercase tracking-widest border border-[#bcdeea]/30 flex items-center gap-1.5">
                                                     <Sparkles size={10} /> Luna Friend
                                                 </span>
                                             </div>
-                                            <p className="text-[#b9dae9] text-xs mt-1 font-medium">Enregistrement légal et compétences linguistiques</p>
+                                            <p className="text-[#b9dae9] text-xs mt-1 font-medium">{isLegal ? 'Enregistrement confrère et informations professionnelles' : 'Enregistrement légal et compétences linguistiques'}</p>
                                         </div>
                                         <button onClick={() => setShowModal(false)} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-all"><X size={24} /></button>
                                     </div>
@@ -307,7 +320,7 @@ export default function SuppliersPage() {
                                     <form onSubmit={handleAdd} className="space-y-10">
                                         {/* Category Toggles */}
                                         <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
-                                            {CATEGORIES.map(c => {
+                                            {activeCategories.map(c => {
                                                 const Icon = c.icon;
                                                 return (
                                                     <button
@@ -340,7 +353,8 @@ export default function SuppliersPage() {
                                             </div>
                                         </div>
 
-                                        {/* Languages Selection */}
+                                        {/* Languages Selection — Travel only */}
+                                        {!isLegal && (
                                         <div className="p-8 bg-[#bcdeea]/10 rounded-[24px] border border-[#bcdeea]/15">
                                             <div className="flex items-center gap-2 mb-6">
                                                 <Languages size={18} className="text-[#5a8fa3]" />
@@ -362,21 +376,41 @@ export default function SuppliersPage() {
                                                 ))}
                                             </div>
                                         </div>
+                                        )}
 
-                                        {/* Roles & Status */}
+                                        {/* Roles & Status — adapted by vertical */}
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                            <button type="button" onClick={() => setForm({ ...form, isGuide: !form.isGuide })} className={`p-4 rounded-[20px] border flex flex-col items-center gap-2 transition-all ${form.isGuide ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-gray-50/50 border-transparent text-gray-400'}`}>
-                                                <UserCheck size={20} />
-                                                <span className="text-[9px] font-bold uppercase tracking-widest"><T>Guide Certifié</T></span>
-                                            </button>
-                                            <button type="button" onClick={() => setForm({ ...form, isChauffeur: !form.isChauffeur })} className={`p-4 rounded-[20px] border flex flex-col items-center gap-2 transition-all ${form.isChauffeur ? 'bg-sky-50 border-sky-200 text-sky-600' : 'bg-gray-50/50 border-transparent text-gray-400'}`}>
-                                                <Briefcase size={20} />
-                                                <span className="text-[9px] font-bold uppercase tracking-widest">Chauffeur</span>
-                                            </button>
-                                            <button type="button" onClick={() => setForm({ ...form, hasLicense: !form.hasLicense })} className={`p-4 rounded-[20px] border flex flex-col items-center gap-2 transition-all ${form.hasLicense ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-gray-50/50 border-transparent text-gray-400'}`}>
-                                                <ShieldCheck size={20} />
-                                                <span className="text-[9px] font-bold uppercase tracking-widest">Licence Pro OK</span>
-                                            </button>
+                                            {isLegal ? (
+                                                <>
+                                                    <button type="button" onClick={() => setForm({ ...form, isGuide: !form.isGuide })} className={`p-4 rounded-[20px] border flex flex-col items-center gap-2 transition-all ${form.isGuide ? 'bg-[#5a3e91]/10 border-[#5a3e91]/30 text-[#5a3e91]' : 'bg-gray-50/50 border-transparent text-gray-400'}`}>
+                                                        <Scale size={20} />
+                                                        <span className="text-[9px] font-bold uppercase tracking-widest">Inscrit au Barreau</span>
+                                                    </button>
+                                                    <button type="button" onClick={() => setForm({ ...form, isChauffeur: !form.isChauffeur })} className={`p-4 rounded-[20px] border flex flex-col items-center gap-2 transition-all ${form.isChauffeur ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-gray-50/50 border-transparent text-gray-400'}`}>
+                                                        <ShieldCheck size={20} />
+                                                        <span className="text-[9px] font-bold uppercase tracking-widest">Assermenté</span>
+                                                    </button>
+                                                    <button type="button" onClick={() => setForm({ ...form, hasLicense: !form.hasLicense })} className={`p-4 rounded-[20px] border flex flex-col items-center gap-2 transition-all ${form.hasLicense ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-gray-50/50 border-transparent text-gray-400'}`}>
+                                                        <FileText size={20} />
+                                                        <span className="text-[9px] font-bold uppercase tracking-widest">Spécialisation CNB</span>
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button type="button" onClick={() => setForm({ ...form, isGuide: !form.isGuide })} className={`p-4 rounded-[20px] border flex flex-col items-center gap-2 transition-all ${form.isGuide ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-gray-50/50 border-transparent text-gray-400'}`}>
+                                                        <UserCheck size={20} />
+                                                        <span className="text-[9px] font-bold uppercase tracking-widest"><T>Guide Certifié</T></span>
+                                                    </button>
+                                                    <button type="button" onClick={() => setForm({ ...form, isChauffeur: !form.isChauffeur })} className={`p-4 rounded-[20px] border flex flex-col items-center gap-2 transition-all ${form.isChauffeur ? 'bg-sky-50 border-sky-200 text-sky-600' : 'bg-gray-50/50 border-transparent text-gray-400'}`}>
+                                                        <Briefcase size={20} />
+                                                        <span className="text-[9px] font-bold uppercase tracking-widest">Chauffeur</span>
+                                                    </button>
+                                                    <button type="button" onClick={() => setForm({ ...form, hasLicense: !form.hasLicense })} className={`p-4 rounded-[20px] border flex flex-col items-center gap-2 transition-all ${form.hasLicense ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-gray-50/50 border-transparent text-gray-400'}`}>
+                                                        <ShieldCheck size={20} />
+                                                        <span className="text-[9px] font-bold uppercase tracking-widest">Licence Pro OK</span>
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
 
                                         {/* Financial & Legal */}
@@ -415,7 +449,7 @@ export default function SuppliersPage() {
 
                                         <div className="pt-6 flex gap-6">
                                             <button type="button" onClick={() => setShowModal(false)} className="btn-expert btn-expert-glass flex-1 !py-6">Annuler</button>
-                                            <button type="submit" className="btn-expert btn-expert-primary flex-[2] !py-6"><T>Nouveau Prestataire</T></button>
+                                            <button type="submit" className="btn-expert btn-expert-primary flex-[2] !py-6">{isLegal ? 'Créer le Collaborateur' : <T>Nouveau Prestataire</T>}</button>
                                         </div>
                                     </form>
                                 </div>
@@ -429,8 +463,11 @@ export default function SuppliersPage() {
                     open={!!deleteTarget}
                     onConfirm={handleConfirmDelete}
                     onCancel={handleCancelDelete}
-                    title="Supprimer le prestataire ?"
-                    message="\u00cates-vous s\u00fbr de vouloir supprimer ce prestataire ? Cette action est irr\u00e9versible."
+                    title={isLegal ? 'Supprimer le collaborateur ?' : 'Supprimer le prestataire ?'}
+                    message={isLegal
+                        ? 'Êtes-vous sûr de vouloir supprimer ce collaborateur ? Cette action est irréversible.'
+                        : 'Êtes-vous sûr de vouloir supprimer ce prestataire ? Cette action est irréversible.'
+                    }
                     confirmLabel="Supprimer"
                     cancelLabel="Annuler"
                 />
@@ -441,7 +478,9 @@ export default function SuppliersPage() {
 
 // ── Supplier Card Component ──
 function SupplierCard({ supplier: s, onDelete, onToggleFav, index = 0 }: { supplier: CRMSupplier; onDelete: (id: string, e: React.MouseEvent) => void; onToggleFav: (s: CRMSupplier, e: React.MouseEvent) => void; index?: number }) {
-    const cat = getCategoryMeta(s.category);
+    const { vertical } = useVertical();
+    const isLegal = vertical.id === 'legal';
+    const cat = getCategoryMeta(s.category, isLegal);
     const { tenantId } = useAuth();
     const [scraping, setScraping] = useState(false);
     const [localPhoto, setLocalPhoto] = useState(s.photoURL || '');
@@ -451,7 +490,7 @@ function SupplierCard({ supplier: s, onDelete, onToggleFav, index = 0 }: { suppl
         if (!s.website || !tenantId || scraping) return;
         setScraping(true);
         try {
-            const res = await fetch('/api/crm/scrape-supplier', {
+            const res = await fetchWithAuth('/api/crm/scrape-supplier', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: s.website }),
@@ -555,9 +594,11 @@ function SupplierCard({ supplier: s, onDelete, onToggleFav, index = 0 }: { suppl
                             <Mail size={16} /> <span className="text-[10px]">No Mail</span>
                         </div>
                     )}
+                    {!isLegal && (
                     <Link href={`/crm/catalog?supplierId=${s.id}`} className="p-4 bg-[#2E2E2E] text-white rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-2">
                         <Briefcase size={16} />
                     </Link>
+                    )}
                 </div>
 
                 <div className="pt-2">

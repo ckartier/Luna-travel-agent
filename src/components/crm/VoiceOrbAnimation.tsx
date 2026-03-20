@@ -90,7 +90,7 @@ function OrbitRings({ intensity, active, palette }: { intensity: number; active:
   );
 }
 
-export default function VoiceOrbAnimation({ size = 'lg', onClick, state = 'idle', parentLevel = 0 }: { size?: 'sm' | 'lg', onClick?: () => void, state?: string, parentLevel?: number }) {
+export default function VoiceOrbAnimation({ size = 'lg', onClick, state = 'idle', parentLevel = 0, vertical = 'travel' }: { size?: 'sm' | 'lg', onClick?: () => void, state?: string, parentLevel?: number, vertical?: string }) {
   const [level, setLevel] = useState(0.06);
   // If size is 'sm', we are docked (the floating button).
   const [docked, setDocked] = useState(size === 'sm');
@@ -184,8 +184,8 @@ export default function VoiceOrbAnimation({ size = 'lg', onClick, state = 'idle'
             sumSquares += normalized * normalized;
           }
           const rms = Math.sqrt(sumSquares / data.length);
-          const boosted = Math.min(1, Math.max(0.02, rms * 10.5));
-          setLevel((prev) => prev * 0.36 + boosted * 0.64);
+          const boosted = Math.min(1, Math.max(0.02, rms * 16));
+          setLevel((prev) => prev * 0.2 + boosted * 0.8);
           rafRef.current = requestAnimationFrame(loop);
         };
 
@@ -203,34 +203,65 @@ export default function VoiceOrbAnimation({ size = 'lg', onClick, state = 'idle'
   // For the AI, we use parentLevel. For the user, we use internal level.
   const activeLevel = state === 'speaking' ? parentLevel : level;
   
-  // The user wants RED when they speak, and BLUE when the AI speaks or thinks.
-  const userSpeaking = state === 'listening' && level > 0.05;
-  const isRed = userSpeaking;
-
   // Sizing mapping based on user's exact values, adjusting container layout
   const orbSize = docked ? 64 : 140;
   const shellSize = docked ? 52 : 120;
   const haloSize = docked ? 80 : 180;
   
-  const outerScale = Math.max(0.1, 1 + activeLevel * 0.3);
-  const innerScale = Math.max(0.1, 1 + activeLevel * 0.18);
-  const squishX = Math.max(0.1, 1 + activeLevel * 0.09);
-  const squishY = Math.max(0.1, 1 - activeLevel * 0.04);
+  const outerScale = Math.max(0.1, 1 + activeLevel * 0.55);
+  const innerScale = Math.max(0.1, 1 + activeLevel * 0.35);
+  const squishX = Math.max(0.1, 1 + activeLevel * 0.16);
+  const squishY = Math.max(0.1, 1 - activeLevel * 0.09);
 
-  const palette = isRed
+  // State-based palette: RED when user speaks (listening), BLUE when AI speaks/thinks
+  const isListening = state === 'listening';
+  const isAI = state === 'speaking' || state === 'thinking';
+
+  const isLegal = vertical === 'legal';
+
+  const palette = isLegal
     ? {
-        glow: "rgba(255,84,84,0.72)",
-        glowSoft: "rgba(255,120,120,0.34)",
-        border: "rgba(255,224,224,0.34)",
-        core: "radial-gradient(circle at 35% 30%, rgba(255,247,247,0.96), rgba(255,178,178,0.5) 20%, rgba(255,102,102,0.42) 40%, rgba(228,52,82,0.3) 62%, rgba(120,18,32,0.42) 82%, rgba(10,18,28,0) 88%)",
-        halo: "radial-gradient(circle, rgba(255,118,118,0.34) 0%, rgba(255,98,98,0.2) 34%, rgba(220,40,70,0.14) 56%, rgba(10,30,80,0.03) 76%, rgba(10,30,80,0) 82%)",
-        ring: "border-red-200/35",
-        dust: "bg-red-100",
-        dustShadow: "0 0 12px rgba(255,170,170,0.9)",
-        innerRing: "rgba(255,225,225,0.22)",
-        coreRing: "rgba(255,190,190,0.34)"
+        glow: "rgba(160,120,80,0.72)",
+        glowSoft: "rgba(160,120,80,0.34)",
+        border: "rgba(237,224,212,0.34)",
+        core: "radial-gradient(circle at 35% 30%, rgba(255,250,245,0.96), rgba(210,180,140,0.5) 20%, rgba(160,120,80,0.42) 40%, rgba(130,90,50,0.3) 62%, rgba(80,50,20,0.42) 82%, rgba(10,18,28,0) 88%)",
+        halo: "radial-gradient(circle, rgba(160,120,80,0.34) 0%, rgba(160,120,80,0.2) 34%, rgba(130,90,50,0.14) 56%, rgba(10,30,80,0.03) 76%, rgba(10,30,80,0) 82%)",
+        ring: "border-[#A07850]/35",
+        dust: "bg-[#A07850]/80",
+        dustShadow: "0 0 12px rgba(160,120,80,0.9)",
+        innerRing: "rgba(237,224,212,0.22)",
+        coreRing: "rgba(210,180,140,0.34)"
+      }
+    : isListening
+    ? {
+        // RED palette — user is speaking
+        glow: "rgba(239,68,68,0.85)",
+        glowSoft: "rgba(248,113,113,0.5)",
+        border: "rgba(252,165,165,0.4)",
+        core: "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.92), rgba(252,165,165,0.6) 20%, rgba(239,68,68,0.5) 40%, rgba(185,28,28,0.4) 62%, rgba(127,29,29,0.45) 82%, rgba(10,18,28,0) 88%)",
+        halo: "radial-gradient(circle, rgba(239,68,68,0.45) 0%, rgba(220,38,38,0.28) 30%, rgba(185,28,28,0.18) 50%, rgba(50,10,10,0.05) 70%, rgba(10,10,10,0) 78%)",
+        ring: "border-red-200/40",
+        dust: "bg-red-200",
+        dustShadow: "0 0 12px rgba(252,165,165,0.9)",
+        innerRing: "rgba(252,165,165,0.3)",
+        coreRing: "rgba(248,113,113,0.4)"
+      }
+    : isAI
+    ? {
+        // BLUE palette — AI is thinking or speaking
+        glow: "rgba(59,130,246,0.85)",
+        glowSoft: "rgba(96,165,250,0.5)",
+        border: "rgba(147,197,253,0.4)",
+        core: "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.92), rgba(147,197,253,0.6) 20%, rgba(59,130,246,0.5) 40%, rgba(29,78,216,0.4) 62%, rgba(30,58,138,0.45) 82%, rgba(10,18,28,0) 88%)",
+        halo: "radial-gradient(circle, rgba(59,130,246,0.45) 0%, rgba(37,99,235,0.28) 30%, rgba(29,78,216,0.18) 50%, rgba(10,20,60,0.05) 70%, rgba(10,10,30,0) 78%)",
+        ring: "border-blue-200/40",
+        dust: "bg-blue-200",
+        dustShadow: "0 0 12px rgba(147,197,253,0.9)",
+        innerRing: "rgba(147,197,253,0.3)",
+        coreRing: "rgba(96,165,250,0.4)"
       }
     : {
+        // Default — idle/connecting (subtle blue-white)
         glow: "rgba(90,188,255,0.85)",
         glowSoft: "rgba(96,198,255,0.45)",
         border: "rgba(255,255,255,0.35)",
@@ -244,7 +275,7 @@ export default function VoiceOrbAnimation({ size = 'lg', onClick, state = 'idle'
       };
 
   return (
-    <div className={`relative overflow-hidden flex items-center justify-center ${docked ? 'w-[72px] h-[72px] bg-transparent' : 'w-full h-full min-h-[320px] pt-4'}`}>
+    <div className={`relative flex items-center justify-center ${docked ? 'w-[72px] h-[72px] bg-transparent' : 'w-full h-full min-h-[320px] pt-4'}`}>
       {!docked && (
         <motion.div
           className="absolute inset-0"
@@ -269,8 +300,8 @@ export default function VoiceOrbAnimation({ size = 'lg', onClick, state = 'idle'
         >
           {/* We scale down the particles and rings if not docked but in a smaller panel context */}
           <div className="absolute inset-0 scale-[0.55] origin-center pointer-events-none">
-            {!docked && <OrbitalDust intensity={activeLevel} active={isRed} palette={palette} />}
-            {!docked && <OrbitRings intensity={activeLevel} active={isRed} palette={palette} />}
+            {!docked && <OrbitalDust intensity={activeLevel} active={isLegal} palette={palette} />}
+            {!docked && <OrbitRings intensity={activeLevel} active={isLegal} palette={palette} />}
           </div>
 
           <motion.div
@@ -285,7 +316,7 @@ export default function VoiceOrbAnimation({ size = 'lg', onClick, state = 'idle'
                 "50% 50% 48% 52% / 50% 48% 52% 50%",
               ],
             }}
-            transition={{ duration: 0.68, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 0.42, repeat: Infinity, ease: "easeInOut" }}
             style={{
               width: haloSize,
               height: haloSize,
@@ -298,7 +329,7 @@ export default function VoiceOrbAnimation({ size = 'lg', onClick, state = 'idle'
             className="absolute"
             animate={{
               scale: outerScale,
-              rotate: [0, 4.5, 0, -3.2, 0],
+              rotate: [0, 6 + activeLevel * 8, 0, -5 - activeLevel * 6, 0],
               borderRadius: [
                 "50% 50% 47% 53% / 51% 46% 54% 49%",
                 "54% 46% 52% 48% / 47% 53% 45% 55%",
@@ -306,13 +337,13 @@ export default function VoiceOrbAnimation({ size = 'lg', onClick, state = 'idle'
                 "50% 50% 47% 53% / 51% 46% 54% 49%",
               ],
             }}
-            transition={{ duration: 0.54, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 0.38, repeat: Infinity, ease: "easeInOut" }}
             style={{
               width: orbSize,
               height: orbSize,
               transform: `scaleX(${squishX}) scaleY(${squishY})`,
               background: palette.core,
-              boxShadow: `0 0 ${docked ? 12 : 96 + activeLevel * 60}px ${palette.glow}, inset 0 0 ${42 + activeLevel * 18}px rgba(255,255,255,0.34)`,
+              boxShadow: `0 0 ${docked ? 12 : 96 + activeLevel * 90}px ${palette.glow}, inset 0 0 ${42 + activeLevel * 28}px rgba(255,255,255,0.34)`,
             }}
           />
 
@@ -320,7 +351,7 @@ export default function VoiceOrbAnimation({ size = 'lg', onClick, state = 'idle'
             className="absolute border bg-white/10 backdrop-blur-xl"
             animate={{
               scale: innerScale,
-              rotate: [0, 3 + activeLevel * 5.5, 0, -3 - activeLevel * 5.5, 0],
+              rotate: [0, 4 + activeLevel * 8, 0, -4 - activeLevel * 8, 0],
               borderRadius: [
                 "50% 50% 49% 51% / 49% 52% 48% 51%",
                 "52% 48% 54% 46% / 47% 53% 45% 55%",
@@ -328,7 +359,7 @@ export default function VoiceOrbAnimation({ size = 'lg', onClick, state = 'idle'
                 "50% 50% 49% 51% / 49% 52% 48% 51%",
               ],
             }}
-            transition={{ duration: 0.48, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 0.32, repeat: Infinity, ease: "easeInOut" }}
             style={{
               width: shellSize,
               height: shellSize,

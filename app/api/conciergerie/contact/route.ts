@@ -8,6 +8,11 @@ export async function POST(request: Request) {
     try {
         const data = await request.json();
 
+        // Honeypot anti-spam: if hidden field is filled, silently discard (bot detected)
+        if (data._hp_website) {
+            return NextResponse.json({ success: true }); // Fake success to not alert bots
+        }
+
         // Resolve tenant
         const tenantsSnap = await adminDb.collection('tenants').limit(1).get();
         const tenantId = tenantsSnap.empty ? null : tenantsSnap.docs[0].id;

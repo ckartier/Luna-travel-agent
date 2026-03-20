@@ -1,16 +1,17 @@
 'use client';
 
 import { useState, useRef, useEffect, Suspense } from 'react';
-import { Bot, Mic, Send, Square, Keyboard, Volume2, Scale, Plane, Hotel, ArrowRight, XCircle, Mail, FileText, AlertTriangle, Calendar, Euro } from 'lucide-react';
+import { Bot, Mic, Send, Square, Keyboard, Volume2, Scale, Plane, Hotel, ArrowRight, XCircle, Mail, FileText, AlertTriangle, Calendar, Euro, Clock, Sparkles, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVertical } from '@/src/contexts/VerticalContext';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { sanitizeHtml } from '@/src/lib/sanitize';
-import { useVoiceAgent } from '@/src/hooks/useVoiceAgent';
+import { useGeminiLive as useVoiceAgent } from '@/src/hooks/useGeminiLive';
 import { useSearchParams } from 'next/navigation';
 
 // Dynamically import travel agents
 import dynamic from 'next/dynamic';
+import { T } from '@/src/components/T';
 const VoyageAgent = dynamic(() => import('@/app/voyage-agent/page'), { ssr: false });
 const PrestationsAgent = dynamic(() => import('@/app/prestations-agent/page'), { ssr: false });
 
@@ -79,6 +80,15 @@ function UnifiedLegalAgent() {
 
     const isConnected = voiceState !== 'idle' && voiceState !== 'error' && voiceState !== 'connecting';
     const isConnecting = voiceState === 'connecting';
+
+    // Auto-start session on mount so it says its greeting (only once)
+    const hasAutoStarted = useRef(false);
+    useEffect(() => {
+        if (!hasAutoStarted.current && voiceState === 'idle') {
+            hasAutoStarted.current = true;
+            start();
+        }
+    }, [start, voiceState]);
 
     // Auto-scroll
     useEffect(() => {
@@ -150,7 +160,7 @@ function UnifiedLegalAgent() {
                         </div>
                     </div>
                     <div className="flex flex-col items-center gap-2 mb-2">
-                        <h1 className="text-[42px] font-light text-[#2E2E2E] tracking-tight leading-none">Agent Juridique</h1>
+                        <h1 className="text-[42px] font-light text-[#2E2E2E] tracking-tight leading-none"><T>Agent Juridique</T></h1>
                         <motion.div 
                             initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                             className="px-3 py-1.5 rounded-full text-white shadow-lg mx-auto flex items-center gap-2"
@@ -481,16 +491,17 @@ function TravelAgentPage() {
     const [searchHistory, setSearchHistory] = useState<{ id: number; destination: string; timestamp: string }[]>([]);
     const [loadedAgents, setLoadedAgents] = useState<Set<AgentType>>(new Set(['voyage']));
     const [isSearching, setIsSearching] = useState(false);
+    const [showResults, setShowResults] = useState(false);
 
     const searchParams = useSearchParams();
     useEffect(() => {
-        const agentParam = searchParams.get('agent');
+        const agentParam = searchParams?.get('agent');
         if (agentParam === 'prestations') {
             setAgentType('prestations');
             setLoadedAgents(prev => new Set(prev).add('prestations'));
         }
         const params: Record<string, string> = {};
-        searchParams.forEach((value, key) => {
+        searchParams?.forEach((value, key) => {
             if (key !== 'agent') params[key] = value;
         });
         if (Object.keys(params).length > 0) {
@@ -531,8 +542,8 @@ function TravelAgentPage() {
     }, []);
 
     useEffect(() => {
-        const onStart = () => setIsSearching(true);
-        const onEnd = () => setIsSearching(false);
+        const onStart = () => { setIsSearching(true); setShowResults(false); };
+        const onEnd = () => { setIsSearching(false); setShowResults(true); };
         window.addEventListener('luna:agentSearchStart', onStart);
         window.addEventListener('luna:agentSearchEnd', onEnd);
         return () => {
@@ -545,6 +556,7 @@ function TravelAgentPage() {
         if (type === agentType) return;
         setLoadedAgents(prev => new Set(prev).add(type));
         setAgentType(type);
+        setShowResults(false);
     };
 
     const cancelSearch = () => {
@@ -556,120 +568,197 @@ function TravelAgentPage() {
 
     return (
         <div className="w-full h-full">
-            <div className="max-w-[1200px] mx-auto w-full pb-20 -mt-[100px]">
-                <div className="flex flex-col items-center text-center mb-6 pt-2">
-                    <div className="relative mb-5">
-                        <div className="w-20 h-20 rounded-2xl flex items-center justify-center agent-ia-glow">
-                            <Bot size={48} className="text-[#5a8fa3]" strokeWidth={1.5} />
+            <div className="w-full pb-20 px-6 pt-6">
+
+                {/* ═══ PREMIUM HEADER ═══ */}
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="flex items-center justify-between mb-6 pt-2"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#5a8fa3] to-[#3d7a91] flex items-center justify-center shadow-lg shadow-[#5a8fa3]/20">
+                            <Sparkles size={22} className="text-white" />
                         </div>
-                        <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#f8f8f8]" />
-                    </div>
-
-                    <style>{`
-                        .agent-ia-glow { animation: agentIaGlow 3s ease-in-out infinite; }
-                        @keyframes agentIaGlow {
-                            0%, 100% { box-shadow: 0 0 15px 5px rgba(188,222,234,0.25), 0 0 35px 12px rgba(90,143,163,0.08); }
-                            50% { box-shadow: 0 0 25px 10px rgba(188,222,234,0.4), 0 0 55px 20px rgba(90,143,163,0.15); }
-                        }
-                    `}</style>
-
-                    <div className="flex items-center gap-3 mb-1.5">
-                        <h1 className="text-[36px] font-light text-[#2E2E2E] tracking-tight">Agent IA</h1>
-                        <div className="px-2.5 py-1 rounded-lg bg-[#b9dae9]/20 border border-[#b9dae9]/25">
-                            <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-[#5a8fa3]">Super Agent</span>
+                        <div>
+                            <h1 className="text-[28px] font-medium text-[#2E2E2E] tracking-tight leading-none"><T>Agent IA</T></h1>
+                            <p className="text-[13px] text-[#9CA3AF] mt-0.5"><T>Recherche intelligente de voyages et prestations</T></p>
                         </div>
                     </div>
-                    <p className="text-[12px] text-[#9CA3AF] font-medium">Recherche intelligente de voyages et prestations • Gemini</p>
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.3 }}
+                        className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#5a8fa3]/10 to-[#b9dae9]/15 border border-[#b9dae9]/30"
+                    >
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#5a8fa3] animate-pulse" />
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#5a8fa3]">Gemini Pro</span>
+                    </motion.div>
+                </motion.div>
 
-                    <div className="flex items-center gap-3 mt-6">
-                        {(Object.keys(agents) as AgentType[]).map((type) => {
-                            const agent = agents[type];
-                            const isActive = agentType === type;
-                            const Icon = agent.icon;
-                            return (
-                                <button
-                                    key={type}
-                                    onClick={() => switchAgent(type)}
-                                    className={`relative flex items-center gap-3 px-6 py-3 rounded-2xl transition-all duration-200 border h-[52px] min-w-[180px]
-                                        ${isActive ? 'bg-white border-[#e0e0e0] shadow-[0_4px_16px_-4px_rgba(0,0,0,0.08)]' : 'bg-white border-[#f0f0f0] shadow-[0_2px_8px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.08)] hover:border-[#e0e0e0]'}`}
-                                >
-                                    {isActive && (
-                                        <motion.div layoutId="agent-active-line" className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-[2.5px] rounded-full bg-gradient-to-r ${agent.gradient}`} transition={{ type: 'spring', stiffness: 400, damping: 30 }} />
-                                    )}
-                                    <Icon size={17} className={`flex-shrink-0 transition-colors duration-200 ${isActive ? 'text-[#5a8fa3]' : 'text-[#9CA3AF]'}`} />
-                                    <div className="flex flex-col items-start">
-                                        <span className={`font-semibold uppercase tracking-[0.1em] text-[11px] transition-colors duration-200 ${isActive ? 'text-[#2E2E2E]' : 'text-[#9CA3AF]'}`}>{agent.label}</span>
-                                        <span className={`text-[9px] transition-colors duration-200 ${isActive ? 'text-[#5a8fa3]' : 'text-[#C0C0C0]'}`}>{agent.desc.split(',')[0]}</span>
+                {/* ═══ AGENT TAB-CARDS — Compact Premium ═══ */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                    {(Object.keys(agents) as AgentType[]).map((type, idx) => {
+                        const agent = agents[type];
+                        const isActive = agentType === type;
+                        const Icon = agent.icon;
+                        return (
+                            <motion.button
+                                key={type}
+                                onClick={() => switchAgent(type)}
+                                initial={{ opacity: 0, y: 16 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.08, type: 'spring', stiffness: 400, damping: 30 }}
+                                whileTap={{ scale: 0.98 }}
+                                className={`relative group text-left rounded-2xl px-5 py-4 transition-all duration-300 overflow-hidden cursor-pointer ${
+                                    isActive
+                                        ? 'bg-white border-2 border-[#b9dae9]/50 shadow-[0_8px_32px_-8px_rgba(90,143,163,0.18)]'
+                                        : 'bg-white/60 border-2 border-gray-100 hover:border-[#b9dae9]/25 hover:bg-white shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.08)]'
+                                }`}
+                            >
+                                {/* Active gradient overlay */}
+                                {isActive && (
+                                    <motion.div
+                                        layoutId="agent-tab-glow"
+                                        className="absolute inset-0 opacity-[0.04] bg-gradient-to-br from-[#5a8fa3] to-[#b9dae9]"
+                                        transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                                    />
+                                )}
+
+                                {/* Active top indicator */}
+                                {isActive && (
+                                    <motion.div
+                                        layoutId="agent-tab-indicator"
+                                        className="absolute top-0 left-4 right-4 h-[2.5px] rounded-full bg-gradient-to-r from-[#5a8fa3] to-[#b9dae9]"
+                                        transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                                    />
+                                )}
+
+                                <div className="relative z-10 flex items-center gap-4">
+                                    {/* Icon */}
+                                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 shrink-0 ${
+                                        isActive
+                                            ? `bg-gradient-to-br ${agent.gradient} shadow-md shadow-[#5a8fa3]/15`
+                                            : 'bg-gray-50 group-hover:bg-gray-100'
+                                    }`}>
+                                        <Icon size={20} className={`transition-colors duration-300 ${isActive ? 'text-white' : 'text-[#9CA3AF] group-hover:text-[#6B7280]'}`} />
                                     </div>
-                                </button>
-                            );
-                        })}
 
-                        <AnimatePresence>
-                            {isSearching && (
-                                <motion.button
-                                    initial={{ opacity: 0, scale: 0.8, width: 0 }}
-                                    animate={{ opacity: 1, scale: 1, width: 'auto' }}
-                                    exit={{ opacity: 0, scale: 0.8, width: 0 }}
-                                    transition={{ duration: 0.2 }}
-                                    onClick={cancelSearch}
-                                    className="flex items-center gap-2 px-5 py-3 h-[52px] rounded-2xl bg-red-50 border border-red-200 text-red-500 hover:bg-red-100 hover:border-red-300 transition-all duration-200 overflow-hidden whitespace-nowrap"
-                                >
-                                    <XCircle size={16} />
-                                    <span className="text-[11px] font-semibold uppercase tracking-[0.1em]">Annuler</span>
-                                </motion.button>
-                            )}
-                        </AnimatePresence>
-                    </div>
+                                    {/* Text */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <h3 className={`text-[15px] font-medium tracking-tight transition-colors duration-300 ${
+                                                isActive ? 'text-[#2E2E2E]' : 'text-[#6B7280] group-hover:text-[#2E2E2E]'
+                                            }`}>{agent.label}</h3>
+                                            {isActive && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, scale: 0 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200"
+                                                >
+                                                    <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                                                    <span className="text-[8px] font-bold text-emerald-600 uppercase tracking-wider"><T>Actif</T></span>
+                                                </motion.div>
+                                            )}
+                                        </div>
+                                        <p className={`text-[11px] mt-0.5 transition-colors duration-300 truncate ${
+                                            isActive ? 'text-[#6B7280]' : 'text-[#B0B0B0]'
+                                        }`}>{agent.subtitle}</p>
+                                    </div>
+
+                                    {/* Arrow */}
+                                    <ArrowRight size={14} className={`shrink-0 transition-all duration-300 ${
+                                        isActive ? 'text-[#5a8fa3] translate-x-0' : 'text-[#D0D0D0] -translate-x-1 opacity-0 group-hover:opacity-100 group-hover:translate-x-0'
+                                    }`} />
+                                </div>
+
+                                {/* Tags row */}
+                                <div className="relative z-10 flex flex-wrap gap-1 mt-3 pl-[60px]">
+                                    {agent.desc.split(', ').map((tag, i) => (
+                                        <span
+                                            key={i}
+                                            className={`px-2 py-0.5 rounded-md text-[9px] font-semibold uppercase tracking-wider transition-all duration-300 ${
+                                                isActive
+                                                    ? 'bg-[#5a8fa3]/8 text-[#5a8fa3] border border-[#b9dae9]/25'
+                                                    : 'bg-gray-50 text-[#C0C0C0] border border-transparent'
+                                            }`}
+                                        >
+                                            {tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            </motion.button>
+                        );
+                    })}
                 </div>
 
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={agentType}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.12 }}
-                        className="flex items-center justify-center gap-2 px-4 py-2 mb-4 rounded-xl bg-gradient-to-r from-[#2E2E2E]/[0.02] to-transparent border border-[#2E2E2E]/[0.04]"
-                    >
-                        <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${current.gradient}`} />
-                        <span className="text-[10px] font-medium text-[#2E2E2E]/30">{current.subtitle}</span>
-                        <ArrowRight size={8} className="text-[#2E2E2E]/15" />
-                        <span className="text-[10px] text-[#2E2E2E]/20">{current.desc}</span>
-                    </motion.div>
+                {/* ═══ Cancel button when searching ═══ */}
+                <AnimatePresence>
+                    {isSearching && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="flex justify-center mb-4"
+                        >
+                            <button
+                                onClick={cancelSearch}
+                                className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-red-50 border border-red-200 text-red-500 hover:bg-red-100 hover:border-red-300 transition-all duration-200 shadow-sm cursor-pointer"
+                            >
+                                <XCircle size={16} />
+                                <span className="text-[11px] font-semibold uppercase tracking-[0.1em]"><T>Annuler la recherche</T></span>
+                            </button>
+                        </motion.div>
+                    )}
                 </AnimatePresence>
 
+                {/* ═══ Saved session banner — Glassmorphism ═══ */}
                 {savedSession && agentType === 'voyage' && (
-                    <div className="mb-4 p-3.5 bg-gradient-to-r from-[#b9dae9]/10 to-white rounded-2xl border border-[#b9dae9]/20 flex items-center justify-between">
+                    <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-5 p-4 bg-white/70 backdrop-blur-xl rounded-2xl border border-[#b9dae9]/25 shadow-[0_4px_20px_-4px_rgba(90,143,163,0.1)] flex items-center justify-between"
+                    >
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-[#b9dae9]/15 flex items-center justify-center">
-                                <Plane size={14} className="text-[#5a8fa3]" />
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#b9dae9]/20 to-[#5a8fa3]/10 flex items-center justify-center border border-[#b9dae9]/20">
+                                <Plane size={16} className="text-[#5a8fa3]" />
                             </div>
                             <div>
-                                <p className="text-xs font-medium text-[#2E2E2E]">Dernière recherche : <span className="text-[#5a8fa3]">{savedSession.destination}</span></p>
-                                <p className="text-[9px] text-[#9CA3AF] mt-0.5">
+                                <p className="text-[13px] font-medium text-[#2E2E2E]">Dernière recherche : <span className="text-[#5a8fa3] font-medium">{savedSession.destination}</span></p>
+                                <p className="text-[11px] text-[#9CA3AF] mt-0.5">
                                     {savedSession.timestamp ? new Date(savedSession.timestamp).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : ''}
-                                    {savedSession.budget ? ` • Budget: ${savedSession.budget}` : ''}
-                                    {savedSession.pax ? ` • ${savedSession.pax}` : ''}
+                                    {savedSession.budget ? ` · Budget: ${savedSession.budget}` : ''}
+                                    {savedSession.pax ? ` · ${savedSession.pax}` : ''}
                                 </p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button onClick={() => { setAgentType('prestations'); setTimeout(() => setAgentType('voyage'), 50); }} className="px-4 py-2 bg-[#b9dae9] text-[#2E2E2E] rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-[#a5cadc] transition-all shadow-sm flex items-center gap-1.5">
-                                <ArrowRight size={11} /> Reprendre
+                            <button onClick={() => { setAgentType('prestations'); setTimeout(() => setAgentType('voyage'), 50); }} className="px-4 py-2.5 bg-gradient-to-r from-[#5a8fa3] to-[#3d7a91] text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:shadow-lg hover:shadow-[#5a8fa3]/20 transition-all flex items-center gap-1.5 cursor-pointer">
+                                <Zap size={11} /> Reprendre
                             </button>
-                            <button onClick={() => { try { localStorage.removeItem('luna_last_results'); } catch { /* */ } setSavedSession(null); }} className="px-3 py-2 text-[10px] text-gray-400 hover:text-gray-600 transition-colors">✕</button>
+                            <button onClick={() => { try { localStorage.removeItem('luna_last_results'); } catch { /* */ } setSavedSession(null); }} className="p-2 text-gray-300 hover:text-gray-500 transition-colors cursor-pointer rounded-lg hover:bg-gray-50">
+                                <XCircle size={14} />
+                            </button>
                         </div>
-                    </div>
+                    </motion.div>
                 )}
 
+                {/* ═══ Recent searches — Improved chips ═══ */}
                 {searchHistory.length > 0 && (
-                    <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1 no-scrollbar">
-                        <span className="text-[9px] text-[#9CA3AF] uppercase tracking-widest font-bold shrink-0">Récents:</span>
+                    <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1 no-scrollbar">
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            <Clock size={11} className="text-[#B0B0B0]" />
+                            <span className="text-[10px] text-[#B0B0B0] uppercase tracking-widest font-semibold"><T>Récents</T></span>
+                        </div>
                         {searchHistory.map(s => (
-                            <span key={s.id} className="shrink-0 px-3 py-1 bg-white rounded-full text-[9px] text-[#2E2E2E]/50 border border-[#2E2E2E]/[0.06] font-medium">
-                                {s.destination} • {new Date(s.timestamp).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                            </span>
+                            <motion.span
+                                key={s.id}
+                                whileHover={{ scale: 1.03, y: -1 }}
+                                className="shrink-0 px-3 py-1.5 bg-white rounded-lg text-[11px] text-[#6B7280] border border-gray-100 font-medium hover:border-[#b9dae9]/30 hover:text-[#2E2E2E] transition-all cursor-pointer shadow-sm"
+                            >
+                                {s.destination} · {new Date(s.timestamp).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                            </motion.span>
                         ))}
                     </div>
                 )}
@@ -686,20 +775,28 @@ function TravelAgentPage() {
                     .agent-page-container .weather-sidebar::-webkit-scrollbar { display: none; }
                 `}</style>
 
+                {/* ═══ RESULTS CONTAINER ═══ */}
                 <div className="agent-page-container">
-                    <div className={`transition-opacity duration-200 ease-in-out ${agentType === 'voyage' ? 'opacity-100' : 'opacity-0 pointer-events-none h-0 overflow-hidden'}`}>
-                        <Suspense fallback={<AgentLoading />}>
-                            <VoyageAgent initialParams={agentInitialParams} />
-                        </Suspense>
-                    </div>
-
-                    <div className={`transition-opacity duration-200 ease-in-out ${agentType === 'prestations' ? 'opacity-100' : 'opacity-0 pointer-events-none h-0 overflow-hidden'}`}>
-                        {loadedAgents.has('prestations') && (
-                            <Suspense fallback={<AgentLoading />}>
-                                <PrestationsAgent />
-                            </Suspense>
-                        )}
-                    </div>
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={agentType}
+                            initial={{ opacity: 0, y: 20, scale: 0.99 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -15, scale: 0.99 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 28, mass: 0.7 }}
+                        >
+                            {agentType === 'voyage' && (
+                                <Suspense fallback={<AgentLoading />}>
+                                    <VoyageAgent initialParams={agentInitialParams} />
+                                </Suspense>
+                            )}
+                            {agentType === 'prestations' && loadedAgents.has('prestations') && (
+                                <Suspense fallback={<AgentLoading />}>
+                                    <PrestationsAgent />
+                                </Suspense>
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
             </div>
         </div>

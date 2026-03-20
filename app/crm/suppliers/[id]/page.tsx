@@ -23,6 +23,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import ConfirmModal from '@/src/components/ConfirmModal';
+import { T } from '@/src/components/T';
 
 const CATEGORIES: { value: SupplierCategory; label: string; emoji: string; color: string; class: string }[] = [
     { value: 'HÉBERGEMENT', label: 'Hébergement', emoji: 'H', color: 'text-indigo-600', class: 'planning-card-hotel shadow-indigo-100/50' },
@@ -260,11 +261,36 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ id: s
         if (!bookingForm.prestationName || !tenantId) return;
         setSaving(true);
         try {
-            await createSupplierBooking(tenantId, {
+            const bookingId = await createSupplierBooking(tenantId, {
                 ...bookingForm,
                 supplierId: supplierId,
                 prestationId: 'manual'
             });
+
+            // ── AUTO-SEND WHATSAPP TO SUPPLIER ──
+            if (supplier?.phone) {
+                try {
+                    const dateStr = format(new Date(bookingForm.date), 'dd MMMM yyyy', { locale: fr });
+                    await fetchWithAuth('/api/whatsapp/send', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            to: supplier.phone,
+                            message: `😊 Bonjour ${supplier.contactName || supplier.name} !\n\nNouvelle mission pour vous 🌟\n\n🎨 *${bookingForm.prestationName}*\n📅 *Date :* ${dateStr}\n💰 *Rémunération :* ${bookingForm.rate + (bookingForm.extraFees || 0)} €\n${bookingForm.clientName ? `👤 *Client :* ${bookingForm.clientName}\n` : ''}\n🙏 Merci de confirmer avec les boutons ci-dessous !\n_✨ Luna CRM - On compte sur vous !_`,
+                            recipientType: 'SUPPLIER',
+                            clientName: supplier.name,
+                            clientId: supplier.id,
+                            interactiveButtons: true,
+                            bookingId,
+                            prestationName: bookingForm.prestationName,
+                        })
+                    });
+                    console.log('[Booking] WhatsApp sent to supplier:', supplier.name);
+                } catch (waErr) {
+                    console.error('[Booking] WhatsApp auto-send failed:', waErr);
+                }
+            }
+
             setShowBookingModal(false);
             setBookingForm({ prestationName: '', date: new Date().toISOString().split('T')[0], rate: 0, clientName: '', status: 'CONFIRMED', extraFees: 0, notes: '' });
             loadData();
@@ -285,7 +311,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ id: s
         </div>
     );
 
-    if (!supplier) return <div className="p-20 text-center text-gray-400">Prestataire introuvable</div>;
+    if (!supplier) return <div className="p-20 text-center text-gray-400"><T>Prestataire introuvable</T></div>;
 
     const cat = getCategoryMeta(supplier.category);
 
@@ -795,7 +821,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ id: s
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-luna-charcoal/40 backdrop-blur-md" onClick={() => setShowBookingModal(false)} />
                             <motion.div initial={{ opacity: 0, y: 50, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 50, scale: 0.95 }} className="bg-white rounded-[60px] w-full max-w-xl relative z-10 shadow-2xl p-12 md:p-16 overflow-hidden">
-                                <h2 className="text-4xl font-light text-[#2E2E2E] tracking-tight">Affectation Mission</h2>
+                                <h2 className="text-4xl font-light text-[#2E2E2E] tracking-tight"><T>Affectation Mission</T></h2>
                                 <form onSubmit={handleAddBooking} className="space-y-8">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Type de Service / Mission</label>
@@ -826,7 +852,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ id: s
                                         <textarea value={bookingForm.notes} onChange={e => setBookingForm({ ...bookingForm, notes: e.target.value })} className="w-full px-6 py-5 bg-gray-50 border-none rounded-[24px] text-sm focus:ring-2 focus:ring-emerald-200 h-28 font-sans" placeholder="Précisions pour le prestataire..." />
                                     </div>
                                     <div className="pt-8 flex gap-6">
-                                        <button type="button" onClick={() => setShowBookingModal(false)} className="flex-1 py-5 bg-gray-50 text-gray-500 rounded-[28px] font-bold uppercase tracking-widest text-[10px]">Annuler</button>
+                                        <button type="button" onClick={() => setShowBookingModal(false)} className="flex-1 py-5 bg-gray-50 text-gray-500 rounded-[28px] font-bold uppercase tracking-widest text-[10px]"><T>Annuler</T></button>
                                         <button type="submit" className="flex-[2] py-5 bg-luna-charcoal text-white rounded-[28px] font-bold uppercase tracking-widest text-[10px] shadow-2xl hover:bg-black transition-all">Valider la Mission</button>
                                     </div>
                                 </form>
@@ -939,7 +965,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ id: s
                                 </div>
                                 <div className="flex gap-3">
                                     <button onClick={() => setCropSrc(null)} className="flex-1 px-4 py-3 rounded-xl border border-[#E5E7EB] bg-[#F8FAFC] text-sm font-normal text-[#6B7280] hover:bg-gray-100 transition-all">Annuler</button>
-                                    <button onClick={handleCropConfirm} className="flex-1 px-4 py-3 rounded-xl bg-luna-charcoal hover:bg-gray-800 text-white text-sm font-normal transition-all">Enregistrer</button>
+                                    <button onClick={handleCropConfirm} className="flex-1 px-4 py-3 rounded-xl bg-luna-charcoal hover:bg-gray-800 text-white text-sm font-normal transition-all"><T>Enregistrer</T></button>
                                 </div>
                             </div>
                         </div>

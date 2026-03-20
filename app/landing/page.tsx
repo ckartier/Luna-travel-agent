@@ -45,8 +45,8 @@ export default function LandingPage() {
                         <a href="#testimonials" className="hover:text-luna-charcoal transition-colors cursor-pointer">Témoignages</a>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Link href="/login" className="text-[13px] text-luna-text-muted hover:text-luna-charcoal px-4 py-2 transition-colors cursor-pointer">Connexion</Link>
-                        <Link href="/signup" className="btn-primary text-[13px] cursor-pointer">Essai gratuit →</Link>
+                        <Link href="/login?vertical=travel" className="text-[13px] text-luna-text-muted hover:text-luna-charcoal px-4 py-2 transition-colors cursor-pointer">Connexion</Link>
+                        <Link href="/signup?vertical=travel" className="btn-primary text-[13px] cursor-pointer">Essai gratuit →</Link>
                     </div>
                 </div>
             </nav>
@@ -289,8 +289,8 @@ export default function LandingPage() {
                         <div>
                             <h4 className="text-label-sharp mb-3">Compte</h4>
                             <div className="space-y-2">
-                                <Link href="/login" className="block text-[12px] text-luna-text-muted hover:text-luna-charcoal transition-colors cursor-pointer">Connexion</Link>
-                                <Link href="/signup" className="block text-[12px] text-luna-text-muted hover:text-luna-charcoal transition-colors cursor-pointer">Essai gratuit</Link>
+                                <Link href="/login?vertical=travel" className="block text-[12px] text-luna-text-muted hover:text-luna-charcoal transition-colors cursor-pointer">Connexion</Link>
+                                <Link href="/signup?vertical=travel" className="block text-[12px] text-luna-text-muted hover:text-luna-charcoal transition-colors cursor-pointer">Essai gratuit</Link>
                             </div>
                         </div>
                     </div>

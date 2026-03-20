@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Search, ExternalLink, Zap, ToggleLeft, ToggleRight, Plane, Hotel, CreditCard, BarChart3, MessageCircle, CalendarDays, Smartphone, Navigation, Brain, BookOpen, Mail, MapPin, Image, Globe2, Sparkles, TrendingUp, AlertTriangle, Activity, Database, Cpu, type LucideIcon } from 'lucide-react';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 import { T, useAutoTranslate } from '@/src/components/T';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/src/lib/firebase/client';
@@ -41,6 +42,7 @@ const DEFAULT_INTEGRATIONS: Integration[] = [
   { id: 'notebooklm', name: 'NotebookLM', description: 'Recherche augmentée par IA — analyse de documents, guides de voyage et sources fiables pour enrichir les recommandations.', category: 'Intelligence Artificielle', icon: BookOpen, connected: false, configUrl: 'https://notebooklm.google.com/' },
   { id: 'gmail', name: 'Gmail API', description: 'Réception et envoi d\'emails directement depuis la boîte de réception CRM.', category: 'Communication', icon: Mail, connected: true },
   { id: 'mapbox', name: 'Mapbox', description: 'Géocodage et autocomplétion des destinations de voyage.', category: 'Données', icon: MapPin, connected: true },
+  { id: 'revolut', name: 'Revolut Business', description: 'Synchronisation bancaire — comptes, transactions et rapprochement automatique.', category: 'Banque', icon: CreditCard, connected: false, configUrl: '/crm/banking' },
 ];
 
 // ═══ Circular Progress Component ═══
@@ -86,7 +88,7 @@ export default function IntegrationsPage() {
     if (!tenantId) return;
     (async () => {
       try {
-        const res = await fetch('/api/crm/api-usage');
+        const res = await fetchWithAuth('/api/crm/api-usage');
         if (res.ok) {
           const data = await res.json();
           const formatted: APIUsage[] = (data.apis || []).map((a: any) => ({

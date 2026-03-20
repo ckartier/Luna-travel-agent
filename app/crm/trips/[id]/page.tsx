@@ -6,6 +6,7 @@ import { Map, Users, Plane, Calendar as CalendarIcon, ArrowLeft, Plus, DollarSig
 import { CRMTrip, getTrips, CRMBooking, getBookingsForTrip } from '@/src/lib/firebase/crm';
 import { useAuth } from '@/src/contexts/AuthContext';
 import Link from 'next/link';
+import { T } from '@/src/components/T';
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id: tripId } = use(params);
@@ -58,8 +59,8 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     if (!trip) {
         return (
             <div className="text-center mt-20">
-                <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight">Voyage introuvable</h1>
-                <button onClick={() => router.back()} className="text-sky-500 hover:underline">Retour</button>
+                <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight"><T>Voyage introuvable</T></h1>
+                <button onClick={() => router.back()} className="text-sky-500 hover:underline"><T>Retour</T></button>
             </div>
         );
     }
@@ -72,7 +73,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     return (
         <div className="min-h-screen">
             <button onClick={() => router.back()} className="text-sm text-[#6B7280] mt-1 font-medium">
-                <ArrowLeft size={16} /> Retour
+                <ArrowLeft size={16} /> <T>Retour</T>
             </button>
 
             {/* Header section */}
@@ -98,7 +99,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                             </div>
                             <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg  ">
                                 <Users size={16} className="text-gray-400" />
-                                {trip.travelers || 2} Voyageurs
+                                {trip.travelers || 2} <T>Voyageurs</T>
                             </div>
                             <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg  ">
                                 <DollarSign size={16} className="text-gray-400" />
@@ -182,7 +183,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4  ">
                                     <Plane className="text-gray-300" size={24} />
                                 </div>
-                                <p className="font-normal text-luna-charcoal mb-1">Aucune réservation attachée</p>
+                                <p className="font-normal text-luna-charcoal mb-1"><T>Aucune réservation attachée</T></p>
                                 <p className="text-xs text-gray-400 max-w-sm">Ajoutez des réservations de vols ou d'hôtels depuis le module Bookings pour calculer automatiquement vos marges.</p>
                             </div>
                         ) : (

@@ -31,7 +31,7 @@ interface SharedQuote {
 
 export default function QuoteValidationPage() {
     const params = useParams();
-    const shareId = params.shareId as string;
+    const shareId = params?.shareId as string;
 
     const [quote, setQuote] = useState<SharedQuote | null>(null);
     const [loading, setLoading] = useState(true);

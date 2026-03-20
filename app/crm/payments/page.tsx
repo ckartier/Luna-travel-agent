@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, Loader2, CreditCard, DollarSign, CheckCircle2 } from 'lucide-react';
 import { CRMPayment, getPayments, createPayment, getInvoices, CRMInvoice } from '@/src/lib/firebase/crm';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { useVertical } from '@/src/contexts/VerticalContext';
 import { T } from '@/src/components/T';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -11,6 +12,8 @@ import Modal, { ModalActions, ModalCancelButton, ModalSubmitButton, ModalField, 
 
 export default function PaymentsPage() {
   const { tenantId } = useAuth();
+  const { vertical } = useVertical();
+  const isLegal = vertical.id === 'legal';
   const [payments, setPayments] = useState<CRMPayment[]>([]);
   const [invoices, setInvoices] = useState<CRMInvoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,9 +25,11 @@ export default function PaymentsPage() {
   const loadData = async () => {
     if (!tenantId) return;
     setLoading(true);
+    const currentVertical = isLegal ? 'legal' : 'travel';
     try {
       const [p, inv] = await Promise.all([getPayments(tenantId), getInvoices(tenantId, 'SUPPLIER')]);
-      setPayments(p); setInvoices(inv);
+      setPayments(p.filter(pay => (pay.vertical || 'travel') === currentVertical));
+      setInvoices(inv.filter(i => (i.vertical || 'travel') === currentVertical));
     } catch (e) { console.error(e); }
     setLoading(false);
   };
@@ -40,6 +45,7 @@ export default function PaymentsPage() {
       method: newPayment.method,
       paymentDate: new Date().toISOString().split('T')[0],
       status: 'COMPLETED',
+      vertical: isLegal ? 'legal' : 'travel',
     });
     setShowModal(false);
     setNewPayment({ invoiceId: '', amount: 0, method: 'CREDIT_CARD' });

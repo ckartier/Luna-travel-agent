@@ -170,8 +170,21 @@ function findAnswer(input: string): { answer: string; category?: string } {
     return { answer: '' };
 }
 
-export function HelpChatbot() {
-    const [open, setOpen] = useState(false);
+interface HelpChatbotProps {
+    externalOpen?: boolean;
+    onExternalClose?: () => void;
+}
+
+export function HelpChatbot({ externalOpen, onExternalClose }: HelpChatbotProps = {}) {
+    const isControlled = externalOpen !== undefined;
+    const [internalOpen, setInternalOpen] = useState(false);
+    const open = isControlled ? externalOpen : internalOpen;
+    const setOpen = isControlled
+        ? (v: boolean | ((prev: boolean) => boolean)) => {
+            const newVal = typeof v === 'function' ? v(open) : v;
+            if (!newVal && onExternalClose) onExternalClose();
+          }
+        : setInternalOpen;
     const [view, setView] = useState<View>('home');
     const [selectedCat, setSelectedCat] = useState<string | null>(null);
     const [selectedQ, setSelectedQ] = useState<number | null>(null);
@@ -189,7 +202,7 @@ export function HelpChatbot() {
     const [bugSent, setBugSent] = useState(false);
 
     const { user, userProfile } = useAuth();
-    const pathname = usePathname();
+    const pathname = usePathname() || '/';
 
     useEffect(() => {
         if (messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
@@ -265,7 +278,8 @@ export function HelpChatbot() {
 
     return (
         <>
-            {/* ═══ TRIGGER ═══ */}
+            {/* ═══ TRIGGER — only show if NOT controlled by Hub ═══ */}
+            {!isControlled && (
             <AnimatePresence>
                 {!open && (
                     <motion.button initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
@@ -280,6 +294,7 @@ export function HelpChatbot() {
                     </motion.button>
                 )}
             </AnimatePresence>
+            )}
 
             {/* ═══ PANEL ═══ */}
             <AnimatePresence>

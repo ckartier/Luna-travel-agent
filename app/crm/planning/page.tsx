@@ -16,6 +16,7 @@ import {
   getLeads, CRMLead
 } from '@/src/lib/firebase/crm';
 import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
+import { useVertical } from '@/src/contexts/VerticalContext';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { format, addDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameMonth, getDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -109,6 +110,8 @@ const emptyTrip = (): Omit<CRMTrip, 'id' | 'createdAt' | 'updatedAt'> => ({
 // ═══ MAIN COMPONENT ═══
 export default function PlanningPage() {
   const { tenantId } = useAuth();
+  const { vertical } = useVertical();
+  const isLegal = vertical.id === 'legal';
   const today = new Date();
   const [currentDate, setCurrentDate] = useState(today);
   const [trips, setTrips] = useState<CRMTrip[]>([]);
@@ -194,12 +197,19 @@ export default function PlanningPage() {
   const loadData = useCallback(async () => {
     if (!tenantId) return;
     setLoading(true);
+    const currentVertical = isLegal ? 'legal' : 'travel';
     try {
-      const [t, b, s, c, l] = await Promise.all([getTrips(tenantId), getAllSupplierBookings(tenantId), getSuppliers(tenantId), getCatalogItems(tenantId), getLeads(tenantId)]);
-      setTrips(t || []); setBookings(b || []); setSuppliers(s || []); setCatalogItems(c || []); setLeads(l || []);
-    } catch (e) { console.error(e); }
-    setLoading(false);
-  }, [tenantId]);
+      // Phase 1: Load trips first → instant render (filtered by vertical)
+      const allTrips = await getTrips(tenantId);
+      const verticalTrips = (allTrips || []).filter(t => (t.vertical || 'travel') === currentVertical);
+      setTrips(verticalTrips);
+      setLoading(false);
+
+      // Phase 2: Load secondary data in background
+      const [b, s, c, l] = await Promise.all([getAllSupplierBookings(tenantId), getSuppliers(tenantId), getCatalogItems(tenantId), getLeads(tenantId)]);
+      setBookings(b || []); setSuppliers(s || []); setCatalogItems(c || []); setLeads((l || []).filter(lead => (lead.vertical || 'travel') === currentVertical));
+    } catch (e) { console.error(e); setLoading(false); }
+  }, [tenantId, isLegal]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -231,8 +241,8 @@ export default function PlanningPage() {
 
   const openNewTrip = (dateStr?: string) => { const f = emptyTrip(); if (dateStr) { f.startDate = dateStr; f.endDate = dateStr; } setForm(f); setEditingTrip(null); setModalOpen(true); };
   const openEditTrip = (trip: CRMTrip) => { setForm({ title: trip.title, destination: trip.destination, clientName: trip.clientName, clientId: trip.clientId || '', startDate: trip.startDate, endDate: trip.endDate, status: trip.status, paymentStatus: trip.paymentStatus, amount: trip.amount, notes: trip.notes, color: trip.color }); setEditingTrip(trip); setModalOpen(true); };
-  const handleSave = async (e: React.FormEvent) => { e.preventDefault(); if (!form.title || !form.destination || !form.clientName) return; try { if (editingTrip?.id) { await updateTrip(tenantId!, editingTrip.id, form); } else { await createTrip(tenantId!, form); } setModalOpen(false); loadData(); } catch (err) { console.error(err); } };
-  const handleDelete = async () => { if (!editingTrip?.id || !confirm('Supprimer ce voyage ?')) return; await deleteTrip(tenantId!, editingTrip.id); setModalOpen(false); loadData(); };
+  const handleSave = async (e: React.FormEvent) => { e.preventDefault(); if (!form.title || !form.destination || !form.clientName) return; try { const dataWithVertical = { ...form, vertical: isLegal ? 'legal' : 'travel' }; if (editingTrip?.id) { await updateTrip(tenantId!, editingTrip.id, dataWithVertical); } else { await createTrip(tenantId!, dataWithVertical); } setModalOpen(false); loadData(); } catch (err) { console.error(err); } };
+  const handleDelete = async () => { if (!editingTrip?.id || !confirm(isLegal ? 'Supprimer ce dossier ?' : 'Supprimer ce voyage ?')) return; await deleteTrip(tenantId!, editingTrip.id); setModalOpen(false); loadData(); };
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
@@ -240,12 +250,12 @@ export default function PlanningPage() {
         {/* ═══ HEADER ═══ */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div>
-            <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight"><T>Planning Voyages</T></h1>
-            <p className="text-sm text-[#6B7280] mt-1 font-medium"><T>Conciergerie</T> • {format(currentDate, 'MMMM yyyy', { locale: fr })}</p>
+            <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight"><T>{isLegal ? 'Agenda Cabinet' : 'Planning Voyages'}</T></h1>
+            <p className="text-sm text-[#6B7280] mt-1 font-medium"><T>{isLegal ? 'Dossiers Récents' : 'Conciergerie'}</T> • {format(currentDate, 'MMMM yyyy', { locale: fr })}</p>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => openNewTrip()} className="flex items-center gap-2 px-6 py-3 bg-[#bcdeea] text-[#2E2E2E] rounded-[16px] text-xs font-bold uppercase tracking-widest hover:scale-[1.02] transition-all shadow-lg active:scale-95">
-              <Plus size={16} /> <T>Nouveau Voyage</T>
+              <Plus size={16} /> <T>{isLegal ? 'Nouveau Dossier' : 'Nouveau Voyage'}</T>
             </button>
             <div className="flex items-center bg-white p-1.5 rounded-[16px] border border-[#E5E7EB] shadow-sm gap-1">
               <button title="Dézoomer" onClick={() => setZoomLevel(Math.max(30, zoomLevel - 10))} className="p-2 text-[#9CA3AF] hover:text-[#2E2E2E] hover:bg-gray-50 rounded-lg transition-all active:scale-90"><ZoomOut size={16} /></button>
@@ -261,7 +271,7 @@ export default function PlanningPage() {
         {/* ═══ STATS ═══ */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
-            { label: 'VOYAGES', value: monthTrips.length, icon: Plane },
+            { label: isLegal ? 'AUDIENCES' : 'VOYAGES', value: monthTrips.length, icon: isLegal ? Briefcase : Plane },
             { label: 'Revenus', value: `${totalRevenue.toLocaleString('fr-FR')}€`, icon: CreditCard },
             { label: 'PRESTATIONS', value: monthBookings.length, icon: Briefcase },
             { label: 'Validées', value: monthBookings.filter(b => b.status === 'CONFIRMED').length, icon: CheckCircle2 },
@@ -362,8 +372,8 @@ export default function PlanningPage() {
                           className="w-full flex items-center justify-between p-2 hover:bg-[#bcdeea]/20 rounded-[14px] transition-colors"
                         >
                           <div className="flex items-center gap-2">
-                            <Plane size={13} className="text-[#bcdeea]" />
-                            <span className="text-[9px] font-bold text-[#bcdeea] uppercase tracking-widest">{dayTrips.length} Voyage{dayTrips.length > 1 ? 's' : ''} en cours</span>
+                            {isLegal ? <Briefcase size={13} className="text-[#A07850]" /> : <Plane size={13} className="text-[#bcdeea]" />}
+                            <span className={`text-[9px] font-bold uppercase tracking-widest ${isLegal ? 'text-[#A07850]' : 'text-[#bcdeea]'}`}>{dayTrips.length} {isLegal ? 'Dossier' : 'Voyage'}{dayTrips.length > 1 ? 's' : ''} en cours</span>
                           </div>
                           <ChevronDown size={14} className={`text-[#bcdeea] transition-transform duration-300 ${expandedTripsDays[ds] ? 'rotate-180' : ''}`} />
                         </button>
@@ -385,7 +395,7 @@ export default function PlanningPage() {
                                       className={`w-full text-left p-2.5 rounded-[16px] shadow-sm hover:shadow-lg transition-all cursor-pointer relative overflow-hidden ${sc.bg}`}>
                                       <div className="flex items-center gap-1.5 mb-1 pl-1">
                                         <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${sc.dot}`} />
-                                        <span className={`text-[7px] font-bold uppercase tracking-widest ${ferie ? 'text-white/50' : 'text-[#bcdeea]'}`}>Voyage</span>
+                                        <span className={`text-[7px] font-bold uppercase tracking-widest ${ferie ? 'text-white/50' : isLegal ? 'text-[#A07850]' : 'text-[#bcdeea]'}`}>{isLegal ? 'Dossier' : 'Voyage'}</span>
                                       </div>
                                       <h4 className={`text-[11px] font-bold leading-tight ${ferie ? 'text-white' : 'text-[#2E2E2E]'}`}>{trip.title}</h4>
                                       <p className={`text-[8px] mt-0.5 ${ferie ? 'text-white/60' : 'text-[#6B7280]'}`}>{trip.destination} · {trip.clientName}</p>
@@ -628,67 +638,103 @@ export default function PlanningPage() {
         )}
       </div>
 
-      {/* ═══ BOOKING DETAIL MODAL ═══ */}
+      {/* ═══ BOOKING DETAIL MODAL — Luna Pro ═══ */}
       <AnimatePresence>
-        {selectedBooking && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-luna-charcoal/60 backdrop-blur-xl flex items-center justify-center p-4" onClick={() => setSelectedBooking(null)}>
-            <motion.div initial={{ opacity: 0, y: 40, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 40 }} className="bg-white rounded-[24px] w-full max-w-xl relative overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-              <div className="p-8 pb-4 flex justify-between items-start">
-                <div>
-                  <p className="text-[9px] font-bold text-[#9CA3AF] uppercase tracking-widest mb-2">Détail Prestation</p>
-                  <h2 className="text-2xl font-light tracking-tight text-[#2E2E2E]">{selectedBooking.prestationName}</h2>
-                  <p className="text-sm text-[#6B7280] mt-2 flex items-center gap-2"><Users size={14} /> {selectedBooking.clientName} · {selectedBooking.date} à {selectedBooking.startTime || '--:--'}</p>
+        {selectedBooking && (() => {
+          const bStatus = BOOKING_STATUS_CONFIG[selectedBooking.status] || BOOKING_STATUS_CONFIG.PROPOSED;
+          const isCancelled = selectedBooking.status === 'CANCELLED' || selectedBooking.status === 'CANCELLED_LATE';
+          const isConfirmed = selectedBooking.status === 'CONFIRMED';
+          const isProposed = selectedBooking.status === 'PROPOSED';
+          const supplierName = getSupplierName(selectedBooking.supplierId);
+          return (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#2E2E2E]/70 backdrop-blur-2xl flex items-center justify-center p-4" onClick={() => { setSelectedBooking(null); setEditingTrip(null); }}>
+            <motion.div
+              initial={{ opacity: 0, y: 50, scale: 0.92 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 50, scale: 0.92 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+              className="bg-white rounded-[28px] w-full max-w-xl relative overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.18)]"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* ─── Header ─── */}
+              <div className="relative p-8 pb-6 bg-[#2E2E2E] text-white overflow-hidden">
+                <motion.div
+                  initial={{ scaleX: 0 }} animate={{ scaleX: 1 }}
+                  transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                  className="absolute bottom-0 left-0 right-0 h-[3px] origin-left"
+                  style={{ background: isConfirmed ? 'linear-gradient(90deg, #6BAF8D, transparent)' : isCancelled ? 'linear-gradient(90deg, #da3832, transparent)' : 'linear-gradient(90deg, #E2C8A9, transparent)' }}
+                />
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
+                        className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-medium">Prestation</motion.p>
+                      <span className={`text-[8px] uppercase tracking-wider font-medium px-2 py-0.5 rounded-full ${isConfirmed ? 'bg-emerald-500/20 text-emerald-300' : isCancelled ? 'bg-red-500/20 text-red-300' : 'bg-amber-500/20 text-amber-300'}`}>
+                        {bStatus.label}
+                      </span>
+                    </div>
+                    <motion.h2 initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                      className={`text-2xl font-light tracking-tight ${isCancelled ? 'line-through text-white/50' : ''}`}>
+                      {selectedBooking.prestationName}
+                    </motion.h2>
+                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
+                      className="text-white/40 text-xs mt-2 flex items-center gap-2">
+                      <Users size={12} /> {selectedBooking.clientName}
+                    </motion.p>
+                  </div>
+                  <motion.button whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}
+                    onClick={() => { setSelectedBooking(null); setEditingTrip(null); }}
+                    className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors">
+                    <X size={18} />
+                  </motion.button>
                 </div>
-                <button onClick={() => setSelectedBooking(null)} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100"><X size={18} /></button>
+
+                <div className="mt-5 grid grid-cols-4 gap-2">
+                  {[
+                    { label: 'Prestataire', value: supplierName },
+                    { label: 'Tarif', value: `${selectedBooking.rate}€` },
+                    { label: 'Date', value: selectedBooking.date },
+                    { label: 'Heure', value: selectedBooking.startTime || '--:--' },
+                  ].map((item, i) => (
+                    <motion.div key={item.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.04 }}
+                      className="bg-white/5 rounded-xl p-3 border border-white/5">
+                      <p className="text-[8px] uppercase tracking-[0.15em] text-white/25 font-medium">{item.label}</p>
+                      <p className="text-xs font-light text-white/80 mt-0.5 truncate">{item.value}</p>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
-              <div className="p-8 pt-4 space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-5 bg-[#FAFAF8] rounded-[24px] border border-gray-100">
-                    <p className="text-[9px] font-bold text-[#9CA3AF] uppercase tracking-widest mb-1">Prestataire</p>
-                    <p className="text-base font-bold text-[#2E2E2E]">{getSupplierName(selectedBooking.supplierId)}</p>
-                  </div>
-                  <div className="p-5 bg-[#FAFAF8] rounded-[24px] border border-gray-100">
-                    <p className="text-[9px] font-bold text-[#9CA3AF] uppercase tracking-widest mb-1">Tarif Net</p>
-                    <p className="text-xl font-bold text-[#2E2E2E]">{selectedBooking.rate}€</p>
-                  </div>
-                </div>
-                
-                {/* ── Actions ── */}
-                <div className="space-y-3">
-                  {selectedBooking.status === 'PROPOSED' && (
-                    <button 
-                      onClick={async () => { 
-                        if (!tenantId || !selectedBooking.id) return;
-                        try {
-                          const res = await fetchWithAuth('/api/bookings/validate', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ bookingId: selectedBooking.id, tenantId }),
-                          });
-                          const data = await res.json();
-                          if (data.success) {
-                            setSelectedBooking(null);
-                            loadData();
-                          } else {
-                            console.error('Validate failed:', data);
-                          }
-                        } catch (err) { console.error(err); }
-                      }}
-                      className="w-full py-4 bg-[#D3E8E3] text-[#2E2E2E] rounded-[20px] font-bold text-xs uppercase tracking-widest shadow-lg shadow-[#bcdeea]/15 hover:scale-[1.02] transition-all flex items-center justify-center gap-2">
-                      <CheckCircle2 size={16} /> Valider Prestation
-                    </button>
-                  )}
+
+              <div className="p-8 pt-6 space-y-4">
+                {isProposed && (
+                  <motion.button whileHover={{ scale: 1.01, y: -1 }} whileTap={{ scale: 0.98 }}
+                    onClick={async () => {
+                      if (!tenantId || !selectedBooking.id) return;
+                      try {
+                        const res = await fetchWithAuth('/api/bookings/validate', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ bookingId: selectedBooking.id, tenantId }),
+                        });
+                        const data = await res.json();
+                        if (data.success) { setSelectedBooking(null); loadData(); }
+                        else console.error('Validate failed:', data);
+                      } catch (err) { console.error(err); }
+                    }}
+                    className="w-full py-4 rounded-2xl text-[10px] font-medium uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2.5 bg-emerald-500 text-white hover:bg-emerald-600 shadow-[0_4px_16px_rgba(16,185,129,0.2)]"
+                  >
+                    <CheckCircle2 size={16} /> Valider Prestation
+                  </motion.button>
+                )}
+                {!isCancelled && (
                   <div className="grid grid-cols-2 gap-3">
-                    <button 
-                      onClick={() => {
-                        if (!selectedBooking?.id) return;
-                        setEditingTrip(prev => prev ? null : ({} as any));
-                      }}
-                      className={`py-4 bg-[#E6D2BD] text-[#2E2E2E] rounded-[20px] font-bold text-xs uppercase tracking-widest hover:scale-[1.02] transition-all flex items-center justify-center gap-2 ${editingTrip ? 'ring-2 ring-[#2E2E2E]' : ''}`}>
-                      <Users size={16} /> Réassigner
-                    </button>
-                    <button 
-                      onClick={async () => { 
+                    <motion.button whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.98 }}
+                      onClick={() => { if (!selectedBooking?.id) return; setEditingTrip(prev => prev ? null : ({} as any)); }}
+                      className={`py-4 rounded-2xl text-[10px] font-medium uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 bg-[#FAFAF8] border text-[#2E2E2E] hover:border-[#bcdeea] hover:bg-[#bcdeea]/10 ${editingTrip ? 'border-[#2E2E2E] ring-1 ring-[#2E2E2E]' : 'border-[#E5E7EB]'}`}>
+                      <Users size={15} /> Réassigner
+                    </motion.button>
+                    <motion.button whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.98 }}
+                      onClick={async () => {
                         if (!tenantId || !selectedBooking.id) return;
                         try {
                           await updateSupplierBooking(tenantId, selectedBooking.id, {
@@ -709,71 +755,67 @@ export default function PlanningPage() {
                               });
                             } catch { }
                           }
-                          setSelectedBooking(null);
-                          loadData();
+                          setSelectedBooking(null); loadData();
                         } catch (err) { console.error(err); }
                       }}
-                      className="py-4 bg-[#F2D9D3] text-[#2E2E2E] rounded-[20px] font-bold text-xs uppercase tracking-widest hover:scale-[1.02] transition-all flex items-center justify-center gap-2">
-                      <X size={16} /> Annuler
-                    </button>
+                      className="py-4 rounded-2xl text-[10px] font-medium uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 bg-red-50 border border-red-100 text-red-500 hover:bg-red-100 hover:border-red-200">
+                      <X size={15} /> Annuler
+                    </motion.button>
                   </div>
-                </div>
-                
-                {/* ── Réassignation panel ── */}
-                {editingTrip && selectedBooking && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="space-y-3 pt-4 border-t border-gray-100">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-[10px] font-bold text-[#2E2E2E] uppercase tracking-widest">Sélectionner un nouveau prestataire</h4>
-                      <button onClick={() => setEditingTrip(null)} className="text-xs font-bold text-gray-400">FERMER</button>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2 max-h-[250px] overflow-y-auto pr-2 no-scrollbar">
-                      {suppliers.filter(s => s.id !== selectedBooking.supplierId).map(s => (
-                        <button key={s.id}
-                          onClick={async () => {
-                            if (!tenantId || !selectedBooking.id) return;
-                            try {
-                              await updateSupplierBooking(tenantId, selectedBooking.id, {
-                                supplierId: s.id!,
-                                status: 'PROPOSED',
-                              });
-                              if (s.phone) {
-                                const dateClean = format(new Date(selectedBooking.date), 'dd/MM/yyyy');
-                                await fetchWithAuth('/api/whatsapp/send', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({
-                                    to: s.phone,
-                                    message: `*MISSION*\nBonjour ${s.name},\nMission pour vous :\n*${selectedBooking.prestationName}*\n*${dateClean}* à ${selectedBooking.startTime || 'à préciser'}\n*${selectedBooking.rate}€*\nConfirmez via le bouton ci-dessous.`,
-                                    recipientType: 'SUPPLIER',
-                                    bookingId: selectedBooking.id,
-                                    clientName: s.name,
-                                    clientId: s.id,
-                                    interactiveButtons: true,
-                                  })
-                                });
-                              }
-                              setSelectedBooking(null);
-                              setEditingTrip(null);
-                              loadData();
-                            } catch (err) { console.error(err); }
-                          }}
-                          className="w-full p-4 bg-white border border-gray-100 rounded-[20px] hover:border-[#bcdeea] hover:shadow-lg transition-all text-left flex items-center justify-between group">
-                          <div>
-                            <p className="font-bold text-[#2E2E2E]">{s.name}</p>
-                            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-1">{s.category}</p>
-                          </div>
-                          <div className="p-2 rounded-full bg-gray-50 group-hover:bg-[#bcdeea] transition-colors">
-                            <ExternalLink size={14} />
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
                 )}
+
+                <AnimatePresence>
+                  {editingTrip && selectedBooking && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden">
+                      <div className="space-y-3 pt-4 border-t border-[#E5E7EB]">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-[10px] font-medium text-[#2E2E2E] uppercase tracking-[0.15em]">Sélectionner un nouveau prestataire</h4>
+                          <button onClick={() => setEditingTrip(null)} className="text-[10px] font-medium text-[#9CA3AF] hover:text-[#6B7280] uppercase tracking-wider transition-colors">Fermer</button>
+                        </div>
+                        <div className="grid grid-cols-1 gap-2 max-h-[250px] overflow-y-auto pr-2 no-scrollbar">
+                          {suppliers.filter(s => s.id !== selectedBooking.supplierId).map(s => (
+                            <motion.button key={s.id} whileHover={{ scale: 1.01, y: -1 }} whileTap={{ scale: 0.98 }}
+                              onClick={async () => {
+                                if (!tenantId || !selectedBooking.id) return;
+                                try {
+                                  await updateSupplierBooking(tenantId, selectedBooking.id, { supplierId: s.id!, status: 'PROPOSED' });
+                                  if (s.phone) {
+                                    const dateClean = format(new Date(selectedBooking.date), 'dd/MM/yyyy');
+                                    await fetchWithAuth('/api/whatsapp/send', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        to: s.phone,
+                                        message: `*MISSION*\nBonjour ${s.name},\nMission pour vous :\n*${selectedBooking.prestationName}*\n*${dateClean}* à ${selectedBooking.startTime || 'à préciser'}\n*${selectedBooking.rate}€*\nConfirmez via le bouton ci-dessous.`,
+                                        recipientType: 'SUPPLIER', bookingId: selectedBooking.id,
+                                        clientName: s.name, clientId: s.id, interactiveButtons: true,
+                                      })
+                                    });
+                                  }
+                                  setSelectedBooking(null); setEditingTrip(null); loadData();
+                                } catch (err) { console.error(err); }
+                              }}
+                              className="w-full p-4 bg-[#FAFAF8] border border-[#E5E7EB] rounded-2xl hover:border-[#bcdeea] hover:bg-[#bcdeea]/5 transition-all text-left flex items-center justify-between group">
+                              <div>
+                                <p className="font-medium text-[#2E2E2E] text-sm">{s.name}</p>
+                                <p className="text-[9px] text-[#9CA3AF] uppercase tracking-[0.15em] font-medium mt-0.5">{s.category}</p>
+                              </div>
+                              <div className="p-2 rounded-full bg-[#E5E7EB]/50 group-hover:bg-[#bcdeea] transition-colors">
+                                <ExternalLink size={13} className="text-[#9CA3AF] group-hover:text-white" />
+                              </div>
+                            </motion.button>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           </motion.div>
-        )}
+          );
+        })()}
       </AnimatePresence>
 
       {/* ═══ TRIP MODAL ═══ */}
@@ -785,7 +827,7 @@ export default function PlanningPage() {
               <div className="p-8 pb-5 bg-luna-charcoal text-white">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-2xl font-light tracking-tight">{editingTrip ? <T>Modifier le voyage</T> : <T>Nouveau voyage</T>}</h3>
+                    <h3 className="text-2xl font-light tracking-tight">{editingTrip ? <T>{isLegal ? 'Modifier le dossier' : 'Modifier le voyage'}</T> : <T>{isLegal ? 'Nouveau dossier' : 'Nouveau voyage'}</T>}</h3>
                     <p className="text-[#b9dae9] text-xs mt-1 font-medium">Planning synchronisé en temps réel</p>
                   </div>
                   <button onClick={() => setModalOpen(false)} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-all"><X size={18} /></button>
@@ -794,10 +836,10 @@ export default function PlanningPage() {
               <form onSubmit={handleSave} className="p-8 pt-6 flex flex-col gap-5">
                 <div>
                   <label className="text-[9px] font-bold text-[#9CA3AF] uppercase tracking-widest block mb-2">Titre</label>
-                  <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required placeholder="Séjour Maldives" className="w-full py-3 px-4 bg-gray-50 rounded-[16px] border border-gray-100 text-sm focus:outline-none focus:border-[#bcdeea]" />
+                  <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required placeholder={isLegal ? 'Dossier divorce Dupont' : 'Séjour Maldives'} className="w-full py-3 px-4 bg-gray-50 rounded-[16px] border border-gray-100 text-sm focus:outline-none focus:border-[#bcdeea]" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><label className="text-[9px] font-bold text-[#9CA3AF] uppercase tracking-widest block mb-2">Destination</label><input value={form.destination} onChange={e => setForm(f => ({ ...f, destination: e.target.value }))} required placeholder="Maldives" className="w-full py-3 px-4 bg-gray-50 rounded-[16px] border border-gray-100 text-sm focus:outline-none focus:border-[#bcdeea]" /></div>
+                  <div><label className="text-[9px] font-bold text-[#9CA3AF] uppercase tracking-widest block mb-2">{isLegal ? 'Juridiction' : 'Destination'}</label><input value={form.destination} onChange={e => setForm(f => ({ ...f, destination: e.target.value }))} required placeholder={isLegal ? 'TGI Paris' : 'Maldives'} className="w-full py-3 px-4 bg-gray-50 rounded-[16px] border border-gray-100 text-sm focus:outline-none focus:border-[#bcdeea]" /></div>
                   <div><label className="text-[9px] font-bold text-[#9CA3AF] uppercase tracking-widest block mb-2">Client</label><input value={form.clientName} onChange={e => setForm(f => ({ ...f, clientName: e.target.value }))} required placeholder="M. Dupont" className="w-full py-3 px-4 bg-gray-50 rounded-[16px] border border-gray-100 text-sm focus:outline-none focus:border-[#bcdeea]" /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -841,7 +883,7 @@ export default function PlanningPage() {
                   )}
                   <div className="flex justify-end gap-3">
                     <button type="button" onClick={() => setModalOpen(false)} className="px-5 py-3 text-xs text-[#6B7280] hover:bg-gray-50 rounded-[16px] font-bold transition-colors">Annuler</button>
-                    <button type="submit" className="px-8 py-3 rounded-[16px] text-xs font-bold bg-[#bcdeea] text-[#2E2E2E] hover:scale-[1.02] transition-all shadow-md">{editingTrip ? 'Sauvegarder' : 'Créer le voyage'}</button>
+                    <button type="submit" className="px-8 py-3 rounded-[16px] text-xs font-bold bg-[#bcdeea] text-[#2E2E2E] hover:scale-[1.02] transition-all shadow-md">{editingTrip ? 'Sauvegarder' : isLegal ? 'Créer le dossier' : 'Créer le voyage'}</button>
                   </div>
                 </div>
               </form>

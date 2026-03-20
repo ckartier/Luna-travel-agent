@@ -14,6 +14,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { createTenant } from "./tenant";
+import { fetchWithAuth } from "@/src/lib/utils/fetchWithAuth";
 
 export interface CRMLead {
   id?: string;
@@ -38,9 +39,60 @@ export interface CRMLead {
   status: "NEW" | "ANALYSING" | "PROPOSAL_READY" | "WON" | "LOST";
   tripId?: string;
   source?: string;
+  score?: number;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
   cartItems?: any[];
+  vertical?: string;
   createdAt: Timestamp | Date;
   updatedAt: Timestamp | Date;
+}
+
+/**
+ * Compute a lead score (0-100) based on weighted criteria.
+ * Higher score = higher probability of conversion.
+ */
+export function computeLeadScore(lead: Partial<CRMLead>): number {
+  let score = 0;
+
+  // Budget specified (+20)
+  if (lead.budget && lead.budget !== 'À définir' && lead.budget.trim()) {
+    score += 20;
+  }
+
+  // B2C source (+25): Espace Client, Stripe, or site
+  const highValueSources = ['Espace Client', 'Stripe', 'B2C', 'Email site'];
+  if (lead.source && highValueSources.some(s => lead.source!.toLowerCase().includes(s.toLowerCase()))) {
+    score += 25;
+  } else if (lead.source) {
+    score += 10; // any known source
+  }
+
+  // AI analyzed (+15): has agent results
+  if (lead.agentResults && Object.keys(lead.agentResults).some(k => (lead.agentResults as any)[k])) {
+    score += 15;
+  }
+
+  // Specific dates provided (+15)
+  if (lead.dates && lead.dates !== 'À définir' && lead.dates.includes('→') && !lead.dates.includes('undefined')) {
+    score += 15;
+  }
+
+  // Destination and pax specified (+10)
+  if (lead.destination && lead.destination.trim() && lead.destination !== 'Non définie') {
+    score += 5;
+  }
+  if (lead.pax && lead.pax !== '1') {
+    score += 5;
+  }
+
+  // Status progression bonus (+15)
+  if (lead.status === 'PROPOSAL_READY') score += 15;
+  else if (lead.status === 'ANALYSING') score += 8;
+  else if (lead.status === 'WON') score = 100;
+
+  return Math.min(100, score);
 }
 
 export interface CRMContact {
@@ -107,6 +159,7 @@ export interface CRMTrip {
   travelers?: number;
   notes: string;
   color: string;
+  vertical?: string;
   shareId?: string;
   createdAt: Timestamp | Date;
   updatedAt: Timestamp | Date;
@@ -313,6 +366,7 @@ export interface CRMQuote {
   currency: string;
   status: "DRAFT" | "SENT" | "ACCEPTED" | "REJECTED" | "EXPIRED";
   notes?: string;
+  vertical?: string;
   createdAt: Timestamp | Date;
   updatedAt: Timestamp | Date;
 }
@@ -336,6 +390,7 @@ export interface CRMInvoice {
   currency: string;
   status: "DRAFT" | "SENT" | "PARTIAL" | "PAID" | "OVERDUE" | "CANCELLED";
   notes?: string;
+  vertical?: string;
   createdAt: Timestamp | Date;
   updatedAt: Timestamp | Date;
 }
@@ -345,11 +400,16 @@ export interface CRMPayment {
   invoiceId: string;
   clientId: string;
   amount: number;
+  amountHT?: number;       // Montant Hors Taxes
+  tvaRate?: number;        // Taux de TVA (ex: 20)
+  amountTTC?: number;      // Montant TTC (amountHT * (1 + tvaRate/100))
   currency: string;
-  method: "CREDIT_CARD" | "BANK_TRANSFER" | "CASH" | "STRIPE";
+  method: "CREDIT_CARD" | "BANK_TRANSFER" | "CASH" | "STRIPE" | "REVOLUT" | "GOCARDLESS" | "BRIDGE" | "PLAID";
   paymentDate: string;
   referenceId?: string;
+  revolutTransactionId?: string; // ID de la transaction Revolut pour rapprochement
   status: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
+  vertical?: string;
   createdAt: Timestamp | Date;
   updatedAt: Timestamp | Date;
 }
@@ -492,10 +552,25 @@ export const updateLeadStatus = async (
   id: string,
   status: CRMLead["status"],
 ) => {
+  const prevDoc = await getDoc(tenantDoc(tid, "leads", id));
+  const oldStage = prevDoc.exists() ? (prevDoc.data() as CRMLead).status : null;
+
   await updateDoc(tenantDoc(tid, "leads", id), {
     status,
     updatedAt: new Date(),
   });
+
+  if (oldStage !== status) {
+    fetch('/api/crm/workflows/trigger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event: 'lead_stage_changed',
+        tenantId: tid,
+        payload: { leadId: id, newStage: status, oldStage }
+      })
+    }).catch(err => console.error('Workflow trigger failed:', err));
+  }
 };
 
 export const updateLead = async (
@@ -503,10 +578,25 @@ export const updateLead = async (
   id: string,
   data: Partial<Omit<CRMLead, "id" | "createdAt">>,
 ) => {
+  const prevDoc = await getDoc(tenantDoc(tid, "leads", id));
+  const oldStage = prevDoc.exists() ? (prevDoc.data() as CRMLead).status : null;
+
   await updateDoc(tenantDoc(tid, "leads", id), {
     ...data,
     updatedAt: new Date(),
   });
+
+  if (data.status && oldStage !== data.status) {
+    fetch('/api/crm/workflows/trigger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event: 'lead_stage_changed',
+        tenantId: tid,
+        payload: { leadId: id, newStage: data.status, oldStage }
+      })
+    }).catch(err => console.error('Workflow trigger failed:', err));
+  }
 };
 
 export const deleteLead = async (tid: string, id: string) => {
@@ -593,6 +683,15 @@ export const createContact = async (
   tid: string,
   data: Omit<CRMContact, "id" | "createdAt" | "updatedAt">,
 ) => {
+  // Pre-write limit check
+  const checkRes = await fetchWithAuth('/api/crm/limits/check', {
+    method: 'POST', body: JSON.stringify({ resource: 'contacts' })
+  });
+  if (checkRes.ok) {
+    const check = await checkRes.json();
+    if (!check.allowed) throw new Error(check.message || "Limite de contacts atteinte.");
+  }
+
   const ref = await addDoc(tenantCol(tid, "contacts"), {
     ...data,
     createdAt: new Date(),
@@ -675,6 +774,36 @@ export const deleteContact = async (tid: string, contactId: string) => {
     } catch (innerError) {
       console.error("Even single delete failed:", innerError);
     }
+  }
+};
+
+// ═══ NOTIFICATION LOGGING ═══
+
+export interface CRMNotificationLog {
+  id?: string;
+  type: 'INVOICE_SENT' | 'QUOTE_SENT' | 'PAYMENT_NOTIFICATION' | 'BOOKING_NOTIFICATION';
+  channel: 'EMAIL' | 'WHATSAPP';
+  recipientName: string;
+  recipientType: 'CLIENT' | 'SUPPLIER';
+  referenceId: string; // invoice/quote/booking ID
+  referenceNumber?: string; // e.g. INV-001
+  message?: string;
+  success: boolean;
+  error?: string;
+  createdAt: Date;
+}
+
+export const logSendNotification = async (
+  tid: string,
+  data: Omit<CRMNotificationLog, 'id' | 'createdAt'>,
+) => {
+  try {
+    await addDoc(tenantCol(tid, 'notifications'), {
+      ...data,
+      createdAt: new Date(),
+    });
+  } catch (e) {
+    console.error('[CRM] Failed to log notification:', e);
   }
 };
 
@@ -880,6 +1009,15 @@ export const createTrip = async (
   tid: string,
   data: Omit<CRMTrip, "id" | "createdAt" | "updatedAt">,
 ) => {
+  // Pre-write limit check
+  const checkRes = await fetchWithAuth('/api/crm/limits/check', {
+    method: 'POST', body: JSON.stringify({ resource: 'trips' })
+  });
+  if (checkRes.ok) {
+    const check = await checkRes.json();
+    if (!check.allowed) throw new Error(check.message || "Limite de voyages atteinte.");
+  }
+
   const ref = await addDoc(tenantCol(tid, "trips"), {
     ...data,
     createdAt: new Date(),
@@ -2087,6 +2225,7 @@ export interface CRMSupplier {
   isChauffeur?: boolean; // New: Functions
   isLunaFriend?: boolean; // Created manually by user = "Luna Friends"
   photoURL?: string; // Image scraped from website or uploaded
+  vertical?: string; // 'travel' | 'legal' — which CRM this supplier belongs to
   createdAt: Timestamp | Date;
   updatedAt: Timestamp | Date;
 }
@@ -2259,4 +2398,112 @@ export const updatePrestation = async (
 export const deletePrestation = async (tid: string, prestationId: string) => {
   const ref = doc(db, "tenants", tid, "prestations", prestationId);
   await deleteDoc(ref);
+};
+
+// ═══ LEGAL DOSSIERS (CRM Avocat) ═══
+
+export type LegalDossierType =
+  | "CIVIL"
+  | "PÉNAL"
+  | "COMMERCIAL"
+  | "TRAVAIL"
+  | "ADMINISTRATIF"
+  | "FAMILLE"
+  | "IMMOBILIER"
+  | "PROPRIÉTÉ_INTELLECTUELLE"
+  | "AUTRE";
+
+export type LegalDossierStatus =
+  | "OUVERT"
+  | "EN_COURS"
+  | "AUDIENCE_PRÉVUE"
+  | "EN_DÉLIBÉRÉ"
+  | "JUGEMENT_RENDU"
+  | "APPEL"
+  | "CLOS"
+  | "ARCHIVÉ";
+
+export interface LegalHearing {
+  date: string;
+  time?: string;
+  tribunal: string;
+  type: string; // "Audience de plaidoirie", "Mise en état", etc.
+  notes?: string;
+  completed: boolean;
+}
+
+export interface LegalDeadline {
+  date: string;
+  label: string;
+  type: "CONCLUSIONS" | "PIÈCES" | "AUDIENCE" | "APPEL" | "PRESCRIPTION" | "AUTRE";
+  completed: boolean;
+}
+
+export interface CRMLegalDossier {
+  id?: string;
+  caseNumber: string;
+  title: string;
+  type: LegalDossierType;
+  status: LegalDossierStatus;
+  jurisdiction: string;
+  tribunal?: string;
+  clientId?: string;
+  clientName: string;
+  opposingParty?: string;
+  opposingCounsel?: string;
+  judge?: string;
+  hearings: LegalHearing[];
+  deadlines: LegalDeadline[];
+  fees: number;
+  feesPaid: number;
+  feesType?: "FORFAIT" | "HORAIRE" | "RÉSULTAT" | "AIDE_JURIDICTIONNELLE";
+  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  notes: string;
+  tags: string[];
+  isStarred: boolean;
+  assignedTo?: string;
+  assignedToName?: string;
+  documents?: string[];
+  createdAt: Timestamp | Date;
+  updatedAt: Timestamp | Date;
+}
+
+export const createLegalDossier = async (
+  tid: string,
+  data: Omit<CRMLegalDossier, "id" | "createdAt" | "updatedAt">,
+) => {
+  const ref = await addDoc(tenantCol(tid, "legal-dossiers"), {
+    ...data,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+  return ref.id;
+};
+
+export const getLegalDossiers = async (tid: string) => {
+  const q = query(tenantCol(tid, "legal-dossiers"), orderBy("updatedAt", "desc"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as CRMLegalDossier);
+};
+
+export const getLegalDossier = async (tid: string, dossierId: string) => {
+  const ref = tenantDoc(tid, "legal-dossiers", dossierId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as CRMLegalDossier;
+};
+
+export const updateLegalDossier = async (
+  tid: string,
+  id: string,
+  data: Partial<Omit<CRMLegalDossier, "id" | "createdAt">>,
+) => {
+  await updateDoc(tenantDoc(tid, "legal-dossiers", id), {
+    ...data,
+    updatedAt: new Date(),
+  });
+};
+
+export const deleteLegalDossier = async (tid: string, id: string) => {
+  await deleteDoc(tenantDoc(tid, "legal-dossiers", id));
 };

@@ -8,14 +8,13 @@ import { LunaLogo } from '../components/LunaLogo';
 import { ArrowRight, Globe, Shield, Sparkles, AlertCircle, Loader2, CheckCircle2, Scale, FileSearch, Briefcase } from 'lucide-react';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { sendPasswordReset, setRememberMe } from '@/src/lib/firebase/auth';
-import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import Image from 'next/image';
 
 /* ── Rotating 3D Globe (Mapbox) ── */
 function RotatingGlobe() {
     const containerRef = useRef<HTMLDivElement>(null);
-    const mapRef = useRef<mapboxgl.Map | null>(null);
+    const mapRef = useRef<any>(null);
     const animRef = useRef<number>(0);
 
     useEffect(() => {
@@ -24,7 +23,8 @@ function RotatingGlobe() {
         const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
         if (!token) return;
 
-        const initTimer = setTimeout(() => {
+        const initTimer = setTimeout(async () => {
+            const mapboxgl = (await import('mapbox-gl')).default;
             mapboxgl.accessToken = token;
             const map = new mapboxgl.Map({
                 container: node,
@@ -86,7 +86,7 @@ export default function LoginPage() {
 
     // Detect legal vertical from URL
     const searchParams = useSearchParams();
-    const isLegal = searchParams.get('vertical') === 'legal';
+    const isLegal = searchParams?.get('vertical') === 'legal';
 
     useEffect(() => { setMounted(true); }, []);
 
@@ -120,9 +120,9 @@ export default function LoginPage() {
     // Redirect if already logged in
     useEffect(() => {
         if (user && !authLoading && !window.location.search.includes('inviteTenant') && !isJoining) {
-            router.replace('/welcome');
+            router.replace(isLegal ? '/welcome?vertical=legal' : '/welcome');
         }
-    }, [user, authLoading, router, isJoining]);
+    }, [user, authLoading, router, isJoining, isLegal]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -169,7 +169,7 @@ export default function LoginPage() {
                             </div>
                             <h1 className="text-[36px] md:text-[42px] text-white font-light leading-[1.1] tracking-tight mb-4">
                                 Le Droit<br />
-                                <span className="italic text-[#bcdeea]">Agent.</span>
+                                <span className="italic text-[#EDE0D4]">Agent.</span>
                             </h1>
                             <p className="text-white/60 text-[14px] font-light leading-relaxed mb-10 max-w-sm mx-auto">
                                 L&apos;intelligence artificielle au service du droit. Analysez, recherchez, gagnez.
@@ -188,7 +188,7 @@ export default function LoginPage() {
                                         className="flex items-center gap-3 text-left"
                                     >
                                         <div className="w-8 h-8 rounded-[10px] bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center shrink-0">
-                                            <feature.icon size={14} className="text-[#bcdeea]" strokeWidth={1.5} />
+                                            <feature.icon size={14} className="text-[#EDE0D4]" strokeWidth={1.5} />
                                         </div>
                                         <span className="text-[12px] text-white/70">{feature.text}</span>
                                     </motion.div>
@@ -284,7 +284,7 @@ export default function LoginPage() {
                         )}
 
                         <button type="submit" disabled={isLoading || isJoining}
-                            className="w-full py-3 btn-primary text-[13px] uppercase tracking-[0.1em] rounded-[12px] flex justify-center items-center gap-2 disabled:opacity-50 cursor-pointer mt-2">
+                            className={`w-full py-3 text-[13px] uppercase tracking-[0.1em] rounded-[12px] flex justify-center items-center gap-2 disabled:opacity-50 cursor-pointer mt-2 transition-colors ${isLegal ? 'bg-[#A07850] hover:bg-[#8B6740] text-white shadow-lg' : 'btn-primary'}`}>
                             {isLoading || isJoining ? (
                                 <span className="flex items-center gap-2">
                                     <Loader2 size={14} className="animate-spin" />
@@ -326,9 +326,9 @@ export default function LoginPage() {
                                     { name: 'Enterprise', price: 'Sur devis', desc: 'Illimité' },
                                 ].map(p => (
                                     <div key={p.name}
-                                        className="flex-1 text-center p-2 rounded-[10px] border border-gray-100 hover:border-[#5a8fa3]/40 transition-colors cursor-pointer">
+                                        className="flex-1 text-center p-2 rounded-[10px] border border-gray-100 hover:border-[#A07850]/40 transition-colors cursor-pointer">
                                         <p className="text-[11px] text-luna-charcoal font-medium">{p.name}</p>
-                                        <p className="text-[11px] text-[#5a8fa3] font-semibold">{p.price}</p>
+                                        <p className="text-[11px] text-[#A07850] font-semibold">{p.price}</p>
                                         <p className="text-[9px] text-[#9CA3AF]">{p.desc}</p>
                                     </div>
                                 ))}
@@ -358,7 +358,7 @@ export default function LoginPage() {
 
                     <p className="text-center text-[13px] text-[#2E2E2E]/40 mt-5">
                         {isLegal
-                            ? <>Pas encore de compte ? <span className="text-[#5a8fa3] font-medium cursor-pointer">Demander une démo →</span></>
+                            ? <><span>Pas encore de compte ? </span><span className="text-[#A07850] font-medium cursor-pointer">Demander une démo →</span></>
                             : <>Pas encore de compte ? <Link href="/signup" className="text-[#5a8fa3] hover:text-[#2E2E2E] transition-colors font-medium">Essai gratuit 14 jours →</Link></>
                         }
                     </p>

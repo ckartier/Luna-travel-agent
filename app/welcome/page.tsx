@@ -2,11 +2,10 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/src/contexts/AuthContext';
-import mapboxgl from 'mapbox-gl';
+import { useVertical } from '@/src/contexts/VerticalContext';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { useLogo } from '@/src/hooks/useSiteConfig';
 
 /**
  * Post-Login Transition Page
@@ -15,9 +14,9 @@ import { useLogo } from '@/src/hooks/useSiteConfig';
 export default function TransitionPage() {
     const router = useRouter();
     const { user, userProfile, loading } = useAuth();
+    const { vertical } = useVertical();
     const [phase, setPhase] = useState<'enter' | 'exit'>('enter');
-    const mapRef = useRef<mapboxgl.Map | null>(null);
-    const logo = useLogo();
+    const mapRef = useRef<any>(null);
 
     const userName = (userProfile?.displayName || user?.displayName || '').split(' ')[0];
 
@@ -28,15 +27,18 @@ export default function TransitionPage() {
         }
     }, [user, loading, router]);
 
-    // Auto-redirect to /crm after animation
+    // Auto-redirect to the correct CRM dashboard after animation
     useEffect(() => {
         if (!user) return;
         const timer = setTimeout(() => {
             setPhase('exit');
-            setTimeout(() => router.push('/crm'), 800);
+            setTimeout(() => {
+                const target = vertical.id === 'legal' ? '/crm/avocat' : '/crm';
+                router.push(target);
+            }, 800);
         }, 2500);
         return () => clearTimeout(timer);
-    }, [user, router]);
+    }, [user, router, vertical.id]);
 
     // Mapbox rotating globe
     const mapContainerCallback = useCallback((node: HTMLDivElement | null) => {
@@ -44,6 +46,8 @@ export default function TransitionPage() {
         const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
         if (!token) return;
 
+        (async () => {
+        const mapboxgl = (await import('mapbox-gl')).default;
         mapboxgl.accessToken = token;
         const map = new mapboxgl.Map({
             container: node,
@@ -79,6 +83,7 @@ export default function TransitionPage() {
         };
         requestAnimationFrame(spin);
         mapRef.current = map;
+        })();
     }, []);
 
     if (loading) return null;
@@ -103,20 +108,6 @@ export default function TransitionPage() {
                         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                         className="absolute inset-0 z-20 flex flex-col items-center justify-center"
                     >
-                        {/* Logo */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.2, duration: 0.6 }}
-                        >
-                            <img
-                                src={logo}
-                                alt="Luna"
-                                className="object-contain mb-8 brightness-0"
-                                style={{ height: '60px', width: 'auto' }}
-                            />
-                        </motion.div>
-
                         {/* Greeting */}
                         <motion.h1
                             initial={{ opacity: 0, y: 20 }}
@@ -135,7 +126,7 @@ export default function TransitionPage() {
                             transition={{ delay: 0.7, duration: 0.6 }}
                             className="text-[#2E2E2E]/35 text-sm font-light tracking-wide"
                         >
-                            Préparation de votre espace concierge...
+                            Préparation de votre bureau...
                         </motion.p>
 
                         {/* Loading dots */}

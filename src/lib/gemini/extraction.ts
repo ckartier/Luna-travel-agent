@@ -27,7 +27,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 export async function extractTravelLeadFromEmail(emailBody: string): Promise<TravelLeadExtraction> {
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-pro',
+            model: 'gemini-2.5-flash',
             contents: `You are the Luna B2B Travel Coordinator AI.
 Your task is to parse an incoming email from a client to a travel agency and extract structured lead data.
 Respond ONLY with a raw JSON object (no markdown, no backticks) matching this exact schema:

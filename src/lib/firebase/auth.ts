@@ -65,19 +65,31 @@ export async function loginWithGoogle() {
         return { user: result.user, error: null };
     } catch (err) {
         const error = err as AuthError;
-        // If popup blocked or failed, fall back to redirect
+        console.error('[Auth] Google sign-in error:', error.code, error.message);
+        
+        // If popup blocked, fall back to redirect
         if (error.code === 'auth/popup-blocked' ||
-            error.code === 'auth/popup-closed-by-user' ||
-            error.code === 'auth/cancelled-popup-request' ||
-            error.code === 'auth/unauthorized-domain') {
+            error.code === 'auth/cancelled-popup-request') {
             try {
                 await signInWithRedirect(auth, googleProvider);
                 return { user: null, error: null }; // redirect will handle the rest
             } catch (redirectErr) {
                 const rError = redirectErr as AuthError;
+                console.error('[Auth] Google redirect error:', rError.code, rError.message);
                 return { user: null, error: getAuthErrorMessage(rError) };
             }
         }
+        
+        // User closed popup — not an error per se
+        if (error.code === 'auth/popup-closed-by-user') {
+            return { user: null, error: 'Connexion annulée.' };
+        }
+        
+        // Unauthorized domain — show clear error
+        if (error.code === 'auth/unauthorized-domain') {
+            return { user: null, error: 'Domaine non autorisé. Ajoutez localhost dans Firebase Console → Authentication → Settings → Authorized Domains.' };
+        }
+        
         return { user: null, error: getAuthErrorMessage(error) };
     }
 }

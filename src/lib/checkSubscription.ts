@@ -62,9 +62,8 @@ export async function checkSubscription(
         };
     } catch (err) {
         console.error('[checkSubscription] Error:', err);
-        // Fail open on errors to avoid blocking legitimate users
-        // (auth layer still protects the route)
-        return { hasAccess: true, planId: null, status: null };
+        // Fail closed: deny access on errors to prevent unauthorized usage during outages
+        return { hasAccess: false, planId: null, status: null };
     }
 }
 

@@ -60,6 +60,7 @@ export const travelVertical: VerticalConfig = {
                 { name: { fr: 'Devis', en: 'Quotes', es: 'Presupuestos' }, href: '/crm/quotes', icon: 'FileSignature', featureKey: 'quotes' },
                 { name: { fr: 'Factures', en: 'Invoices', es: 'Facturas' }, href: '/crm/invoices', icon: 'FileText', featureKey: 'invoices' },
                 { name: { fr: 'Paiements', en: 'Payments', es: 'Pagos' }, href: '/crm/payments', icon: 'CreditCard', featureKey: 'payments' },
+                { name: { fr: 'Banque', en: 'Banking', es: 'Banco' }, href: '/crm/banking', icon: 'Landmark', featureKey: 'payments' },
             ],
         },
         {

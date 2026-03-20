@@ -13,6 +13,7 @@ import { db } from '@/src/lib/firebase/client';
 import { VERTICAL_LIST, getVertical } from '@/src/verticals';
 import { useVertical } from '@/src/contexts/VerticalContext';
 import { getIcon } from '@/src/lib/utils/iconMap';
+import { T } from '@/src/components/T';
 
 /* ════════════════════════════════════════════════════════
    SETUP WIZARD — Self-service installation module
@@ -293,8 +294,8 @@ export default function SetupPage() {
                                 <Rocket size={22} className="text-[#b9dae9]" />
                             </div>
                             <div>
-                                <h1 className="text-3xl font-light text-[#2E2E2E] tracking-tight">Installation & Configuration</h1>
-                                <p className="text-sm text-[#6B7280] font-medium">Configurez vos clés API pour activer chaque module</p>
+                                <h1 className="text-3xl font-light text-[#2E2E2E] tracking-tight"><T>Installation & Configuration</T></h1>
+                                <p className="text-sm text-[#6B7280] font-medium"><T>Configurez vos clés API pour activer chaque module</T></p>
                             </div>
                         </div>
                     </div>
@@ -310,7 +311,7 @@ export default function SetupPage() {
                             Guide complet
                         </a>
                         <div className="text-right">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Configuration</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400"><T>Configuration</T></p>
                             <p className="text-2xl font-light text-[#2E2E2E]">{totalCompletion}%</p>
                         </div>
                         <div className="w-32 h-3 bg-gray-100 rounded-full overflow-hidden border border-gray-200">
@@ -331,8 +332,8 @@ export default function SetupPage() {
                             <Sparkles size={18} className="text-[#5a8fa3]" />
                         </div>
                         <div>
-                            <h3 className="text-sm font-bold text-[#2E2E2E]">Votre Métier</h3>
-                            <p className="text-[10px] text-gray-400">Choisissez votre secteur pour adapter l'interface Luna</p>
+                            <h3 className="text-sm font-bold text-[#2E2E2E]"><T>Votre Métier</T></h3>
+                            <p className="text-[10px] text-gray-400"><T>Choisissez votre secteur pour adapter l'interface Luna</T></p>
                         </div>
                         {savingVertical && (
                             <Loader2 size={14} className="animate-spin text-[#5a8fa3] ml-auto" />
@@ -653,8 +654,8 @@ export default function SetupPage() {
 
                             {/* Need help? */}
                             <div className="bg-white rounded-3xl border border-gray-200 p-7 shadow-sm text-center">
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Besoin d'aide ?</p>
-                                <p className="text-xs text-gray-500 mb-4">Notre équipe peut configurer vos APIs pour vous.</p>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2"><T>Besoin d'aide ?</T></p>
+                                <p className="text-xs text-gray-500 mb-4"><T>Notre équipe peut configurer vos APIs pour vous.</T></p>
                                 <a
                                     href="mailto:support@luna-travel.com"
                                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#2E2E2E] text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-black transition-all"

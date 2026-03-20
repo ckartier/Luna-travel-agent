@@ -29,7 +29,7 @@ interface NavSection {
 }
 
 export default function SiteAdminLayout({ children }: { children: ReactNode }) {
-    const pathname = usePathname();
+    const pathname = usePathname() || '/'
     const [mobileOpen, setMobileOpen] = useState(false);
     const { user, userProfile, role } = useAuth();
     const { canAccessFeature } = useAccess();

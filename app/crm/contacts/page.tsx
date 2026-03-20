@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Users, Search, Star, Phone, Mail, RefreshCcw, X, Plus, ChevronRight, Plane, Calendar, Target, Clock, ExternalLink, Download, FileSpreadsheet, ArrowUpDown, Sparkles, Activity, Upload, FileUp, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Users, Search, Star, Phone, Mail, RefreshCcw, X, Plus, ChevronRight, Plane, Calendar, Target, Clock, ExternalLink, Download, FileSpreadsheet, ArrowUpDown, Sparkles, Activity, Upload, FileUp, AlertCircle, CheckCircle2, Loader2, Briefcase } from 'lucide-react';
 import { getContacts, createContact, getLeadsForContact, getTripsForContact, getActivitiesForContact, CRMContact, CRMLead, CRMTrip, CRMActivity } from '@/src/lib/firebase/crm';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { useVertical } from '@/src/contexts/VerticalContext';
 import { T } from '@/src/components/T';
+import { CRMEmptyState } from '@/app/components/CRMEmptyState';
 
 const VIP_COLORS: Record<string, string> = {
   Standard: 'bg-gray-50 text-gray-400 border-gray-100',
@@ -78,6 +80,8 @@ function parseCSVLine(line: string): string[] {
 
 export default function CRMContacts() {
   const { tenantId } = useAuth();
+  const { vertical } = useVertical();
+  const isLegal = vertical.id === 'legal';
   const [contacts, setContacts] = useState<CRMContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -179,7 +183,7 @@ export default function CRMContacts() {
 
   const exportAllDataCSV = async () => {
     const allRows: string[][] = [];
-    const headers = ['Prénom', 'Nom', 'Email', 'Téléphone', 'VIP', 'Préférences', 'Leads', 'Voyages', 'Activités'];
+    const headers = ['Prénom', 'Nom', 'Email', 'Téléphone', 'VIP', 'Préférences', 'Leads', isLegal ? 'Dossiers' : 'Voyages', 'Activités'];
     for (const c of contacts) {
       try {
         const [leads, trips, activities] = await Promise.all([
@@ -226,22 +230,38 @@ export default function CRMContacts() {
         setColumnMapping(autoMapColumns(headers));
         setImportStep('mapping');
       } else if (ext === 'xlsx' || ext === 'xls') {
-        // Load SheetJS dynamically
-        const XLSX = await import('xlsx');
+        // Load ExcelJS dynamically
+        const ExcelJS = await import('exceljs');
+        const workbook = new ExcelJS.Workbook();
         const data = await file.arrayBuffer();
-        const wb = XLSX.read(data, { type: 'array' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(ws, { defval: '' }) as Record<string, any>[];
-        if (jsonData.length === 0) { alert('Le fichier Excel est vide.'); return; }
-        const headers = Object.keys(jsonData[0]);
-        const rows: ParsedRow[] = jsonData.map((row: Record<string, any>) => {
-          const r: ParsedRow = {};
-          headers.forEach(h => { r[h] = String(row[h] ?? ''); });
-          return r;
+        await workbook.xlsx.load(data);
+        const ws = workbook.worksheets[0];
+        if (!ws || ws.rowCount < 2) { alert('Le fichier Excel est vide.'); return; }
+        
+        // Extract headers from first row
+        const headerRow = ws.getRow(1);
+        const headers: string[] = [];
+        headerRow.eachCell((cell, colNumber) => {
+          headers[colNumber - 1] = String(cell.value ?? '');
         });
-        setImportHeaders(headers);
+        
+        // Extract data rows
+        const rows: ParsedRow[] = [];
+        ws.eachRow((row, rowNumber) => {
+          if (rowNumber === 1) return; // Skip header
+          const r: ParsedRow = {};
+          row.eachCell((cell, colNumber) => {
+            const header = headers[colNumber - 1];
+            if (header) r[header] = String(cell.value ?? '');
+          });
+          // Fill missing headers with empty string
+          headers.forEach(h => { if (!(h in r)) r[h] = ''; });
+          rows.push(r);
+        });
+        
+        setImportHeaders(headers.filter(Boolean));
         setImportRows(rows);
-        setColumnMapping(autoMapColumns(headers));
+        setColumnMapping(autoMapColumns(headers.filter(Boolean)));
         setImportStep('mapping');
       } else {
         alert('Format non supporté. Utilisez .csv ou .xlsx');
@@ -412,11 +432,11 @@ export default function CRMContacts() {
               </motion.div>
             ))}
             {filtered.length === 0 && !loading && (
-              <div className="text-center py-24">
-                <Users size={48} className="mx-auto text-gray-100 mb-4" />
-                <h4 className="text-lg font-normal text-gray-400 uppercase tracking-tighter"><T>Aucun contact trouvé</T></h4>
-                <p className="text-sm text-[#6B7280] mt-1 font-medium">Ajustez vos filtres ou lancez une nouvelle recherche.</p>
-              </div>
+              <CRMEmptyState
+                icon={Users}
+                title="Aucun contact trouvé"
+                description="Ajustez vos filtres ou lancez une nouvelle recherche."
+              />
             )}
           </div>
         </div>
@@ -488,20 +508,20 @@ export default function CRMContacts() {
                   </div>
                 ) : (
                   <>
-                    {/* Trips */}
+                    {/* Trips / Dossiers */}
                     <div>
                       <h4 className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-6 flex items-center gap-2">
-                        <Plane size={14} /> Voyages en cours ({contactTrips.length})
+                        {isLegal ? <Briefcase size={14} /> : <Plane size={14} />} {isLegal ? 'Dossiers en cours' : 'Voyages en cours'} ({contactTrips.length})
                       </h4>
                       {contactTrips.length === 0 ? (
-                        <p className="text-xs text-gray-300 font-sans italic">Aucun dossier actif</p>
+                        <p className="text-xs text-gray-300 font-sans italic">{isLegal ? 'Aucun dossier actif' : 'Aucun voyage actif'}</p>
                       ) : (
                         <div className="space-y-3">
                           {contactTrips.map(trip => (
-                            <Link href={`/crm/trips/${trip.id}/itinerary`} key={trip.id} className="flex items-center justify-between p-5 rounded-[24px] bg-gray-50/50 border border-gray-100 hover:border-indigo-200 hover:bg-white transition-all group">
+                            <Link href={isLegal ? `/crm/dossiers` : `/crm/trips/${trip.id}/itinerary`} key={trip.id} className="flex items-center justify-between p-5 rounded-[24px] bg-gray-50/50 border border-gray-100 hover:border-indigo-200 hover:bg-white transition-all group">
                               <div className="flex items-center gap-4 min-w-0">
                                 <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                                  <Plane size={18} className="text-[#5a8fa3]" />
+                                  {isLegal ? <Briefcase size={18} className="text-[#A07850]" /> : <Plane size={18} className="text-[#5a8fa3]" />}
                                 </div>
                                 <div className="min-w-0">
                                   <p className="text-sm font-bold text-luna-charcoal uppercase truncate">{trip.title}</p>
@@ -609,7 +629,7 @@ export default function CRMContacts() {
 
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2">Préférences (tags)</label>
-                    <input type="text" placeholder="Ex: Luxe, Aventure, Gastronomie..." className="w-full px-6 py-4 rounded-[20px] bg-gray-50 border-none focus:ring-2 focus:ring-indigo-100 focus:bg-white transition-all text-sm font-sans"
+                    <input type="text" placeholder={isLegal ? 'Ex: Droit pénal, Famille, Commercial...' : 'Ex: Luxe, Aventure, Gastronomie...'} className="w-full px-6 py-4 rounded-[20px] bg-gray-50 border-none focus:ring-2 focus:ring-indigo-100 focus:bg-white transition-all text-sm font-sans"
                       value={newContact.preferences} onChange={e => setNewContact({ ...newContact, preferences: e.target.value })} />
                   </div>
 

@@ -47,6 +47,8 @@ export default function PrestationsPage() {
   const [suppliers, setSuppliers] = useState<CRMSupplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('ALL');
+  const [filterLocation, setFilterLocation] = useState<string>('ALL');
+  const [filterSupplier, setFilterSupplier] = useState<string>('ALL');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -206,13 +208,19 @@ export default function PrestationsPage() {
 
   const getTypeConfig = (t: string) => TYPES.find((tp: any) => tp.value === t) || TYPES[4];
 
+  // Unique locations & suppliers for filter pills
+  const uniqueLocations = [...new Set(items.map(i => i.location).filter(Boolean))].sort();
+  const uniqueSuppliers = [...new Set(items.map(i => i.supplier).filter(Boolean))].sort();
+
   const filtered = items.filter(i => {
     const matchType = filter === 'ALL' || i.type === filter;
+    const matchLocation = filterLocation === 'ALL' || i.location === filterLocation;
+    const matchSupplier = filterSupplier === 'ALL' || i.supplier === filterSupplier;
     const matchSearch = i.name.toLowerCase().includes(searchTerm.toLowerCase())
       || i.location.toLowerCase().includes(searchTerm.toLowerCase())
       || (i.supplier || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchFav = !showFavoritesOnly || i.favorite;
-    return matchType && matchSearch && matchFav;
+    return matchType && matchLocation && matchSupplier && matchSearch && matchFav;
   });
 
   if (loading && items.length === 0) return (
@@ -294,6 +302,48 @@ export default function PrestationsPage() {
               </button>
             ))}
           </div>
+
+          {/* Location & Supplier filters */}
+          {(uniqueLocations.length > 1 || uniqueSuppliers.length > 1) && (
+            <div className="flex flex-wrap items-center gap-3">
+              {uniqueLocations.length > 1 && (
+                <div className="flex items-center gap-1.5">
+                  <MapPin size={13} className="text-gray-300 shrink-0" />
+                  <select
+                    value={filterLocation}
+                    onChange={e => setFilterLocation(e.target.value)}
+                    className="text-[11px] font-semibold text-gray-500 bg-white border border-gray-100 rounded-xl px-3 py-2 pr-7 focus:outline-none focus:border-[#bcdeea] focus:ring-1 focus:ring-[#bcdeea]/30 cursor-pointer appearance-none transition-all hover:border-gray-200"
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                  >
+                    <option value="ALL">Toutes les villes</option>
+                    {uniqueLocations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+                  </select>
+                </div>
+              )}
+              {uniqueSuppliers.length > 1 && (
+                <div className="flex items-center gap-1.5">
+                  <UserCircle size={13} className="text-gray-300 shrink-0" />
+                  <select
+                    value={filterSupplier}
+                    onChange={e => setFilterSupplier(e.target.value)}
+                    className="text-[11px] font-semibold text-gray-500 bg-white border border-gray-100 rounded-xl px-3 py-2 pr-7 focus:outline-none focus:border-[#bcdeea] focus:ring-1 focus:ring-[#bcdeea]/30 cursor-pointer appearance-none transition-all hover:border-gray-200"
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                  >
+                    <option value="ALL">Tous les prestataires</option>
+                    {uniqueSuppliers.map(sup => <option key={sup} value={sup}>{sup}</option>)}
+                  </select>
+                </div>
+              )}
+              {(filterLocation !== 'ALL' || filterSupplier !== 'ALL') && (
+                <button
+                  onClick={() => { setFilterLocation('ALL'); setFilterSupplier('ALL'); }}
+                  className="text-[10px] font-bold text-[#5a8fa3] hover:text-[#4a7f93] transition-colors flex items-center gap-1"
+                >
+                  <X size={12} /> Réinitialiser
+                </button>
+              )}
+            </div>
+          )}
         </motion.div>
 
         {/* Grid */}
@@ -620,6 +670,14 @@ export default function PrestationsPage() {
             </div>
           )}
         </AnimatePresence>
+
+        <ConfirmModal
+          open={!!deleteTarget}
+          title="Supprimer cette prestation ?"
+          message="La prestation sera supprimée définitivement du catalogue."
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       </div>
     </div>
   );

@@ -11,11 +11,13 @@ import {
 } from 'firebase/firestore';
 
 // ═══ TENANT INTERFACE ═══
+export type TenantPlan = 'starter' | 'site_builder' | 'crm' | 'all_in_one' | 'pro' | 'enterprise';
+
 export interface Tenant {
     id?: string;
     name: string;
     slug: string;
-    plan: 'starter' | 'pro' | 'enterprise';
+    plan: TenantPlan;
     ownerId: string;
     members: {
         [uid: string]: {
@@ -46,18 +48,36 @@ export interface Tenant {
     updatedAt: Timestamp | Date;
 }
 
-// Plan-based limits
-const PLAN_LIMITS: Record<Tenant['plan'], Tenant['limits']> = {
+// Plan-based limits — aligned with pricing page
+const PLAN_LIMITS: Record<TenantPlan, Tenant['limits']> = {
     starter: {
         maxContacts: 100,
-        maxTripsPerMonth: 20,
-        maxTeamMembers: 2,
-        aiQueriesPerDay: 20,
+        maxTripsPerMonth: 10,
+        maxTeamMembers: 1,
+        aiQueriesPerDay: 5,
+    },
+    site_builder: {
+        maxContacts: 0,
+        maxTripsPerMonth: 0,
+        maxTeamMembers: 1,
+        aiQueriesPerDay: 5,
+    },
+    crm: {
+        maxContacts: 500,
+        maxTripsPerMonth: 50,
+        maxTeamMembers: 5,
+        aiQueriesPerDay: 30,
+    },
+    all_in_one: {
+        maxContacts: 2000,
+        maxTripsPerMonth: 200,
+        maxTeamMembers: 15,
+        aiQueriesPerDay: 100,
     },
     pro: {
-        maxContacts: 1000,
-        maxTripsPerMonth: 100,
-        maxTeamMembers: 10,
+        maxContacts: 2000,
+        maxTripsPerMonth: 200,
+        maxTeamMembers: 15,
         aiQueriesPerDay: 100,
     },
     enterprise: {

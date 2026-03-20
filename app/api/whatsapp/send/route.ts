@@ -63,13 +63,13 @@ export async function POST(request: Request) {
                             type: 'button',
                             header: {
                                 type: 'text',
-                                text: '🌟 Confirmation de disponibilité'
+                                text: '✨ Luna Conciergerie'
                             },
                             body: {
                                 text: message
                             },
                             footer: {
-                                text: '✨ Répondez directement depuis ce message'
+                                text: 'Répondez en un clic 👇'
                             },
                             action: {
                                 buttons: [
@@ -77,14 +77,14 @@ export async function POST(request: Request) {
                                         type: 'reply',
                                         reply: {
                                             id: `CONFIRM_${bookingId || 'unknown'}`,
-                                            title: '✅ Validé'
+                                            title: 'Confirmer ✅'
                                         }
                                     },
                                     {
                                         type: 'reply',
                                         reply: {
                                             id: `REJECT_${bookingId || 'unknown'}`,
-                                            title: '❌ Non Validé'
+                                            title: 'Refuser ❌'
                                         }
                                     }
                                 ]
@@ -102,6 +102,7 @@ export async function POST(request: Request) {
                     };
                 }
 
+                // ── Send the message directly ──
                 let response = await fetch(`${WHATSAPP_API_URL}/${phoneId}/messages`, {
                     method: 'POST',
                     headers: {
@@ -114,12 +115,12 @@ export async function POST(request: Request) {
                 let data = await response.json();
                 console.log('[WhatsApp API Response]', data);
 
-                // If recipient not in allowed list (sandbox) or no conversation window,
-                // initiate with a template first, then send the actual message
-                if (!response.ok && (data.error?.code === 131030 || data.error?.code === 131047)) {
-                    console.log(`[WhatsApp] Initiating conversation with template for ${normalizedPhone}...`);
-
-                    // Send hello_world template to open the conversation window
+                if (response.ok) {
+                    deliveryStatus = 'sent';
+                    waMessageId = data.messages?.[0]?.id;
+                } else if (data.error?.code === 131030 || data.error?.code === 131047) {
+                    // Conversation window closed — send template to reopen, then retry
+                    console.log(`[WhatsApp] Window closed, sending template to reopen...`);
                     const templateRes = await fetch(`${WHATSAPP_API_URL}/${phoneId}/messages`, {
                         method: 'POST',
                         headers: {
@@ -133,15 +134,10 @@ export async function POST(request: Request) {
                             template: { name: 'hello_world', language: { code: 'en_US' } },
                         }),
                     });
-
                     const templateData = await templateRes.json();
                     if (templateRes.ok) {
-                        console.log(`[WhatsApp] Template sent successfully, now sending interactive/text...`);
-                        deliveryStatus = 'sent';
-                        waMessageId = templateData.messages?.[0]?.id;
-
-                        // Now try sending the actual message (conversation window is open)
-                        const textRes = await fetch(`${WHATSAPP_API_URL}/${phoneId}/messages`, {
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        const retryRes = await fetch(`${WHATSAPP_API_URL}/${phoneId}/messages`, {
                             method: 'POST',
                             headers: {
                                 'Authorization': `Bearer ${token}`,
@@ -149,20 +145,18 @@ export async function POST(request: Request) {
                             },
                             body: JSON.stringify(messageBody),
                         });
-                        const textData = await textRes.json();
-                        if (textRes.ok) {
-                            waMessageId = textData.messages?.[0]?.id;
+                        const retryData = await retryRes.json();
+                        if (retryRes.ok) {
+                            deliveryStatus = 'sent';
+                            waMessageId = retryData.messages?.[0]?.id;
                         } else {
-                            console.log(`[WhatsApp] Message after template failed:`, textData.error?.message);
+                            deliveryStatus = 'failed';
+                            deliveryError = retryData.error?.message || 'Retry failed';
                         }
                     } else {
                         deliveryStatus = 'failed';
                         deliveryError = templateData.error?.message || 'Template failed';
-                        console.error('WhatsApp template error:', templateData.error);
                     }
-                } else if (response.ok) {
-                    deliveryStatus = 'sent';
-                    waMessageId = data.messages?.[0]?.id;
                 } else {
                     deliveryStatus = 'failed';
                     deliveryError = data.error?.message || 'Failed to send';

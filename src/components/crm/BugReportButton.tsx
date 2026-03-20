@@ -13,7 +13,7 @@ export function BugReportButton() {
     const [sending, setSending] = useState(false);
     const [sent, setSent] = useState(false);
     const { user, userProfile } = useAuth();
-    const pathname = usePathname();
+    const pathname = usePathname() || '/';
 
     const handleSubmit = async () => {
         if (!title.trim() || !description.trim()) return;

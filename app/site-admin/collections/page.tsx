@@ -47,13 +47,13 @@ export default function AdminCollectionsPage() {
             const fd = new FormData();
             fd.append('file', file);
             try {
-                const res = await fetchWithAuth('/api/crm/upload', { method: 'POST', body: fd });
-                if (res.ok) {
-                    const { url } = await res.json();
-                    setFormData(prev => ({ ...prev, images: [...prev.images, url] }));
-                } else {
-                    console.error('Upload failed:', await res.text());
-                }
+                const res = await fetchWithAuth('/api/crm/upload', {
+                    method: 'POST',
+                    body: fd,
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Erreur upload');
+                setFormData(prev => ({ ...prev, images: [...prev.images, data.url] }));
             } catch (err) {
                 console.error('Upload error:', err);
             }
@@ -73,16 +73,19 @@ export default function AdminCollectionsPage() {
         }
 
         setUploading(true);
-        const fd = new FormData();
-        fd.append('file', file);
         try {
-            const res = await fetchWithAuth('/api/crm/upload', { method: 'POST', body: fd });
-            if (!res.ok) throw new Error('Upload failed');
-            const { url } = await res.json();
-            setFormData(prev => ({ ...prev, video: url }));
-        } catch (err) {
+            const fd = new FormData();
+            fd.append('file', file);
+            const res = await fetchWithAuth('/api/crm/upload', {
+                method: 'POST',
+                body: fd,
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Erreur upload');
+            setFormData(prev => ({ ...prev, video: data.url }));
+        } catch (err: any) {
             console.error('Video upload error:', err);
-            alert('Erreur lors du téléchargement de la vidéo');
+            alert(`Erreur upload: ${err?.message || err}`);
         } finally {
             setUploading(false);
             if (e.target) e.target.value = '';

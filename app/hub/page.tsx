@@ -233,7 +233,7 @@ function TerminalPrompt({ onComplete, locale }: { onComplete?: () => void; local
             {lines.slice(0, visibleLines + 1).map((line, i) => {
                 const isCurrentLine = i === visibleLines;
                 const text = isCurrentLine ? line.text.substring(0, typedChars) : line.text;
-                const promptColor = line.green ? 'text-emerald-400' : 'text-white/60';
+                const promptColor = line.green ? 'text-red-500' : 'text-white/60';
                 const textColor = line.dim ? 'text-white/50' : line.green ? 'text-white/90' : 'text-white';
 
                 if (!line.prompt && !line.text) return <div key={i} className="h-2" />;
@@ -317,25 +317,25 @@ function getProducts(locale: Locale) {
         {
             id: 'travel', name: 'Luna Travel', tagline: 'sys.concierge_voyage',
             desc: t('travelDesc', locale),
-            loginHref: '/crm/luna', crmHref: '/crm/luna',
-            accentColor: 'text-emerald-400', hoverBorder: 'hover:border-emerald-400/50',
-            glowColor: 'rgba(16,185,129,0.15)', borderGlow: 'rgba(16,185,129,0.4)',
+            loginHref: '/landing?vertical=travel', crmHref: '/crm/luna?vertical=travel',
+            accentColor: 'text-red-500', hoverBorder: 'hover:border-red-500/50',
+            glowColor: 'rgba(239,68,68,0.15)', borderGlow: 'rgba(239,68,68,0.4)',
             features: ['[OK] Agents_IA_Voyage', '[OK] Pipeline_B2B', '[OK] Routing_J/J'],
         },
         {
             id: 'legal', name: 'Le Droit Agent', tagline: 'sys.ia_juridique',
             desc: t('legalDesc', locale),
-            loginHref: '/crm/avocat', crmHref: '/crm/avocat',
-            accentColor: 'text-amber-400', hoverBorder: 'hover:border-amber-400/50',
-            glowColor: 'rgba(245,158,11,0.15)', borderGlow: 'rgba(245,158,11,0.4)',
+            loginHref: '/landing-legal?vertical=legal', crmHref: '/crm/avocat?vertical=legal',
+            accentColor: 'text-red-500', hoverBorder: 'hover:border-red-500/50',
+            glowColor: 'rgba(239,68,68,0.15)', borderGlow: 'rgba(239,68,68,0.4)',
             features: ['[OK] Analyse_Dossiers', '[OK] Jurisprudence_RT', '[OK] Auth_Secret_Pro'],
         },
         {
             id: 'renovtracker', name: 'Paris RenovTracker', tagline: 'sys.renov_tracker',
             desc: t('datarnivoreDesc', locale),
             loginHref: 'https://datarnivore-renovtracker.web.app', crmHref: 'https://datarnivore-renovtracker.web.app',
-            accentColor: 'text-fuchsia-400', hoverBorder: 'hover:border-fuchsia-400/50',
-            glowColor: 'rgba(232,121,249,0.15)', borderGlow: 'rgba(232,121,249,0.4)',
+            accentColor: 'text-red-500', hoverBorder: 'hover:border-red-500/50',
+            glowColor: 'rgba(239,68,68,0.15)', borderGlow: 'rgba(239,68,68,0.4)',
             features: ['[OK] DVF_Open_Data', '[OK] Permis_Tracker', '[OK] Analyse_Marché'],
             isExternal: true,
         },
@@ -374,10 +374,10 @@ function FeatureTypein({ text, delay, ready }: { text: string; delay: number; re
             <span className="font-mono text-[11px] text-white/80">
                 {displayed}
                 {started && displayed.length < text.length && (
-                    <span className="animate-pulse text-emerald-400">▌</span>
+                    <span className="animate-pulse text-red-500">▌</span>
                 )}
                 {started && displayed.length >= text.length && (
-                    <span className="text-emerald-400/60"> ✓</span>
+                    <span className="text-red-500/60"> ✓</span>
                 )}
             </span>
         </div>
@@ -386,11 +386,11 @@ function FeatureTypein({ text, delay, ready }: { text: string; delay: number; re
 
 
 /* ═══════════════════════════════════════════════════════
-   Hero Videos — randomly picked on each page load
+   Hero Videos — played sequentially with crossfade
    ═══════════════════════════════════════════════════════ */
 const HERO_VIDEOS = [
-    { src: '/The_bear_walks_4c936ce790.mp4', poster: '/bear-walk-poster.jpg' },
-    { src: '/Platforms_random_up_down_movement_delpmaspu_.mp4', poster: '/platforms-poster.jpg' },
+    { src: '/The_bear_walks._202603181916.mp4', poster: '/bear-walk-poster.jpg' },
+    { src: '/vertex_animation_202603182054.mp4', poster: '/bear-walk-poster.jpg' },
 ];
 
 /* ═══════════════════════════════════════════════════════
@@ -402,15 +402,70 @@ export default function HubPage() {
     const [isMuted, setIsMuted] = useState(true);
     const [terminalDone, setTerminalDone] = useState(false);
     const [heroShift, setHeroShift] = useState('-10vh');
-    const [heroEntry, setHeroEntry] = useState(HERO_VIDEOS[0]);
+    const [videoIndex, setVideoIndex] = useState(0);
     const videoRef = useRef<HTMLVideoElement>(null);
+
+    // ── Editor integration: listen for postMessage from builder iframe ──
+    const [editorConfig, setEditorConfig] = useState<any>(null);
+    const [savedConfig, setSavedConfig] = useState<any>(null);
+    const isInIframe = typeof window !== 'undefined' && window.parent !== window;
+
+    useEffect(() => {
+        fetch('/api/hub/config').then(r => r.json()).then(data => setSavedConfig(data)).catch(() => {});
+    }, []);
+
+    const activeConfig = editorConfig || savedConfig;
+
+    useEffect(() => {
+        const handler = (e: MessageEvent) => {
+            if (e.data?.type === 'hub-editor-update' && e.data.config) {
+                setEditorConfig(e.data.config);
+            }
+        };
+        window.addEventListener('message', handler);
+        return () => window.removeEventListener('message', handler);
+    }, []);
+
+    // When inside iframe (editor preview), send click events back to parent for click-to-edit
+    useEffect(() => {
+        if (!isInIframe) return;
+        const handler = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            const section = target.closest('[data-section-id]');
+            if (section) {
+                window.parent.postMessage({
+                    type: 'hub-editor-focus',
+                    section: (section as HTMLElement).dataset.sectionId,
+                }, '*');
+            }
+        };
+        document.addEventListener('click', handler);
+        return () => document.removeEventListener('click', handler);
+    }, [isInIframe]);
+
+    useEffect(() => {
+        const lastIdx = sessionStorage.getItem('hub-video-idx');
+        const next = lastIdx !== null ? (parseInt(lastIdx) + 1) % HERO_VIDEOS.length : Math.floor(Math.random() * HERO_VIDEOS.length);
+        sessionStorage.setItem('hub-video-idx', next.toString());
+        setVideoIndex(next);
+    }, []);
     const locale = useLocale();
     const products = getProducts(locale);
 
-    // Pick a random video on each page load (client-side only to avoid hydration mismatch)
-    useEffect(() => {
-        setHeroEntry(HERO_VIDEOS[Math.floor(Math.random() * HERO_VIDEOS.length)]);
-    }, []);
+    // Derived config fields
+    const heroBlock = activeConfig?.blocks?.find((b: any) => b.type === 'hero');
+    const contentBlock = activeConfig?.blocks?.find((b: any) => b.type === 'content');
+    const featureBlock = activeConfig?.blocks?.find((b: any) => b.type === 'feature');
+    const business = activeConfig?.business;
+    const globalConfig = activeConfig?.global;
+    
+    const activeVideo = heroBlock?.videoUrl || HERO_VIDEOS[videoIndex].src;
+    const activeLogo = globalConfig?.logo || "/Logo ours agence blanc.png";
+    const brandName = business?.name || "Datarnivore";
+    const accentColor = globalConfig?.accentColor || '#ef4444'; // default red-500
+
+    const contentText = contentBlock?.text || `${t('demo1', locale)}\n${t('demo2', locale)}\n${t('demo3', locale)}\n${t('demo4', locale)}`;
+    const contentLines = contentText.split('\n').filter(Boolean);
 
     // Responsive hero shift based on viewport
     useEffect(() => {
@@ -429,7 +484,7 @@ export default function HubPage() {
     // Removed scrubbing logic because video seeking is inherently choppy on compressed web video.
     // We will use pure Autoplay + Smooth Parallax instead.
 
-    // Start video only AFTER loading screen has fully exited
+    // Start video only AFTER loading screen has fully exited (and when video changes)
     useEffect(() => {
         if (!contentReady) return;
         const video = videoRef.current;
@@ -438,7 +493,44 @@ export default function HubPage() {
             video.play().catch(() => {});
         }, 300);
         return () => clearTimeout(t);
-    }, [contentReady]);
+    }, [contentReady, videoIndex]);
+
+    // Video playback control: fade out audio near end, then advance to next video
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const handleTimeUpdate = () => {
+            const duration = video.duration;
+            const currentTime = video.currentTime;
+            if (!duration) return;
+
+            const timeRemaining = duration - currentTime;
+            
+            // Fade out audio over the last 2 seconds
+            const fadeOutDuration = 2.0;
+            if (timeRemaining <= fadeOutDuration && !video.muted) {
+                const newVolume = Math.max(0, timeRemaining / fadeOutDuration);
+                video.volume = newVolume;
+            } else if (timeRemaining > fadeOutDuration && video.volume !== 1) {
+                video.volume = 1;
+            }
+
+            // Near end: pause at the last frame
+            if (timeRemaining <= 0.06) {
+                video.pause();
+                video.currentTime = duration - 0.06;
+                // Keep the static last frame, do not loop to the next video
+            }
+        };
+
+        video.addEventListener('timeupdate', handleTimeUpdate);
+        
+        return () => {
+            video.removeEventListener('timeupdate', handleTimeUpdate);
+            video.volume = 1;
+        };
+    }, [videoIndex]);
 
     // Mute handling will just toggle the property. No more timeupdate fade.
     useEffect(() => {
@@ -492,20 +584,20 @@ export default function HubPage() {
                 >
                     <div className="absolute inset-0">
                         <video
-                            key={heroEntry.src}
+                            key={activeVideo}
                             ref={videoRef}
                             muted
                             playsInline
-                            loop
                             className="absolute inset-0 w-full h-full object-cover"
                         >
-                            <source src={heroEntry.src} type="video/mp4" />
+                            <source src={activeVideo} type="video/mp4" />
                         </video>
                     </div>
                 </motion.div>
 
                 {/* Header */}
                 <motion.header
+                    data-section-id="nav"
                     initial={{ opacity: 0, y: -20 }}
                     animate={contentReady ? { opacity: 1, y: 0 } : {}}
                     transition={{ delay: 0.8, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
@@ -513,14 +605,14 @@ export default function HubPage() {
                 >
                     <div className="max-w-[1000px] mx-auto flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <Image src="/Logo ours agence blanc.png" alt="Datarnivore" width={46} height={46} className="object-contain drop-shadow-md" />
+                            {activeLogo && <Image src={activeLogo} alt={brandName} width={46} height={46} className="object-contain drop-shadow-md" />}
                             <span className="text-[20px] text-white font-light tracking-wide">
-                                Datar<span className="font-semibold">Nivore</span>
+                                <span className="font-semibold" style={{ color: globalConfig?.brandColor || 'white' }}>{brandName}</span>
                             </span>
                         </div>
                         <div className="flex items-center gap-3">
                             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
-                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.5)] animate-pulse" />
+                                <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)] animate-pulse" />
                                 <span className="text-[8px] font-medium text-white/50 uppercase tracking-[0.15em]">Online</span>
                             </div>
                             <motion.button
@@ -549,6 +641,7 @@ export default function HubPage() {
                         {!terminalDone ? (
                             <motion.div
                                 key="terminal"
+                                data-section-id="hero"
                                 initial={{ opacity: 0, y: 30 }}
                                 animate={contentReady ? { opacity: 1, y: 0 } : {}}
                                 exit={{ opacity: 0, y: -20 }}
@@ -556,20 +649,21 @@ export default function HubPage() {
                                 className="text-center mb-8"
                             >
                                 <p className="text-[9px] uppercase tracking-[0.4em] text-white font-medium mb-4">
-                                    {t('studio', locale)}
+                                    {heroBlock?.subtitle || t('studio', locale)}
                                 </p>
                                 <TerminalPrompt onComplete={() => setTerminalDone(true)} locale={locale} />
                             </motion.div>
                         ) : (
                             <motion.div
                                 key="title"
+                                data-section-id="hero"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                                 className="text-center mb-4 sm:mb-8"
                             >
                                 <p className="text-[9px] uppercase tracking-[0.4em] text-white font-medium mb-4">
-                                    {t('studio', locale)}
+                                    {heroBlock?.subtitle || t('studio', locale)}
                                 </p>
                                 <TypewriterTitle locale={locale} />
                             </motion.div>
@@ -577,25 +671,28 @@ export default function HubPage() {
                     </AnimatePresence>
 
                     {/* Block 2: Demo prompt — no background, clean floating text */}
-                    {terminalDone && (
+                    {(terminalDone && contentBlock?.visible !== false) && (
                         <motion.div
+                            data-section-id="content"
                             initial={{ opacity: 0, y: 15 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.8, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                             className="text-center mb-4 sm:mb-8"
                         >
-                            <p className="font-mono text-[9px] text-emerald-400/60 uppercase tracking-[0.2em] mb-3">{t('demoLabel', locale)}</p>
+                            <p className="font-mono text-[9px] uppercase tracking-[0.2em] mb-3" style={{ color: `${accentColor}99` }}>
+                                {contentBlock?.title || t('demoLabel', locale)}
+                            </p>
                             <div className="inline-flex flex-col gap-0.5 items-start text-left max-w-full overflow-hidden">
-                                <FeatureTypein text={t('demo1', locale)} delay={1000} />
-                                <FeatureTypein text={t('demo2', locale)} delay={1400} />
-                                <FeatureTypein text={t('demo3', locale)} delay={1800} />
-                                <FeatureTypein text={t('demo4', locale)} delay={2200} />
+                                {contentLines.map((line: string, i: number) => (
+                                    <FeatureTypein key={i} text={line} delay={1000 + i * 400} />
+                                ))}
                             </div>
                         </motion.div>
                     )}
 
                     {/* Block 3: Product Cards */}
-                    <div className="w-full max-w-[1100px] px-2 sm:px-0">
+                    {featureBlock?.visible !== false && (
+                    <div className="w-full max-w-[1100px] px-2 sm:px-0" data-section-id="feature">
                         <div className="flex flex-col sm:flex-row md:grid md:grid-cols-3 gap-3 md:gap-4 sm:overflow-x-auto md:overflow-visible sm:snap-x sm:snap-mandatory pb-4 md:pb-0 scrollbar-hide">
                         {products.map((p, i) => {
                             const isExt = 'isExternal' in p && p.isExternal;
@@ -614,7 +711,7 @@ export default function HubPage() {
                                         animate={terminalDone ? { scaleX: 1 } : {}}
                                         transition={{ delay: 3.3 + i * 0.25, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                                         className="absolute top-0 left-0 right-0 h-[2px] origin-left"
-                                        style={{ background: `linear-gradient(90deg, transparent, ${p.borderGlow}, transparent)` }}
+                                        style={{ background: `linear-gradient(90deg, transparent, ${accentColor}66, transparent)` }}
                                     />
                                     {/* Glow pulse on entry */}
                                     <motion.div
@@ -622,12 +719,12 @@ export default function HubPage() {
                                         animate={terminalDone ? { opacity: [0, 0.8, 0] } : {}}
                                         transition={{ delay: 3.0 + i * 0.25 + 0.3, duration: 2.5, ease: 'easeOut' }}
                                         className="absolute inset-0 rounded-xl pointer-events-none"
-                                        style={{ boxShadow: `inset 0 0 40px ${p.glowColor}, 0 0 60px ${p.glowColor}` }}
+                                        style={{ boxShadow: `inset 0 0 40px ${accentColor}26, 0 0 60px ${accentColor}26` }}
                                     />
                                     {/* Hover glow - stronger */}
                                     <div
                                         className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-none"
-                                        style={{ boxShadow: `inset 0 0 30px ${p.glowColor}, 0 0 50px ${p.glowColor}, 0 4px 30px ${p.glowColor}` }}
+                                        style={{ boxShadow: `inset 0 0 30px ${accentColor}26, 0 0 50px ${accentColor}26, 0 4px 30px ${accentColor}26` }}
                                     />
                                     {/* Hover scan line */}
                                     <motion.div
@@ -638,7 +735,7 @@ export default function HubPage() {
                                     <div className="relative z-10">
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-2">
-                                                <span className={`font-mono ${p.accentColor}`}>{'>'}_</span>
+                                                <span className="font-mono" style={{ color: accentColor }}>{'>'}_</span>
                                                 <FeatureTypein text={p.name} delay={3500 + i * 250} ready={terminalDone} />
                                             </div>
                                             <FeatureTypein text={`[${p.tagline}]`} delay={3700 + i * 250} ready={terminalDone} />
@@ -659,18 +756,21 @@ export default function HubPage() {
                                         <div className="flex items-center gap-4">
                                             {isExt ? (
                                                 <a href={p.loginHref} target="_blank" rel="noopener noreferrer"
-                                                    className={`flex items-center gap-1.5 ${p.accentColor} hover:text-white font-mono text-[9px] uppercase tracking-[0.1em] transition-all duration-300 cursor-pointer hover:drop-shadow-[0_0_8px_currentColor]`}>
+                                                    className="flex items-center gap-1.5 hover:text-white font-mono text-[9px] uppercase tracking-[0.1em] transition-all duration-300 cursor-pointer hover:drop-shadow-[0_0_8px_currentColor]"
+                                                    style={{ color: accentColor }}>
                                                     <ExternalLink size={10} /> INIT_CONNECT
                                                 </a>
                                             ) : (
                                                 <>
                                                     <Link href={p.loginHref}
-                                                        className={`flex items-center gap-1.5 ${p.accentColor} hover:text-white font-mono text-[9px] uppercase tracking-[0.1em] transition-all duration-300 cursor-pointer hover:drop-shadow-[0_0_8px_currentColor]`}>
+                                                        className="flex items-center gap-1.5 hover:text-white font-mono text-[9px] uppercase tracking-[0.1em] transition-all duration-300 cursor-pointer hover:drop-shadow-[0_0_8px_currentColor]"
+                                                        style={{ color: accentColor }}>
                                                         <ExternalLink size={10} /> LOGIN
                                                     </Link>
                                                     <span className="text-white/20">|</span>
                                                     <Link href={p.crmHref}
-                                                        className={`flex items-center gap-1.5 ${p.accentColor} hover:text-white font-mono text-[9px] uppercase tracking-[0.1em] transition-all duration-300 cursor-pointer hover:drop-shadow-[0_0_8px_currentColor]`}>
+                                                        className="flex items-center gap-1.5 hover:text-white font-mono text-[9px] uppercase tracking-[0.1em] transition-all duration-300 cursor-pointer hover:drop-shadow-[0_0_8px_currentColor]"
+                                                        style={{ color: accentColor }}>
                                                         <ArrowRight size={10} /> ENTER_CRM
                                                     </Link>
                                                 </>
@@ -680,8 +780,9 @@ export default function HubPage() {
                                 </motion.div>
                             );
                         })}
+                        </div>
                     </div>
-                </div>
+                    )}
                 </motion.div>
             </div>
         </>

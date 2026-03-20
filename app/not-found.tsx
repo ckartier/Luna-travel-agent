@@ -13,7 +13,7 @@ export default function NotFound() {
             setCountdown(prev => {
                 if (prev <= 1) {
                     clearInterval(timer);
-                    router.push('/landing');
+                    router.push('/hub');
                     return 0;
                 }
                 return prev - 1;
@@ -24,7 +24,7 @@ export default function NotFound() {
 
     return (
         <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center"
-            style={{ background: '#0B1220' }}
+            style={{ background: '#FFFFFF' }}
         >
             {/* Floating capsules */}
             <style>{`
@@ -35,9 +35,9 @@ export default function NotFound() {
       `}</style>
 
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-10 -left-16 w-[200px] h-[380px] rounded-[100px] border border-white/[0.04] bg-white/[0.015]"
+                <div className="absolute -top-10 -left-16 w-[200px] h-[380px] rounded-[100px] border border-gray-100 bg-gray-50/30"
                     style={{ animation: 'floatSlow 18s ease-in-out infinite' }} />
-                <div className="absolute bottom-10 -right-12 w-[160px] h-[300px] rounded-[80px] border border-sky-400/[0.05] bg-sky-400/[0.01]"
+                <div className="absolute bottom-10 -right-12 w-[160px] h-[300px] rounded-[80px] border border-[#bcdeea]/20 bg-[#bcdeea]/5"
                     style={{ animation: 'floatSlow 22s ease-in-out infinite', animationDelay: '4s' }} />
             </div>
 
@@ -52,13 +52,13 @@ export default function NotFound() {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.15, duration: 0.5 }}
-                    className="relative w-[200px] h-[320px] bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mb-10"
+                    className="relative w-[200px] h-[320px] bg-gray-50 border border-gray-100 flex items-center justify-center mb-10"
                     style={{ borderRadius: '100px' }}
                 >
                     {/* Pin dot */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-[45%] w-5 h-5 rounded-full bg-sky-400/20 border-4 border-[#0B1220] shadow-sm" />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-[45%] w-5 h-5 rounded-full bg-[#bcdeea]/40 border-4 border-white shadow-sm" />
 
-                    <span className="text-7xl font-bold text-white/10" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
+                    <span className="text-7xl font-bold text-gray-200" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
                         404
                     </span>
                 </motion.div>
@@ -67,7 +67,7 @@ export default function NotFound() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3 }}
-                    className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-3"
+                    className="text-2xl md:text-3xl font-bold text-[#2E2E2E] tracking-tight mb-3"
                     style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}
                 >
                     Page introuvable
@@ -77,25 +77,25 @@ export default function NotFound() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.4 }}
-                    className="text-white/40 text-base font-normal mb-6 max-w-sm"
+                    className="text-gray-400 text-base font-normal mb-6 max-w-sm"
                 >
                     Cette page n'existe pas ou a été déplacée.<br />
-                    Redirection automatique dans <span className="text-sky-400 font-medium">{countdown}s</span>
+                    Redirection automatique dans <span className="text-[#5a8fa3] font-medium">{countdown}s</span>
                 </motion.p>
 
                 <motion.button
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.55 }}
-                    onClick={() => router.push('/landing')}
-                    className="px-6 py-3 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.08] text-white text-sm font-medium rounded-full transition-all hover:-translate-y-0.5"
+                    onClick={() => router.push('/hub')}
+                    className="px-6 py-3 bg-[#2E2E2E] hover:bg-black text-white text-sm font-medium rounded-full transition-all hover:-translate-y-0.5 shadow-lg"
                 >
-                    Retour à l'accueil →
+                    Retour au Hub →
                 </motion.button>
             </motion.div>
 
             <div className="absolute bottom-6 left-0 right-0 text-center">
-                <p className="text-[11px] text-white/15 font-normal tracking-wider uppercase">
+                <p className="text-[11px] text-gray-300 font-normal tracking-wider uppercase">
                     © 2026 Luna — Concierge Voyage
                 </p>
             </div>

@@ -14,7 +14,7 @@
  */
 
 import { createContext, useContext, useMemo, useEffect, useState, type ReactNode } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 import { getVertical, VERTICALS, type VerticalConfig, type LocalizedString } from '@/src/verticals';
 import { useAuth } from './AuthContext';
 import { useTranslation } from '@/src/hooks/useTranslation';
@@ -38,14 +38,38 @@ const ENV_VERTICAL = typeof window !== 'undefined'
     ? process.env.NEXT_PUBLIC_VERTICAL || null
     : process.env.NEXT_PUBLIC_VERTICAL || null;
 
+// ═══ PATH → VERTICAL mapping ═══
+// When both CRMs coexist in the same app, specific path prefixes
+// force the vertical regardless of the ENV lock.
+const PATH_VERTICAL_MAP: { prefix: string; vertical: string }[] = [
+    { prefix: '/crm/avocat', vertical: 'legal' },
+    { prefix: '/crm/dossiers', vertical: 'legal' },
+    { prefix: '/crm/jurisprudence', vertical: 'legal' },
+];
+
 export function VerticalProvider({ children }: { children: ReactNode }) {
     const { userProfile, isSuperAdmin } = useAuth();
     const { locale } = useTranslation();
     const [activeVerticalId, setActiveVerticalId] = useState<string | null>(null);
+    const pathname = usePathname() || '/';
 
     // ── Reactively detect vertical from URL search params ──
     const searchParams = useSearchParams();
-    const urlVertical = searchParams.get('vertical');
+    const urlVertical = searchParams?.get('vertical');
+
+    // ── Path-based vertical detection (BYPASSES env lock) ──
+    // When both CRMs live in the same app, navigating to a legal-specific
+    // path must switch the vertical even if ENV_VERTICAL is set.
+    const pathVertical = PATH_VERTICAL_MAP.find(m => pathname.startsWith(m.prefix))?.vertical || null;
+
+    useEffect(() => {
+        if (!pathVertical) return;
+        if (activeVerticalId !== pathVertical) {
+            setActiveVerticalId(pathVertical);
+            // Persist so shared pages (/crm/pipeline, /crm/settings) keep the context
+            sessionStorage.setItem('luna-vertical-override', pathVertical);
+        }
+    }, [pathVertical, activeVerticalId]);
 
     // If NEXT_PUBLIC_VERTICAL is set:
     // - SuperAdmins can still override via ?vertical=xxx URL param (stored in sessionStorage)
@@ -53,17 +77,14 @@ export function VerticalProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (typeof window === 'undefined') return;
         if (ENV_VERTICAL && VERTICALS[ENV_VERTICAL]) {
-            if (!isSuperAdmin) {
-                // Lock non-superadmins — clear any stale stored vertical
+            // Restore any session override (used by both superadmins and path-based switches)
+            const sessionOverride = sessionStorage.getItem('luna-vertical-override');
+            if (sessionOverride && VERTICALS[sessionOverride]) {
+                setActiveVerticalId(sessionOverride);
+            } else if (!isSuperAdmin) {
+                // No override stored — fall back to env default
                 localStorage.removeItem('luna-vertical');
-                sessionStorage.removeItem('luna-vertical-override');
                 setActiveVerticalId(null);
-            } else {
-                // SuperAdmins: restore any session override they previously set
-                const sessionOverride = sessionStorage.getItem('luna-vertical-override');
-                if (sessionOverride && VERTICALS[sessionOverride]) {
-                    setActiveVerticalId(sessionOverride);
-                }
             }
         }
     }, [isSuperAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -73,13 +94,11 @@ export function VerticalProvider({ children }: { children: ReactNode }) {
     // Others: only when no env lock
     useEffect(() => {
         if (!urlVertical || !VERTICALS[urlVertical]) return;
-        if (ENV_VERTICAL && !isSuperAdmin) return; // locked for non-superadmins
 
         setActiveVerticalId(urlVertical);
-        if (isSuperAdmin && ENV_VERTICAL) {
-            // Store in sessionStorage only (resets on browser close)
-            sessionStorage.setItem('luna-vertical-override', urlVertical);
-        } else {
+        // Always persist to sessionStorage so it survives navigation to shared pages
+        sessionStorage.setItem('luna-vertical-override', urlVertical);
+        if (!ENV_VERTICAL) {
             localStorage.setItem('luna-vertical', urlVertical);
         }
     }, [urlVertical, isSuperAdmin]);
@@ -96,10 +115,14 @@ export function VerticalProvider({ children }: { children: ReactNode }) {
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const switchVertical = (id: string) => {
-        if (ENV_VERTICAL) return; // locked by env — no switching allowed
+        if (ENV_VERTICAL && !isSuperAdmin) return; // locked by env — no switching allowed for non-superadmins
         if (VERTICALS[id]) {
             setActiveVerticalId(id);
-            localStorage.setItem('luna-vertical', id);
+            if (isSuperAdmin && ENV_VERTICAL) {
+                sessionStorage.setItem('luna-vertical-override', id);
+            } else {
+                localStorage.setItem('luna-vertical', id);
+            }
         }
     };
 

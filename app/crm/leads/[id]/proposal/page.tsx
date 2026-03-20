@@ -864,7 +864,7 @@ export default function ProposalPage({
   const totals = computeTotals();
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto px-4 pb-20">
+    <div className="w-full max-w-[1600px] mx-auto pb-20">
 
       {/* Header */}
       <div className="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-600 rounded-2xl p-6 md:p-8 mb-4 text-white relative overflow-hidden">
@@ -922,7 +922,7 @@ export default function ProposalPage({
                 });
 
                 try {
-                  const res = await fetch('/api/crm/devis-pdf', {
+                  const res = await fetchWithAuth('/api/crm/devis-pdf', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

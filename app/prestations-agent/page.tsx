@@ -37,7 +37,6 @@ import { LunaLogo } from '@/app/components/LunaLogo';
 import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 type WorkflowState = 'IDLE' | 'ANALYSING' | 'CATALOG_MATCHING' | 'MARGIN_CALC' | 'VALIDATION' | 'READY';
@@ -62,7 +61,7 @@ type AgentKey = keyof typeof agentMeta;
 
 // ═══ MAPBOX 3D GLOBE BACKGROUND (shown when agents are processing) ═══
 function MapGlobeBackground() {
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const mapRef = useRef<any>(null);
   const frameRef = useRef<number>(0);
 
   const mapCallback = useCallback((node: HTMLDivElement | null) => {
@@ -70,6 +69,8 @@ function MapGlobeBackground() {
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
     if (!token) return;
 
+    (async () => {
+    const mapboxgl = (await import('mapbox-gl')).default;
     mapboxgl.accessToken = token;
     const map = new mapboxgl.Map({
       container: node,
@@ -103,6 +104,7 @@ function MapGlobeBackground() {
     };
     frameRef.current = requestAnimationFrame(spin);
     mapRef.current = map;
+    })();
   }, []);
 
   useEffect(() => {

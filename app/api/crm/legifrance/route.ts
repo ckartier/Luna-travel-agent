@@ -27,31 +27,46 @@ async function getLegifranceToken(): Promise<string> {
         throw new Error('LEGIFRANCE_CLIENT_ID et LEGIFRANCE_CLIENT_SECRET requis dans .env');
     }
 
-    const res = await fetch('https://sandbox-oauth.piste.gouv.fr/api/oauth/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-            grant_type: 'client_credentials',
-            client_id: clientId,
-            client_secret: clientSecret,
-            scope: 'openid',
-        }),
-    });
+    // Try sandbox first (where our subscription is), then production
+    const endpoints = [
+        'https://sandbox-oauth.piste.gouv.fr/api/oauth/token',
+        'https://oauth.piste.gouv.fr/api/oauth/token',
+    ];
 
-    if (!res.ok) {
-        const err = await res.text();
-        throw new Error(`OAuth PISTE error ${res.status}: ${err}`);
+    let lastError = '';
+    for (const endpoint of endpoints) {
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    grant_type: 'client_credentials',
+                    client_id: clientId,
+                    client_secret: clientSecret,
+                    scope: 'openid',
+                }),
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                cachedToken = {
+                    token: data.access_token,
+                    expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
+                };
+                console.log('[Légifrance] OAuth OK via', endpoint);
+                return cachedToken.token;
+            }
+            lastError = await res.text();
+            console.warn(`[Légifrance] OAuth failed on ${endpoint}: ${lastError}`);
+        } catch (e: any) {
+            lastError = e.message;
+        }
     }
 
-    const data = await res.json();
-    cachedToken = {
-        token: data.access_token,
-        expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
-    };
-    return cachedToken.token;
+    throw new Error(`OAuth PISTE error: ${lastError}`);
 }
 
-// ── Légifrance API base URL ──
+// ── Légifrance API base URL (sandbox — subscription active here) ──
 const LEGI_BASE = 'https://sandbox-api.piste.gouv.fr/dila/legifrance/lf-engine-app';
 
 // ── Code identifiers ──
@@ -224,6 +239,7 @@ export async function POST(request: Request) {
                     ],
                     pageNumber: page,
                     pageSize,
+                    sort: 'DATE_DESC',
                 },
                 fond,
             };
@@ -241,15 +257,19 @@ export async function POST(request: Request) {
             }
 
             const data = await res.json();
-            const results = (data.results || []).map((r: any) => ({
-                title: r.titles?.[0]?.title || r.title || 'Décision',
-                id: r.id || '',
-                date: r.date || r.dateTexte || '',
-                jurisdiction: r.origin || r.juridiction || '',
-                number: r.num || r.numero || '',
-                summary: (r.texte || r.text || r.sommaire || '').substring(0, 400),
-                solution: r.solution || '',
-            }));
+            const results = (data.results || []).map((r: any) => {
+                const fullText = r.texte || r.text || r.sommaire || r.highlights?.texte || '';
+                return {
+                    title: r.titles?.[0]?.title || r.title || 'Décision',
+                    id: r.id || '',
+                    date: r.date || r.dateTexte || '',
+                    jurisdiction: r.origin || r.juridiction || '',
+                    number: r.num || r.numero || '',
+                    content: fullText,
+                    summary: fullText.substring(0, 400),
+                    solution: r.solution || '',
+                };
+            });
 
             return NextResponse.json({
                 results,

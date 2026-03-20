@@ -1,0 +1,117 @@
+/* ════════════════════════════════════════════════════════════════
+   LUNA EDITOR THEME 
+   Light mode matching Luna CRM UI
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+  --puck-color-black: #2E2E2E;
+  --puck-color-white: #ffffff;
+  --puck-color-grey-01: #f9fafb;
+  --puck-color-grey-02: #f3f4f6;
+  --puck-color-grey-03: #e5e7eb;
+  --puck-color-grey-04: #d1d5db;
+  --puck-color-grey-05: #9ca3af;
+  --puck-color-grey-06: #f9fafb;
+  --puck-color-grey-07: #5a8fa3;
+  --puck-color-grey-08: #4b5563;
+  --puck-color-grey-09: #f3f4f6;
+  --puck-color-grey-10: #b9dae9;
+  --puck-color-grey-11: #111827;
+  
+  --puck-color-primary: #2E2E2E; /* Black buttons like CRM */
+}
+
+/* Base override */
+.puck {
+  background-color: #fcfcfc !important;
+  color: #2E2E2E !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Sidebar & panels */
+.puck [class*="Sidebar"], 
+.puck [class*="Panel"] {
+  background-color: #fcfcfc !important;
+  border-color: #f3f4f6 !important;
+}
+
+/* Custom scrollbars */
+.puck [class*="Sidebar"]::-webkit-scrollbar,
+.puck [class*="Panel"]::-webkit-scrollbar {
+  width: 4px;
+}
+.puck [class*="Sidebar"]::-webkit-scrollbar-track,
+.puck [class*="Panel"]::-webkit-scrollbar-track {
+  background: #fcfcfc;
+}
+.puck [class*="Sidebar"]::-webkit-scrollbar-thumb,
+.puck [class*="Panel"]::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 4px;
+}
+.puck [class*="Sidebar"]::-webkit-scrollbar-thumb:hover,
+.puck [class*="Panel"]::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
+
+/* Input fields */
+.puck input, .puck select, .puck textarea {
+  background-color: #ffffff !important;
+  color: #2E2E2E !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
+  transition: all 0.2s ease;
+}
+.puck input:focus, .puck select:focus, .puck textarea:focus {
+  border-color: #b9dae9 !important;
+  box-shadow: 0 0 0 2px rgba(185, 218, 233, 0.2) !important;
+  outline: none !important;
+}
+
+/* Component blocks in sidebar */
+.puck [class*="ComponentList_item"] {
+  background-color: #ffffff !important;
+  border: 1px solid #f3f4f6 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.01) !important;
+  transition: all 0.2s ease !important;
+}
+.puck [class*="ComponentList_item"]:hover {
+  background-color: #f9fafb !important;
+  border-color: #e5e7eb !important;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.03) !important;
+  transform: translateY(-1px);
+}
+
+/* Drop zones */
+.puck [class*="DropZone"] {
+  background-color: rgba(185, 218, 233, 0.05) !important;
+  border: 2px dashed rgba(185, 218, 233, 0.4) !important;
+  border-radius: 8px !important;
+}
+.puck [class*="DropZone"][data-is-active="true"] {
+  background-color: rgba(185, 218, 233, 0.1) !important;
+  border: 2px dashed #b9dae9 !important;
+}
+
+/* Iframe preview container */
+.puck [class*="Preview"] {
+  background-color: #f4f5f7 !important;
+}
+
+/* Primary buttons (Publish, etc) */
+.puck button[class*="Button_primary"] {
+  background-color: #2E2E2E !important;
+  color: #ffffff !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  border: none !important;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important;
+  transition: all 0.2s ease !important;
+}
+.puck button[class*="Button_primary"]:hover {
+  background-color: #1a1a1a !important;
+  transform: translateY(-1px);
+}

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Calendar, Clock, CheckCircle2, PhoneCall, Mail, AlertTriangle, MessageSquare, RefreshCcw, X, Plus, User, Target, Plane } from 'lucide-react';
 import { getActivities, createActivity, updateActivityStatus, getContacts, CRMActivity, CRMContact } from '@/src/lib/firebase/crm';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { T } from '@/src/components/T';
 
 const iconMap: Record<string, any> = {
   'AlertTriangle': AlertTriangle,
@@ -92,15 +93,15 @@ export default function CRMActivities() {
       <div className="max-w-[1600px] mx-auto w-full space-y-8 pb-20">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight">Activités</h1>
-            <p className="text-sm text-[#6B7280] mt-1 font-medium">Votre ligne du temps pour ne rater aucune opportunité.</p>
+            <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight"><T>Activités</T></h1>
+            <p className="text-sm text-[#6B7280] mt-1 font-medium"><T>Votre ligne du temps pour ne rater aucune opportunité.</T></p>
           </div>
           <div className="flex gap-3">
             <button onClick={loadActivities} className="bg-white border border-luna-warm-gray/30 hover:bg-luna-cream text-luna-charcoal font-normal px-4 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-2">
               <RefreshCcw size={18} className={loading ? "animate-spin text-luna-accent" : "text-luna-text-muted"} />
             </button>
             <button onClick={() => setIsModalOpen(true)} className="bg-luna-charcoal hover:bg-gray-800 text-white font-normal px-6 py-2.5 rounded-xl transition-all flex items-center gap-2 text-sm">
-              + Nouvelle Tâche
+              + <T>Nouvelle tâche</T>
             </button>
           </div>
         </div>
@@ -159,8 +160,8 @@ export default function CRMActivities() {
 
                     {!isDone && (
                       <div className="flex gap-3 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => handleMarkDone(activity.id)} className="text-xs font-normal text-emerald-600 bg-emerald-50 hover:bg-[#bcdeea]/30 px-4 py-2 rounded-lg transition-colors">Marquer Fait</button>
-                        <button className="text-xs font-normal text-gray-500 bg-gray-50 hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors">Reporter</button>
+                        <button onClick={() => handleMarkDone(activity.id)} className="text-xs font-normal text-emerald-600 bg-emerald-50 hover:bg-[#bcdeea]/30 px-4 py-2 rounded-lg transition-colors"><T>Marquer Fait</T></button>
+                        <button className="text-xs font-normal text-gray-500 bg-gray-50 hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors"><T>Reporter</T></button>
                       </div>
                     )}
                   </div>
@@ -178,7 +179,7 @@ export default function CRMActivities() {
               <div className="p-8 pb-5 bg-luna-charcoal text-white">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h2 className="text-2xl font-light tracking-tight">Nouvelle Tâche</h2>
+                    <h2 className="text-2xl font-light tracking-tight"><T>Nouvelle tâche</T></h2>
                     <p className="text-[#b9dae9] text-xs mt-1 font-medium">Suivi d'activité Luna CRM</p>
                   </div>
                   <button onClick={() => setIsModalOpen(false)} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-all"><X size={20} /></button>
@@ -241,8 +242,8 @@ export default function CRMActivities() {
                   </div>
                 </div>
                 <div className="pt-4 flex justify-end gap-3">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 rounded-xl text-luna-charcoal font-normal hover:bg-luna-cream transition-colors">Annuler</button>
-                  <button type="submit" className="bg-luna-charcoal hover:bg-gray-800 text-white font-normal px-6 py-2.5 rounded-xltransition-all">Sauvegarder</button>
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 rounded-xl text-luna-charcoal font-normal hover:bg-luna-cream transition-colors"><T>Annuler</T></button>
+                  <button type="submit" className="bg-luna-charcoal hover:bg-gray-800 text-white font-normal px-6 py-2.5 rounded-xltransition-all"><T>Enregistrer</T></button>
                 </div>
               </form>
             </div>

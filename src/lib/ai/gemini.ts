@@ -2,16 +2,25 @@ import { GoogleGenAI } from '@google/genai';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
-const MODEL = 'gemini-2.5-pro';
+const MODEL = 'gemini-2.5-flash';
 
 async function generateJSON(prompt: string): Promise<any> {
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: prompt,
-  });
-  const text = response.text || '';
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  return jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: text };
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: prompt,
+    });
+    const text = response.text || '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.warn('[Gemini] No JSON found in response, raw text:', text.substring(0, 300));
+      return { summary: text };
+    }
+    return JSON.parse(jsonMatch[0]);
+  } catch (error: any) {
+    console.error('[Gemini] generateJSON ERROR:', error?.message || error, '| Status:', error?.status || 'N/A');
+    throw error; // Re-throw so Promise.allSettled catches it
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -262,8 +271,9 @@ Réponds UNIQUEMENT en JSON valide, AUCUN texte avant ou après:
       });
     }
     return parsed;
-  } catch {
-    return { summary: 'Agent Transport indisponible', flights: [], trains: [], cars: [] };
+  } catch (err: any) {
+    console.error('[Agent:Transport] ERROR:', err?.message || err);
+    return { summary: `Agent Transport erreur: ${err?.message || 'inconnu'}`, flights: [], trains: [], cars: [] };
   }
 }
 
@@ -345,8 +355,9 @@ Réponds UNIQUEMENT en JSON valide:
       });
     }
     return parsed;
-  } catch {
-    return { summary: 'Agent Hébergement indisponible', hotels: [] };
+  } catch (err: any) {
+    console.error('[Agent:Accommodation] ERROR:', err?.message || err);
+    return { summary: `Agent Hébergement erreur: ${err?.message || 'inconnu'}`, hotels: [] };
   }
 }
 
@@ -403,8 +414,9 @@ Réponds UNIQUEMENT en JSON valide, AUCUN texte avant ou après:
       }));
     }
     return parsed;
-  } catch {
-    return { summary: 'Agent Client indisponible', profile: {} };
+  } catch (err: any) {
+    console.error('[Agent:Client] ERROR:', err?.message || err);
+    return { summary: `Agent Client erreur: ${err?.message || 'inconnu'}`, profile: {} };
   }
 }
 
@@ -507,7 +519,8 @@ Réponds UNIQUEMENT en JSON valide:
       }));
     }
     return parsed;
-  } catch {
-    return { summary: 'Agent Itinéraire indisponible', days: [] };
+  } catch (err: any) {
+    console.error('[Agent:Itinerary] ERROR:', err?.message || err);
+    return { summary: `Agent Itinéraire erreur: ${err?.message || 'inconnu'}`, days: [] };
   }
 }

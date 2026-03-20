@@ -6,6 +6,7 @@ import { CRMTask, getTasks, createTask, updateTask, deleteTask } from '@/src/lib
 import { useAuth } from '@/src/contexts/AuthContext';
 import Modal, { ModalActions, ModalCancelButton, ModalSubmitButton, ModalField, modalInputClass, modalSelectClass } from '@/src/components/ui/Modal';
 import ConfirmModal from '@/src/components/ConfirmModal';
+import { T } from '@/src/components/T';
 
 const COLUMNS = [
   { id: 'TODO' as const, label: 'À Faire', color: 'border-gray-300', bg: 'bg-gray-50' },
@@ -83,11 +84,11 @@ export default function TasksPage() {
     <div className="min-h-screen">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight">Tâches & Rappels</h1>
-          <p className="text-sm text-[#6B7280] mt-1 font-medium">Organisez le travail de votre équipe en colonnes Kanban.</p>
+          <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight"><T>Tâches & Rappels</T></h1>
+          <p className="text-sm text-[#6B7280] mt-1 font-medium"><T>Organisez le travail de votre équipe en colonnes Kanban.</T></p>
         </div>
         <button onClick={() => setShowModal(true)} className="bg-luna-charcoal hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl text-sm font-normal transition-all flex items-center gap-2 ">
-          <Plus size={16} /> Nouvelle Tâche
+          <Plus size={16} /> <T>Nouvelle tâche</T>
         </button>
       </div>
 
@@ -95,7 +96,7 @@ export default function TasksPage() {
         {COLUMNS.map(col => (
           <div key={col.id} className={`${col.bg} rounded-2xl p-4 min-h-[400px] border-t-4 ${col.color}`}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-sm font-normal text-luna-charcoal uppercase tracking-wider">{col.label}</h2>
+              <h2 className="text-sm font-normal text-luna-charcoal uppercase tracking-wider"><T>{col.label}</T></h2>
               <span className="text-xs font-normal bg-white text-gray-500 px-2 py-0.5 rounded-full border border-gray-200 ">
                 {tasksByStatus(col.id).length}
               </span>
@@ -112,7 +113,7 @@ export default function TasksPage() {
                         <button onClick={() => handleStatusChange(task.id!, COLUMNS[COLUMNS.findIndex(c => c.id === col.id) + 1]?.id || 'DONE')}
                           className="text-[12px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-normal hover:bg-[#bcdeea]/30">→</button>
                       )}
-                      <button onClick={() => handleDelete(task.id!)} className="text-gray-400 hover:text-red-500"><X size={12} /></button>
+                      <button onClick={() => setDeleteTarget(task.id!)} className="text-gray-400 hover:text-red-500"><X size={12} /></button>
                     </div>
                   </div>
                   <h3 className="text-sm font-normal text-luna-charcoal leading-snug mb-3">{task.title}</h3>
@@ -129,7 +130,7 @@ export default function TasksPage() {
               ))}
               <button onClick={() => { setNewTask(prev => ({ ...prev, title: '' })); setShowModal(true); }}
                 className="w-full flex items-center justify-center gap-2 text-gray-400 hover:text-luna-charcoal hover:bg-white/60 py-3 rounded-xl border border-dashed border-gray-200 hover:border-luna-charcoal transition-colors text-sm font-normal">
-                <Plus size={16} /> Ajouter
+                <Plus size={16} /> <T>Ajouter</T>
               </button>
             </div>
           </div>
@@ -158,6 +159,13 @@ export default function TasksPage() {
           <ModalSubmitButton onClick={handleCreate}>Créer</ModalSubmitButton>
         </ModalActions>
       </Modal>
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Supprimer cette tâche ?"
+        message="La tâche sera supprimée définitivement."
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

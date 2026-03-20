@@ -3,11 +3,12 @@ import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 import { requireSubscription } from '@/src/lib/checkSubscription';
 import { rateLimitResponse, getRateLimitKey } from '@/src/lib/rateLimit';
 import { adminDb } from '@/src/lib/firebase/admin';
+import { requireRole } from '@/src/lib/rbac';
 
 /**
  * GET /api/crm/export?type=contacts|trips|invoices|quotes&format=csv
  * 
- * Export CRM data as CSV. Requires auth + subscription.
+ * Export CRM data as CSV. Requires Manager+ role.
  */
 export async function GET(req: NextRequest) {
     const rl = rateLimitResponse(getRateLimitKey(req), 'default');
@@ -21,6 +22,10 @@ export async function GET(req: NextRequest) {
 
     const tenantId = auth.tenantId;
     if (!tenantId) return NextResponse.json({ error: 'Tenant required' }, { status: 403 });
+
+    // Manager+ only
+    const denied = requireRole(auth as any, 'Manager');
+    if (denied) return denied;
 
     const { searchParams } = new URL(req.url);
     const type = searchParams.get('type') || 'contacts';

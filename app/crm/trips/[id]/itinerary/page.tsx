@@ -242,7 +242,7 @@ export default function ItineraryBuilderPage({ params }: { params: Promise<{ id:
             let businessName = 'Votre Conciergerie';
             let businessLogo = '';
             try {
-                const cfgRes = await fetch('/api/crm/site-config');
+                const cfgRes = await fetchWithAuth('/api/crm/site-config');
                 const cfgData = await cfgRes.json();
                 if (cfgData?.business?.name) businessName = cfgData.business.name;
                 else if (cfgData?.global?.siteName) businessName = cfgData.global.siteName;
@@ -300,7 +300,7 @@ export default function ItineraryBuilderPage({ params }: { params: Promise<{ id:
             let businessName = 'Votre Conciergerie';
             let businessLogo = '';
             try {
-                const cfgRes = await fetch('/api/crm/site-config');
+                const cfgRes = await fetchWithAuth('/api/crm/site-config');
                 const cfgData = await cfgRes.json();
                 if (cfgData?.business?.name) businessName = cfgData.business.name;
                 else if (cfgData?.global?.siteName) businessName = cfgData.global.siteName;
@@ -371,7 +371,7 @@ export default function ItineraryBuilderPage({ params }: { params: Promise<{ id:
                 refNumber: `DEV-${new Date().getFullYear()}-${tripId.slice(0, 4).toUpperCase()}`,
             };
 
-            const res = await fetch('/api/crm/devis-pdf', {
+            const res = await fetchWithAuth('/api/crm/devis-pdf', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),

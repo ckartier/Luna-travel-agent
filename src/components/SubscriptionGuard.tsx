@@ -12,7 +12,7 @@ const PUBLIC_PATHS = ['/login', '/pricing', '/cgv', '/landing', '/admin', '/site
 export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
     const { user, userProfile, loading: authLoading } = useAuth();
     const { isActive, loading: subLoading } = useSubscription();
-    const pathname = usePathname();
+    const pathname = usePathname() || '/';
     const [dismissed, setDismissed] = useState(false);
 
     // Always render children — guard is non-blocking (shows banner only)

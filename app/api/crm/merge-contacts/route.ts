@@ -4,11 +4,12 @@ import { requireSubscription } from '@/src/lib/checkSubscription';
 import { rateLimitResponse, getRateLimitKey } from '@/src/lib/rateLimit';
 import { adminDb } from '@/src/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { requireRole } from '@/src/lib/rbac';
 
 /**
  * POST /api/crm/merge-contacts
  * 
- * Merge two duplicate contacts into one.
+ * Merge two duplicate contacts into one. Requires Manager+ role.
  * Keeps the first contact (primary), merges missing fields from secondary,
  * updates all trip/invoice references, then deletes the secondary.
  * 
@@ -26,6 +27,10 @@ export async function POST(req: NextRequest) {
 
     const tenantId = auth.tenantId;
     if (!tenantId) return NextResponse.json({ error: 'Tenant required' }, { status: 403 });
+
+    // Manager+ only (destructive operation)
+    const denied = requireRole(auth as any, 'Manager');
+    if (denied) return denied;
 
     const body = await req.json();
     const { primaryId, secondaryId } = body;

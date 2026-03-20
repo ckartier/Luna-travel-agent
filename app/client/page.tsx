@@ -27,7 +27,7 @@ export default function ClientPortal() {
 
     // Detect Stripe return
     useEffect(() => {
-        if (searchParams.get('payment') === 'success') {
+        if (searchParams?.get('payment') === 'success') {
             setPaymentSuccess(true);
         }
     }, [searchParams]);
@@ -197,14 +197,13 @@ export default function ClientPortal() {
                     <h1 className="font-serif text-5xl md:text-7xl text-luna-charcoal tracking-tight">Bonjour, {displayName.split(' ')[0]}.</h1>
                 </motion.div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                <div className="max-w-5xl mx-auto">
 
-                    {/* LEFT COLUMN: VOYAGE OVERVIEW */}
+                    {/* VOYAGE OVERVIEW */}
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                        className="lg:col-span-7"
                     >
                         <h2 className="text-[13px] uppercase tracking-[0.3em] font-bold text-gray-400 mb-8 flex items-center gap-4">
                             Voyage Actuel <div className="flex-1 h-px bg-gray-200" />
@@ -421,96 +420,6 @@ export default function ClientPortal() {
                                     </button>
                                 </motion.div>
                             )}
-                        </motion.div>
-
-                        {/* DOCUMENTS */}
-                        <motion.div
-                            initial={{ opacity: 0, x: 30 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                        >
-                            <h2 className="text-[13px] uppercase tracking-[0.3em] font-bold text-gray-400 mb-8 flex items-center gap-4">
-                                Documents <div className="flex-1 h-px bg-gray-200" />
-                            </h2>
-
-                            <div className="flex flex-col gap-3">
-                                {userInvoices.length > 0 ? (
-                                    userInvoices.map((inv: any, idx: number) => {
-                                        const itemDescriptions = (inv.items || []).map((it: any) => it.description).filter(Boolean);
-                                        const statusColors: Record<string, string> = {
-                                            'PAID': 'bg-emerald-50 text-emerald-600',
-                                            'SENT': 'bg-amber-50 text-amber-600',
-                                            'DRAFT': 'bg-gray-100 text-gray-500',
-                                            'OVERDUE': 'bg-red-50 text-red-600',
-                                        };
-                                        const statusLabels: Record<string, string> = {
-                                            'PAID': 'Réglée', 'SENT': 'En attente', 'DRAFT': 'Brouillon', 'OVERDUE': 'En retard',
-                                        };
-                                        return (
-                                            <div key={idx} className="bg-white border border-gray-100 p-6 group cursor-pointer hover:border-[#b9dae9]/40 hover:shadow-md transition-all">
-                                                <div className="flex items-start justify-between gap-4">
-                                                    <div className="flex items-start gap-5 flex-1 min-w-0">
-                                                        <div className="w-12 h-12 bg-gray-50 flex items-center justify-center group-hover:bg-[#b9dae9]/10 transition-colors shrink-0">
-                                                            <FileText size={20} className="text-gray-400 group-hover:text-[#b9dae9] transition-colors" strokeWidth={1.5} />
-                                                        </div>
-                                                        <div className="flex flex-col min-w-0">
-                                                            <div className="flex items-center gap-3 mb-1">
-                                                                <span className="text-[15px] font-medium text-luna-charcoal">Facture {inv.invoiceNumber || 'B2C'}</span>
-                                                                {inv.status && (
-                                                                    <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ${statusColors[inv.status] || 'bg-gray-100 text-gray-500'}`}>
-                                                                        {statusLabels[inv.status] || inv.status}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            {itemDescriptions.length > 0 ? (
-                                                                <div className="text-[12px] text-gray-500 leading-relaxed">
-                                                                    {itemDescriptions.map((desc: string, i: number) => (
-                                                                        <span key={i}>{desc}{i < itemDescriptions.length - 1 ? ' · ' : ''}</span>
-                                                                    ))}
-                                                                </div>
-                                                            ) : (
-                                                                <span className="text-[12px] text-gray-400 italic">Prestation voyage</span>
-                                                            )}
-                                                            <div className="flex items-center gap-4 mt-2 text-[11px] text-gray-400">
-                                                                <span className="font-semibold text-luna-charcoal text-[14px]">{(inv.totalAmount || inv.amountPaid || finalTotal).toLocaleString('fr-FR')} €</span>
-                                                                <span>·</span>
-                                                                <span>{inv.issueDate ? new Date(inv.issueDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Récent'}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => window.open(`/api/client/invoice-pdf?id=${inv.id}`, '_blank')}
-                                                        className="text-gray-300 group-hover:text-[#b9dae9] hover:!text-luna-charcoal transition-colors p-2 hover:bg-gray-50 rounded-lg shrink-0"
-                                                        title="Télécharger la facture"
-                                                    >
-                                                        <Download size={20} strokeWidth={1.5} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        );
-                                    })
-                                ) : (
-                                    [
-                                        { title: "Proposition Détaillée", sub: "PDF interactif", date: "À venir" },
-                                        { title: "Conditions Générales", sub: "À signer", date: "À venir" }
-                                    ].map((doc, idx) => (
-                                        <div key={idx} className="bg-white border border-gray-100 p-6 flex flex-row items-center justify-between group cursor-pointer hover:border-[#b9dae9]/40 transition-colors">
-                                            <div className="flex items-center gap-5">
-                                                <div className="w-12 h-12 bg-gray-50 flex items-center justify-center group-hover:bg-[#b9dae9]/10 transition-colors">
-                                                    <FileText size={20} className="text-gray-400 group-hover:text-[#b9dae9] transition-colors" strokeWidth={1.5} />
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-[15px] font-medium text-luna-charcoal mb-1">{doc.title}</span>
-                                                    <span className="text-[12px] text-gray-400 tracking-wide">{doc.sub} — {doc.date}</span>
-                                                </div>
-                                            </div>
-                                            <button className="text-gray-300 group-hover:text-black transition-colors">
-                                                <Download size={20} strokeWidth={1.5} />
-                                            </button>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
                         </motion.div>
 
                     </div>

@@ -18,6 +18,7 @@ import { format, addDays, startOfWeek, endOfWeek, isSameMonth, startOfMonth, end
 import { fr } from 'date-fns/locale';
 import { doc, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '@/src/lib/firebase/client';
+import { T } from '@/src/components/T';
 
 interface SupplierAlert {
     id: string;
@@ -352,8 +353,8 @@ export default function SupplierPlanningPage() {
             <div className="max-w-[1600px] mx-auto w-full space-y-8  pb-20">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
                     <div>
-                        <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight">Executive Planning</h1>
-                        <p className="text-sm text-[#6B7280] mt-1 font-medium">Logistique & Synchronisation Prestataires</p>
+                        <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight"><T>Executive Planning</T></h1>
+                        <p className="text-sm text-[#6B7280] mt-1 font-medium"><T>Logistique & Synchronisation Prestataires</T></p>
                     </div>
                     <div className="flex items-center gap-3">
                         <button onClick={() => setShowVacationModal(true)} className="flex items-center gap-2 px-5 py-3 bg-white text-[#2E2E2E] rounded-[16px] text-xs font-bold uppercase tracking-widest hover:bg-gray-50 transition-all border border-[#E5E7EB] active:scale-95">
@@ -558,7 +559,7 @@ export default function SupplierPlanningPage() {
                             <div className="p-8 pb-5 bg-luna-charcoal text-white">
                                 <div className="flex justify-between items-center">
                                     <div>
-                                        <h3 className="text-2xl font-light tracking-tight">Envoyer Planning</h3>
+                                        <h3 className="text-2xl font-light tracking-tight"><T>Envoyer Planning</T></h3>
                                         <p className="text-[#b9dae9] text-xs mt-1 font-medium">Récapitulatif WhatsApp Luna Executive</p>
                                     </div>
                                     <button onClick={() => setShowSendModal(false)} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-all"><X size={20} /></button>
@@ -649,12 +650,12 @@ export default function SupplierPlanningPage() {
                                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">2. Période de Vacances</p>
                                         <div className="grid grid-cols-2 gap-3">
                                             <div>
-                                                <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block">Début</label>
+                                                <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block"><T>Début</T></label>
                                                 <input type="date" value={vacationStart} onChange={e => setVacationStart(e.target.value)}
                                                     className="w-full p-3 border border-gray-200 rounded-[16px] text-sm focus:outline-none focus:border-amber-400" />
                                             </div>
                                             <div>
-                                                <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block">Fin</label>
+                                                <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block"><T>Fin</T></label>
                                                 <input type="date" value={vacationEnd} onChange={e => setVacationEnd(e.target.value)}
                                                     className="w-full p-3 border border-gray-200 rounded-[16px] text-sm focus:outline-none focus:border-amber-400" />
                                             </div>

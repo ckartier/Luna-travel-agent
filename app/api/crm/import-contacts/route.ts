@@ -5,11 +5,12 @@ import { rateLimitResponse, getRateLimitKey } from '@/src/lib/rateLimit';
 import { adminDb } from '@/src/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { validateContact } from '@/src/lib/validation';
+import { requireRole } from '@/src/lib/rbac';
 
 /**
  * POST /api/crm/import-contacts
  * 
- * Import contacts from CSV data.
+ * Import contacts from CSV data. Requires Manager+ role.
  * Body: { contacts: Array<{ firstName, lastName, email, phone?, company?, ... }> }
  * 
  * Max 500 contacts per import.
@@ -26,6 +27,10 @@ export async function POST(req: NextRequest) {
 
     const tenantId = auth.tenantId;
     if (!tenantId) return NextResponse.json({ error: 'Tenant required' }, { status: 403 });
+
+    // Manager+ only
+    const denied = requireRole(auth as any, 'Manager');
+    if (denied) return denied;
 
     const body = await req.json();
     const { contacts } = body;

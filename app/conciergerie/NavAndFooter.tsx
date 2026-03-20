@@ -14,15 +14,29 @@ export default function NavAndFooter({ children }: { children: ReactNode }) {
     const [scrolled, setScrolled] = useState(false);
     const cartCount = cart.length;
 
-    // Nav labels from siteConfig.nav with fallbacks to translations
     const navItems = siteConfig?.nav?.menuItems || [];
-    const navLabel1 = navItems[0]?.label || t('nav.destinations');
+    
+    const getNavLabel = (index: number, key: string, frFallback: string) => {
+        const val = navItems[index]?.label;
+        if (!val || val === frFallback) return t(key);
+        return val;
+    };
+
+    const navLabel1 = getNavLabel(0, 'nav.destinations', 'Destinations');
     const navHref1 = navItems[0]?.href || '#destinations';
-    const navLabel2 = navItems[1]?.label || t('nav.services');
+    const navLabel2 = getNavLabel(1, 'nav.services', 'Services');
     const navHref2 = navItems[1]?.href || '#services';
-    const navLabel3 = navItems[2]?.label || t('nav.contact');
+    const navLabel3 = getNavLabel(2, 'nav.contact', 'Contact');
     const navHref3 = navItems[2]?.href || '#tailor-made';
-    const ctaText = siteConfig?.nav?.ctaText || t('nav.client_area');
+    
+    const customCta = siteConfig?.nav?.ctaText;
+    const ctaText = (!customCta || customCta === 'Espace Client') ? t('nav.client_area') : customCta;
+
+    const customFooterDesc = siteConfig?.footer?.description;
+    const footerDesc = (!customFooterDesc || customFooterDesc === 'Voyages privés et services de conciergerie sur-mesure pour les voyageurs exigeants.') ? t('footer.desc') : customFooterDesc;
+    
+    const customCopyright = siteConfig?.footer?.copyright;
+    const footerCopyright = (!customCopyright || customCopyright === '© 2026 Luna Conciergerie. Tous droits réservés.') ? t('footer.rights') : customCopyright;
 
     useEffect(() => {
         const handleScroll = () => {
@@ -90,55 +104,117 @@ export default function NavAndFooter({ children }: { children: ReactNode }) {
             <footer className="border-t border-gray-100 bg-[#f9fafb] pt-20 pb-8 px-6 md:px-16 shrink-0 relative overflow-hidden text-luna-charcoal font-sans">
                 <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-gradient-to-bl from-[#b9dae9]/20/50 to-transparent rounded-full blur-[120px] pointer-events-none" />
                 <div className="max-w-[1600px] mx-auto relative z-10">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-16 mb-20">
-                        <div className="md:col-span-1 flex flex-col items-start">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 lg:gap-8 xl:gap-16 mb-20">
+                        {/* 1. BRAND & SOCIALS */}
+                        <div className="lg:col-span-1 flex flex-col items-start">
                             <img src={logo} alt="Luna Travel" className="h-10 object-contain brightness-0 mb-8" />
-                            <p className="text-[15px] font-serif italic text-luna-charcoal/60 leading-relaxed max-w-sm">
-                                {t('footer.desc')}
+                            <p className="text-[14px] font-serif italic text-luna-charcoal/60 leading-relaxed max-w-sm mb-8">
+                                {footerDesc}
                             </p>
-                            <div className="mt-8 flex gap-4">
-                                <a href="#" className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center text-luna-charcoal hover:bg-luna-charcoal hover:border-luna-charcoal hover:text-white transition-all shadow-sm">
-                                    <span className="text-[12px] font-bold tracking-widest">IN</span>
-                                </a>
-                                <a href="#" className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center text-luna-charcoal hover:bg-luna-charcoal hover:border-luna-charcoal hover:text-white transition-all shadow-sm">
-                                    <span className="text-[12px] font-bold tracking-widest">IG</span>
-                                </a>
+                            <div className="flex flex-wrap gap-3">
+                                {(siteConfig?.business?.linkedin) && (
+                                    <a href={siteConfig.business.linkedin} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-luna-charcoal hover:bg-luna-charcoal hover:border-luna-charcoal hover:text-white transition-all shadow-sm">
+                                        <span className="text-[10px] font-bold tracking-widest">IN</span>
+                                    </a>
+                                )}
+                                {(siteConfig?.business?.instagram) && (
+                                    <a href={siteConfig.business.instagram} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-luna-charcoal hover:bg-luna-charcoal hover:border-luna-charcoal hover:text-white transition-all shadow-sm">
+                                        <span className="text-[10px] font-bold tracking-widest">IG</span>
+                                    </a>
+                                )}
+                                {(siteConfig?.business?.facebook) && (
+                                    <a href={siteConfig.business.facebook} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-luna-charcoal hover:bg-luna-charcoal hover:border-luna-charcoal hover:text-white transition-all shadow-sm">
+                                        <span className="text-[10px] font-bold tracking-widest">FB</span>
+                                    </a>
+                                )}
+                                {(siteConfig?.business?.tiktok) && (
+                                    <a href={siteConfig.business.tiktok} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-luna-charcoal hover:bg-luna-charcoal hover:border-luna-charcoal hover:text-white transition-all shadow-sm">
+                                        <span className="text-[10px] font-bold tracking-widest">TK</span>
+                                    </a>
+                                )}
                             </div>
                         </div>
 
-                        <div className="md:col-span-1">
-                            <h4 className="font-bold text-[11px] uppercase tracking-[0.3em] mb-10 text-gray-400">{t('footer.col1')}</h4>
-                            <ul className="space-y-6 text-[15px] font-light text-luna-charcoal/80">
-                                <li><a href="#destinations" className="hover:text-[#b9dae9] hover:translate-x-1 inline-block transition-transform duration-300">{t('footer.private_col')}</a></li>
-                                <li><a href="#services" className="hover:text-[#b9dae9] hover:translate-x-1 inline-block transition-transform duration-300">{t('footer.services_link')}</a></li>
-                                <li><a href="#tailor-made" className="hover:text-[#b9dae9] hover:translate-x-1 inline-block transition-transform duration-300">{t('footer.tailor_made')}</a></li>
-                                <li><a href="/client" className="hover:text-[#b9dae9] hover:translate-x-1 inline-block transition-transform duration-300">{t('footer.client_area')}</a></li>
+                        {/* 2. COLONNE 1 (Voyages) */}
+                        <div className="lg:col-span-1">
+                            <h4 className="font-bold text-[11px] uppercase tracking-[0.3em] mb-8 text-gray-400">
+                                {siteConfig?.footer?.col1Title || t('footer.col1')}
+                            </h4>
+                            <ul className="space-y-5 text-[14px] font-light text-luna-charcoal/80">
+                                {(siteConfig?.footer?.col1Links || [
+                                    { label: t('footer.private_col'), href: '#destinations' },
+                                    { label: 'Offres du moment', href: '#catalog' },
+                                ]).map((link: any, idx: number) => (
+                                    <li key={idx}><a href={link.href} className="hover:text-[#b9dae9] hover:translate-x-1 inline-block transition-transform duration-300">{link.label}</a></li>
+                                ))}
                             </ul>
                         </div>
 
-                        <div className="md:col-span-1">
-                            <h4 className="font-bold text-[11px] uppercase tracking-[0.3em] mb-10 text-gray-400">{t('footer.col2')}</h4>
-                            <ul className="space-y-6 text-[15px] font-light text-luna-charcoal/80">
-                                <li><a href="#histoire" className="hover:text-[#b9dae9] hover:translate-x-1 inline-block transition-transform duration-300">{t('footer.our_story')}</a></li>
-                                <li><a href="#" className="hover:text-[#b9dae9] hover:translate-x-1 inline-block transition-transform duration-300">{t('footer.private_concierge')}</a></li>
-                                <li><a href="#" className="hover:text-[#b9dae9] hover:translate-x-1 inline-block transition-transform duration-300">{t('footer.signature_trips')}</a></li>
-                                <li><a href="#" className="hover:text-[#b9dae9] hover:translate-x-1 inline-block transition-transform duration-300">{t('footer.testimonials')}</a></li>
+                        {/* 3. COLONNE 2 (Services) */}
+                        <div className="lg:col-span-1">
+                            <h4 className="font-bold text-[11px] uppercase tracking-[0.3em] mb-8 text-gray-400">
+                                {siteConfig?.footer?.col2Title || t('footer.col2')}
+                            </h4>
+                            <ul className="space-y-5 text-[14px] font-light text-luna-charcoal/80">
+                                {(siteConfig?.footer?.col2Links || [
+                                    { label: t('footer.services_link'), href: '#services' },
+                                    { label: t('footer.signature_trips'), href: '#catalog' },
+                                    { label: t('footer.tailor_made'), href: '#tailor-made' },
+                                    { label: t('footer.client_area'), href: '/client' },
+                                ]).map((link: any, idx: number) => (
+                                    <li key={idx}><a href={link.href} className="hover:text-[#b9dae9] hover:translate-x-1 inline-block transition-transform duration-300">{link.label}</a></li>
+                                ))}
                             </ul>
                         </div>
 
-                        <div className="md:col-span-1">
-                            <h4 className="font-bold text-[11px] uppercase tracking-[0.3em] mb-10 text-gray-400">{t('footer.col3')}</h4>
-                            <ul className="space-y-6 text-[15px] font-light text-luna-charcoal/80">
-                                <li>Paris, France</li>
-                                <li><a href="mailto:lunaconciergerie@gmail.com" className="hover:text-[#b9dae9] transition-colors">lunaconciergerie@gmail.com</a></li>
-                                <li><a href="tel:+33100000000" className="hover:text-[#b9dae9] transition-colors">+33 (0) 1 00 00 00 00</a></li>
+                        {/* 4. COLONNE 3 (À Propos) */}
+                        <div className="lg:col-span-1">
+                            <h4 className="font-bold text-[11px] uppercase tracking-[0.3em] mb-8 text-gray-400">
+                                {siteConfig?.footer?.col3Title || t('footer.col3')}
+                            </h4>
+                            <ul className="space-y-5 text-[14px] font-light text-luna-charcoal/80">
+                                {(siteConfig?.footer?.col3Links || [
+                                    { label: t('footer.our_story'), href: '#histoire' },
+                                    { label: t('footer.testimonials'), href: '#temoignages' },
+                                    { label: 'Devenir Partenaire', href: 'mailto:' + (siteConfig?.business?.email || '') },
+                                ]).map((link: any, idx: number) => (
+                                    <li key={idx}><a href={link.href} className="hover:text-[#b9dae9] hover:translate-x-1 inline-block transition-transform duration-300">{link.label}</a></li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        {/* 5. CONTACT */}
+                        <div className="lg:col-span-1">
+                            <h4 className="font-bold text-[11px] uppercase tracking-[0.3em] mb-8 text-gray-400">
+                                {siteConfig?.footer?.colContactTitle || 'Contact'}
+                            </h4>
+                            <ul className="space-y-5 text-[14px] font-light text-luna-charcoal/80">
+                                <li>{siteConfig?.business?.address || 'Paris, France'}</li>
+                                <li>
+                                    <a href={`mailto:${siteConfig?.business?.email || 'lunaconciergerie@gmail.com'}`} className="hover:text-[#b9dae9] transition-colors block break-all">
+                                        {siteConfig?.business?.email || 'lunaconciergerie@gmail.com'}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href={`tel:${(siteConfig?.business?.phone || '+33100000000').replace(/\s/g, '')}`} className="hover:text-[#b9dae9] transition-colors block">
+                                        {siteConfig?.business?.phone || '+33 (0) 1 00 00 00 00'}
+                                    </a>
+                                </li>
+                                {siteConfig?.business?.whatsapp && (
+                                    <li>
+                                        <a href={`https://wa.me/${siteConfig.business.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-[#b9dae9] transition-colors block">
+                                            WhatsApp
+                                        </a>
+                                    </li>
+                                )}
                             </ul>
                         </div>
                     </div>
 
-                    <div className="pt-10 border-t border-gray-200/60 flex flex-col lg:flex-row items-center justify-between gap-8 text-[11px] uppercase tracking-[0.2em] text-gray-400 font-bold">
-                        <div>{t('footer.rights')}</div>
-                        <div className="flex flex-wrap justify-center gap-8">
+                    {/* BARRE LÉGALE */}
+                    <div className="pt-8 border-t border-gray-200/60 flex flex-col lg:flex-row items-center justify-between gap-6 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">
+                        <div>{footerCopyright}</div>
+                        <div className="flex flex-wrap justify-center gap-x-8 gap-y-4">
                             <a href="/cgv" className="hover:text-[#b9dae9] transition-colors">{t('footer.cgv')}</a>
                             <a href="/mentions-legales" className="hover:text-[#b9dae9] transition-colors">{t('footer.legal')}</a>
                             <a href="/confidentialite" className="hover:text-[#b9dae9] transition-colors">{t('footer.privacy')}</a>

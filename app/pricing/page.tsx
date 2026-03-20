@@ -276,7 +276,7 @@ export default function PricingPage() {
 
     // ═══ VERTICAL-AWARE CONTENT ═══
     const searchParams = useSearchParams();
-    const verticalParam = searchParams.get('vertical');
+    const verticalParam = searchParams?.get('vertical');
     const vertical = getVertical(verticalParam || process.env.NEXT_PUBLIC_VERTICAL || 'travel');
     const isLegal = vertical.id === 'legal';
     const isTravel = vertical.id === 'travel';

@@ -12,6 +12,9 @@ import {
 import { generateMultimodalEmbedding } from '@/src/lib/ai/gemini-embeddings';
 import { searchCatalogSimilar } from '@/src/lib/ai/vector-store';
 import { adminDb } from '@/src/lib/firebase/admin';
+import { sanitizePromptInputs } from '@/src/lib/ai/promptGuard';
+import { validateAgentResponse } from '@/src/lib/ai/schemas';
+import { consumeAiUsage } from '@/src/lib/firebase/tenantLimits';
 
 export async function POST(request: Request) {
     const auth = await verifyAuth(request);
@@ -21,7 +24,22 @@ export async function POST(request: Request) {
     const token = authHeader?.split('Bearer ')[1];
 
     try {
-        const body = await request.json();
+        if (auth.tenantId) {
+            const usageCheck = await consumeAiUsage(auth.tenantId);
+            if (!usageCheck.allowed) {
+                return NextResponse.json({ error: usageCheck.message }, { status: 429 });
+            }
+        }
+
+        const rawBody = await request.json();
+        const body = sanitizePromptInputs(rawBody, ['departureCity', 'budget', 'vibe', 'mustHaves']);
+        // Also sanitize destination names
+        if (Array.isArray(body.destinations)) {
+            body.destinations = body.destinations.map((d: any) => ({
+                ...d,
+                city: typeof d.city === 'string' ? d.city.replace(/[^\w\s\-'àâäéèêëïîôùûüÿçœæ,./()]/gi, '').substring(0, 100) : d.city,
+            }));
+        }
         const { destinations, departureCity, departureDate, returnDate, budget, pax, vibe, mustHaves } = body;
         const budgetNum = parseInt((budget || '').replace(/[^\d]/g, '')) || 0;
 
@@ -113,6 +131,8 @@ export async function POST(request: Request) {
         let realFlights: any[] = [];
         let realHotels: any[] = [];
 
+        console.log('[Agents] Starting real data pre-fetch. AMADEUS keys:', !!process.env.AMADEUS_CLIENT_ID, !!process.env.AMADEUS_CLIENT_SECRET, '| RAPIDAPI_KEY:', !!process.env.RAPIDAPI_KEY);
+
         try {
             // Already extracted token from headers above
 
@@ -123,6 +143,7 @@ export async function POST(request: Request) {
                 body: JSON.stringify({ from: departureCity || 'Paris', to: destinations[0].city, date: departureDate, pax: parseInt(pax) || 2 })
             });
             const leg1Data = await leg1Res.json();
+            console.log('[Agents] Amadeus leg1 response:', JSON.stringify(leg1Data).substring(0, 200));
             if (leg1Data.flights) realFlights = [...realFlights, ...leg1Data.flights];
 
             // If multi-destination, fetch internal legs
@@ -147,6 +168,7 @@ export async function POST(request: Request) {
                         body: JSON.stringify({ city: dest.city, checkin: departureDate, adults: parseInt(pax) || 2 })
                     });
                     const hotelData = await hotelRes.json();
+                    console.log(`[Agents] Booking.com response for ${dest.city}:`, JSON.stringify(hotelData).substring(0, 200));
                     if (hotelData.hotels) {
                         // Tag each hotel with its destination
                         const taggedHotels = hotelData.hotels.map((h: any) => ({ ...h, destination: dest.city }));
@@ -157,6 +179,7 @@ export async function POST(request: Request) {
                 }
             }
 
+            console.log(`[Agents] Pre-fetch complete: ${realFlights.length} real flights, ${realHotels.length} real hotels`);
         } catch (e) {
             console.warn('Real data pre-fetch failed, falling back to AI intuition:', e);
         }
@@ -190,6 +213,7 @@ export async function POST(request: Request) {
         }
 
         // ── 2. Run Agents with REAL context & Vector Search Context ──
+        console.log('[Agents] Starting 4 parallel Gemini agent calls with GEMINI_API_KEY:', process.env.GEMINI_API_KEY?.substring(0, 8) + '...');
         const [transport, accommodation, client, itinerary] = await Promise.allSettled([
             searchTransport({ destinations, departureCity, departureDate, returnDate, pax, budget, realData: realFlights }),
             searchAccommodation({ destinations, vibe, budget, pax, realData: realHotels, internalCatalog }),
@@ -197,15 +221,43 @@ export async function POST(request: Request) {
             planItinerary({ destinations, departureDate, returnDate, vibe, mustHaves, budget, internalCatalog }),
         ]);
 
+        // Log each agent result
+        const agentNames = ['transport', 'accommodation', 'client', 'itinerary'];
+        [transport, accommodation, client, itinerary].forEach((result, i) => {
+            if (result.status === 'rejected') {
+                console.error(`[Agents] ❌ Agent ${agentNames[i]} FAILED:`, result.reason?.message || result.reason);
+            } else {
+                const val = result.value;
+                console.log(`[Agents] ✅ Agent ${agentNames[i]} OK:`, JSON.stringify(val).substring(0, 150));
+            }
+        });
+
+        const rawResponse = {
+            transport: transport.status === 'fulfilled' ? transport.value : { summary: `Agent Transport erreur: ${(transport as PromiseRejectedResult).reason?.message || 'inconnu'}`, flights: [] },
+            accommodation: accommodation.status === 'fulfilled' ? accommodation.value : { summary: `Agent Hébergement erreur: ${(accommodation as PromiseRejectedResult).reason?.message || 'inconnu'}`, hotels: [] },
+            client: client.status === 'fulfilled' ? client.value : { summary: `Agent Client erreur: ${(client as PromiseRejectedResult).reason?.message || 'inconnu'}`, profile: {} },
+            itinerary: itinerary.status === 'fulfilled' ? itinerary.value : { summary: `Agent Itinéraire erreur: ${(itinerary as PromiseRejectedResult).reason?.message || 'inconnu'}`, days: [] },
+        };
+
+        // Validate AI output through Zod schemas (catches hallucinated/malformed data)
+        const { data: validated, errors: validationErrors } = validateAgentResponse(rawResponse);
+        if (validationErrors.length > 0) {
+            console.warn(`[Agents] ⚠️ ${validationErrors.length} validation issues:`, validationErrors.slice(0, 5));
+        }
+
         return NextResponse.json({
-            transport: transport.status === 'fulfilled' ? transport.value : { summary: 'Agent Transport indisponible', flights: [] },
-            accommodation: accommodation.status === 'fulfilled' ? accommodation.value : { summary: 'Agent Hébergement indisponible', hotels: [] },
-            client: client.status === 'fulfilled' ? client.value : { summary: 'Agent Client indisponible', profile: {} },
-            itinerary: itinerary.status === 'fulfilled' ? itinerary.value : { summary: 'Agent Itinéraire indisponible', days: [] },
+            ...validated,
             meta: {
                 hasRealFlights: realFlights.length > 0,
                 hasRealHotels: realHotels.length > 0,
-                sources: ['Amadeus', 'Booking.com', 'Gemini 2.5 Pro']
+                sources: ['Amadeus', 'Booking.com', 'Gemini 2.5 Pro'],
+                agentStatus: {
+                    transport: transport.status,
+                    accommodation: accommodation.status,
+                    client: client.status,
+                    itinerary: itinerary.status,
+                },
+                validationErrors: validationErrors.length > 0 ? validationErrors.length : undefined,
             }
         });
 

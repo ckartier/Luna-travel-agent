@@ -16,10 +16,18 @@ import {
   getInvoices, getQuotes, getSuppliers,
   CRMLead, CRMTrip, CRMInvoice, CRMQuote, CRMSupplier
 } from '@/src/lib/firebase/crm';
+import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { useVertical } from '@/src/contexts/VerticalContext';
 import { T } from '@/src/components/T';
 
 const CHART_COLORS = ['#10b981', '#1f2937', '#6366f1', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6', '#f97316'];
+
+interface AIInsight {
+  type: 'positive' | 'warning' | 'opportunity';
+  title: string;
+  detail: string;
+}
 
 function StatCard({ icon: Icon, label, value, sub, color, delay, up = true, trend = '' }: {
   icon: any; label: string; value: string | number; sub?: string; color: string; delay: number;
@@ -57,6 +65,8 @@ function StatCard({ icon: Icon, label, value, sub, color, delay, up = true, tren
 
 export default function AnalyticsPage() {
   const { tenantId } = useAuth();
+  const { vertical } = useVertical();
+  const isLegal = vertical.id === 'legal';
   const [leads, setLeads] = useState<CRMLead[]>([]);
   const [trips, setTrips] = useState<CRMTrip[]>([]);
   const [invoices, setInvoices] = useState<CRMInvoice[]>([]);
@@ -65,13 +75,16 @@ export default function AnalyticsPage() {
   const [contactCount, setContactCount] = useState(0);
   const [activityCount, setActivityCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     if (!tenantId) return;
     const loadData = async () => {
       setLoading(true);
+      const currentVertical = isLegal ? 'legal' : 'travel';
       try {
-        const [l, t, invs, qts, c, a, sups] = await Promise.all([
+        const [allL, allT, allInvs, allQts, c, a, sups] = await Promise.all([
           getLeads(tenantId),
           getTrips(tenantId),
           getInvoices(tenantId),
@@ -80,10 +93,10 @@ export default function AnalyticsPage() {
           getActivities(tenantId),
           getSuppliers(tenantId)
         ]);
-        setLeads(l);
-        setTrips(t);
-        setInvoices(invs);
-        setQuotes(qts);
+        setLeads(allL.filter(l => (l.vertical || 'travel') === currentVertical));
+        setTrips(allT.filter(t => (t.vertical || 'travel') === currentVertical));
+        setInvoices(allInvs.filter(i => (i.vertical || 'travel') === currentVertical));
+        setQuotes(allQts.filter(q => (q.vertical || 'travel') === currentVertical));
         setContactCount(c.length);
         setActivityCount(a.length);
         setSuppliers(sups);
@@ -93,7 +106,7 @@ export default function AnalyticsPage() {
       setLoading(false);
     };
     loadData();
-  }, [tenantId]);
+  }, [tenantId, isLegal]);
 
   // ── ADVANCED COMPUTED METRICS ──
   const dashboardData = useMemo(() => {
@@ -178,6 +191,34 @@ export default function AnalyticsPage() {
       financePie
     };
   }, [leads, trips, invoices, quotes, suppliers]);
+
+  const fetchAiInsights = async () => {
+    setAiLoading(true);
+    try {
+      const res = await fetchWithAuth('/api/crm/ai-insights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'analytics',
+          data: {
+            revenue: dashboardData.grossRevenue,
+            profit: dashboardData.netProfit,
+            margin: dashboardData.avgMargin,
+            unpaid: dashboardData.totalUnpaid,
+            conversionRate: dashboardData.conversionRate,
+            wonLeads: dashboardData.wonLeads,
+            totalLeads: dashboardData.totalLeads,
+            contacts: contactCount,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.insights) setAiInsights(data.insights);
+    } catch (e) {
+      console.error('AI insights error:', e);
+    }
+    setAiLoading(false);
+  };
 
   const isEmpty = leads.length === 0 && trips.length === 0;
 
@@ -658,6 +699,56 @@ export default function AnalyticsPage() {
               </div>
             </motion.div>
           )}
+
+          {/* Gemini AI Insights Panel */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.1 }}
+            className="bg-gradient-to-br from-[#1f2937] to-[#111827] rounded-[24px] border border-gray-700 p-8 shadow-xl lg:col-span-3 text-white"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-white/60 flex items-center gap-2">
+                <Sparkles size={16} className="text-amber-400" /> Insights IA — Gemini
+              </h3>
+              <button
+                onClick={fetchAiInsights}
+                disabled={aiLoading}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest bg-white/10 hover:bg-white/20 text-white/80 transition-all disabled:opacity-50"
+              >
+                {aiLoading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                {aiLoading ? 'Analyse...' : aiInsights.length > 0 ? 'Relancer' : 'Analyser'}
+              </button>
+            </div>
+            {aiInsights.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {aiInsights.map((insight, i) => {
+                  const colors = {
+                    positive: 'border-emerald-500/30 bg-emerald-500/10',
+                    warning: 'border-amber-500/30 bg-amber-500/10',
+                    opportunity: 'border-sky-500/30 bg-sky-500/10',
+                  };
+                  const icons = {
+                    positive: '✅',
+                    warning: '⚠️',
+                    opportunity: '💡',
+                  };
+                  return (
+                    <div key={i} className={`rounded-2xl border p-5 ${colors[insight.type] || colors.opportunity}`}>
+                      <p className="text-sm font-semibold mb-2 flex items-center gap-2">
+                        <span>{icons[insight.type] || '💡'}</span> {insight.title}
+                      </p>
+                      <p className="text-xs text-white/60 leading-relaxed">{insight.detail}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-white/30 text-center py-6">
+                Cliquez sur « Analyser » pour obtenir des insights IA personnalisés basés sur vos KPIs.
+              </p>
+            )}
+          </motion.div>
         </div>
       </div>
     </div>

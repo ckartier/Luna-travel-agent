@@ -24,7 +24,7 @@ const PLAN_DETAILS: Record<string, { name: string; description: string }> = {
 
 function SuccessContent() {
     const params = useSearchParams();
-    const planId = params.get('plan') || 'self_hosted_code';
+    const planId = params?.get('plan') || 'self_hosted_code';
     const plan = PLAN_DETAILS[planId] || PLAN_DETAILS.self_hosted_code;
 
     return (

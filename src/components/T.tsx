@@ -434,6 +434,109 @@ const AUTO_DICT: Record<string, Record<LunaLocale, string>> = {
     'Enrichir depuis le web': { fr: 'Enrichir depuis le web', en: 'Enrich from web', da: 'Berig fra nettet', nl: 'Verrijken vanaf web', es: 'Enriquecer desde la web' },
     'Enrichir': { fr: 'Enrichir', en: 'Enrich', da: 'Berig', nl: 'Verrijken', es: 'Enriquecer' },
     'Scraping...': { fr: 'Scraping...', en: 'Scraping...', da: 'Scraper...', nl: 'Scrapen...', es: 'Extrayendo...' },
+
+    // ═══ DOCUMENTS ═══
+    'Coffre-fort Documents': { fr: 'Coffre-fort Documents', en: 'Document Vault', da: 'Dokumentboks', nl: 'Documentkluis', es: 'Caja fuerte de documentos' },
+    'Stockez et gérez les documents de vos clients en toute sécurité.': { fr: 'Stockez et gérez les documents de vos clients en toute sécurité.', en: 'Store and manage your clients\' documents securely.', da: 'Opbevar og administrer dine kunders dokumenter sikkert.', nl: 'Sla de documenten van uw klanten veilig op.', es: 'Almacene y gestione los documentos de sus clientes de forma segura.' },
+    'Uploader': { fr: 'Uploader', en: 'Upload', da: 'Upload', nl: 'Uploaden', es: 'Subir' },
+    'Uploader un document': { fr: 'Uploader un document', en: 'Upload a document', da: 'Upload et dokument', nl: 'Upload een document', es: 'Subir un documento' },
+    'Tous les types': { fr: 'Tous les types', en: 'All types', da: 'Alle typer', nl: 'Alle typen', es: 'Todos los tipos' },
+    'Sélectionner un client': { fr: 'Sélectionner un client', en: 'Select a client', da: 'Vælg en klient', nl: 'Selecteer een klant', es: 'Seleccionar un cliente' },
+
+    // ═══ MARKETING ═══
+    'Marketing & Campagnes': { fr: 'Marketing & Campagnes', en: 'Marketing & Campaigns', da: 'Marketing & Kampagner', nl: 'Marketing & Campagnes', es: 'Marketing & Campañas' },
+    'Envoyés': { fr: 'Envoyés', en: 'Sent', da: 'Sendt', nl: 'Verzonden', es: 'Enviados' },
+
+    // ═══ TASKS ═══
+    'Tâches & Rappels': { fr: 'Tâches & Rappels', en: 'Tasks & Reminders', da: 'Opgaver & Påmindelser', nl: 'Taken & Herinneringen', es: 'Tareas & Recordatorios' },
+    'Organisez le travail de votre équipe en colonnes Kanban.': { fr: 'Organisez le travail de votre équipe en colonnes Kanban.', en: 'Organize your team\'s work in Kanban columns.', da: 'Organisér dit teams arbejde i Kanban-kolonner.', nl: 'Organiseer het werk van uw team in Kanban-kolommen.', es: 'Organice el trabajo de su equipo en columnas Kanban.' },
+    'À Faire': { fr: 'À Faire', en: 'To Do', da: 'At gøre', nl: 'Te doen', es: 'Por hacer' },
+    'En Cours': { fr: 'En Cours', en: 'In Progress', da: 'I gang', nl: 'Bezig', es: 'En progreso' },
+    'En Revue': { fr: 'En Revue', en: 'In Review', da: 'Under gennemgang', nl: 'In review', es: 'En revisión' },
+    'Marquer Fait': { fr: 'Marquer Fait', en: 'Mark Done', da: 'Markér færdig', nl: 'Markeer als klaar', es: 'Marcar como hecho' },
+
+    // ═══ ACTIVITIES ═══
+    'Votre ligne du temps pour ne rater aucune opportunité.': { fr: 'Votre ligne du temps pour ne rater aucune opportunité.', en: 'Your timeline to never miss an opportunity.', da: 'Din tidslinje for aldrig at gå glip af en mulighed.', nl: 'Uw tijdlijn om geen kans te missen.', es: 'Su línea de tiempo para no perder ninguna oportunidad.' },
+    'Reporter': { fr: 'Reporter', en: 'Postpone', da: 'Udskyd', nl: 'Uitstellen', es: 'Posponer' },
+
+    // ═══ MESSAGES ═══
+    'Nouvelle Conversation': { fr: 'Nouvelle Conversation', en: 'New Conversation', da: 'Ny samtale', nl: 'Nieuw gesprek', es: 'Nueva conversación' },
+
+    // ═══ CHANGELOG ═══
+    'Quoi de neuf': { fr: 'Quoi de neuf', en: 'What\'s new', da: 'Hvad er nyt', nl: 'Wat is nieuw', es: 'Novedades' },
+    'Dernières mises à jour et améliorations': { fr: 'Dernières mises à jour et améliorations', en: 'Latest updates and improvements', da: 'Seneste opdateringer og forbedringer', nl: 'Laatste updates en verbeteringen', es: 'Últimas actualizaciones y mejoras' },
+
+    // ═══ CLIENT PROFILE ═══
+    'Client introuvable': { fr: 'Client introuvable', en: 'Client not found', da: 'Klient ikke fundet', nl: 'Klant niet gevonden', es: 'Cliente no encontrado' },
+    'Préférences Strictes': { fr: 'Préférences Strictes', en: 'Strict Preferences', da: 'Strenge præferencer', nl: 'Strikte voorkeuren', es: 'Preferencias estrictas' },
+
+    // ═══ TRIP DETAIL ═══
+    'Voyage introuvable': { fr: 'Voyage introuvable', en: 'Trip not found', da: 'Rejse ikke fundet', nl: 'Reis niet gevonden', es: 'Viaje no encontrado' },
+
+    // ═══ DOSSIERS (LEGAL) ═══
+    'Dossiers': { fr: 'Dossiers', en: 'Cases', da: 'Sager', nl: 'Dossiers', es: 'Expedientes' },
+    'Aucun dossier trouvé': { fr: 'Aucun dossier trouvé', en: 'No cases found', da: 'Ingen sager fundet', nl: 'Geen dossiers gevonden', es: 'Sin expedientes encontrados' },
+    'Créez votre premier dossier pour commencer.': { fr: 'Créez votre premier dossier pour commencer.', en: 'Create your first case to get started.', da: 'Opret din første sag for at komme i gang.', nl: 'Maak uw eerste dossier om te beginnen.', es: 'Cree su primer expediente para comenzar.' },
+    'Honoraires': { fr: 'Honoraires', en: 'Fees', da: 'Honorarer', nl: 'Honoraria', es: 'Honorarios' },
+    'Juridiction': { fr: 'Juridiction', en: 'Jurisdiction', da: 'Jurisdiktion', nl: 'Jurisdictie', es: 'Jurisdicción' },
+    'Partie adverse': { fr: 'Partie adverse', en: 'Opposing party', da: 'Modpart', nl: 'Tegenpartij', es: 'Parte contraria' },
+    'Magistrat': { fr: 'Magistrat', en: 'Judge', da: 'Dommer', nl: 'Rechter', es: 'Magistrado' },
+    'Forces': { fr: 'Forces', en: 'Strengths', da: 'Styrker', nl: 'Sterktes', es: 'Fortalezas' },
+    'Faiblesses': { fr: 'Faiblesses', en: 'Weaknesses', da: 'Svagheder', nl: 'Zwaktes', es: 'Debilidades' },
+
+    // ═══ AVOCAT (LEGAL CRM) ═══
+    'CRM Legal': { fr: 'CRM Legal', en: 'Legal CRM', da: 'Juridisk CRM', nl: 'Juridisch CRM', es: 'CRM Legal' },
+    'Aucune audience planifiée': { fr: 'Aucune audience planifiée', en: 'No hearings scheduled', da: 'Ingen retsmøder planlagt', nl: 'Geen hoorzittingen gepland', es: 'Sin audiencias programadas' },
+    'Par type': { fr: 'Par type', en: 'By type', da: 'Efter type', nl: 'Per type', es: 'Por tipo' },
+    'Aucune échéance': { fr: 'Aucune échéance', en: 'No deadlines', da: 'Ingen deadlines', nl: 'Geen deadlines', es: 'Sin vencimientos' },
+
+    // ═══ SETUP ═══
+    'Installation & Configuration': { fr: 'Installation & Configuration', en: 'Setup & Configuration', da: 'Installation & Konfiguration', nl: 'Installatie & Configuratie', es: 'Instalación & Configuración' },
+    'Configurez vos clés API pour activer chaque module': { fr: 'Configurez vos clés API pour activer chaque module', en: 'Configure your API keys to activate each module', da: 'Konfigurér dine API-nøgler for at aktivere hvert modul', nl: 'Configureer uw API-sleutels om elke module te activeren', es: 'Configure sus claves API para activar cada módulo' },
+    'Configuration': { fr: 'Configuration', en: 'Configuration', da: 'Konfiguration', nl: 'Configuratie', es: 'Configuración' },
+    'Votre Métier': { fr: 'Votre Métier', en: 'Your Industry', da: 'Din branche', nl: 'Uw sector', es: 'Su sector' },
+    "Choisissez votre secteur pour adapter l'interface Luna": { fr: "Choisissez votre secteur pour adapter l'interface Luna", en: 'Choose your industry to customize the Luna interface', da: 'Vælg din branche for at tilpasse Luna-grænsefladen', nl: 'Kies uw sector om de Luna-interface aan te passen', es: 'Elija su sector para adaptar la interfaz Luna' },
+    "Besoin d'aide ?": { fr: "Besoin d'aide ?", en: 'Need help?', da: 'Brug for hjælp?', nl: 'Hulp nodig?', es: '¿Necesita ayuda?' },
+    "Notre équipe peut configurer vos APIs pour vous.": { fr: "Notre équipe peut configurer vos APIs pour vous.", en: 'Our team can configure your APIs for you.', da: 'Vores team kan konfigurere dine API\'er for dig.', nl: 'Ons team kan uw API\'s voor u configureren.', es: 'Nuestro equipo puede configurar sus APIs por usted.' },
+
+    // ═══ SITE BUILDER ═══
+    'Templates Web': { fr: 'Templates Web', en: 'Web Templates', da: 'Webskabeloner', nl: 'Webjablonen', es: 'Plantillas Web' },
+
+    // ═══ SUPPLIERS ═══
+    'Prestataire introuvable': { fr: 'Prestataire introuvable', en: 'Supplier not found', da: 'Leverandør ikke fundet', nl: 'Leverancier niet gevonden', es: 'Proveedor no encontrado' },
+    'Affectation Mission': { fr: 'Affectation Mission', en: 'Mission Assignment', da: 'Missionsopgave', nl: 'Missietoewijzing', es: 'Asignación de misión' },
+    'Prestation introuvable': { fr: 'Prestation introuvable', en: 'Service not found', da: 'Ydelse ikke fundet', nl: 'Dienst niet gevonden', es: 'Servicio no encontrado' },
+    'Lier un Prestataire': { fr: 'Lier un Prestataire', en: 'Link a Supplier', da: 'Tilknyt en leverandør', nl: 'Koppel een leverancier', es: 'Vincular un proveedor' },
+
+    // ═══ PLANNING ═══
+    'Executive Planning': { fr: 'Executive Planning', en: 'Executive Planning', da: 'Executive Planning', nl: 'Executive Planning', es: 'Planificación Ejecutiva' },
+    'Logistique & Synchronisation Prestataires': { fr: 'Logistique & Synchronisation Prestataires', en: 'Logistics & Supplier Sync', da: 'Logistik & Leverandørsync', nl: 'Logistiek & Leverancierssync', es: 'Logística & Sincronización de Proveedores' },
+    'Début': { fr: 'Début', en: 'Start', da: 'Start', nl: 'Start', es: 'Inicio' },
+    'Fin': { fr: 'Fin', en: 'End', da: 'Slut', nl: 'Einde', es: 'Fin' },
+
+    // ═══ AGENT IA ═══
+    'Agent Juridique': { fr: 'Agent Juridique', en: 'Legal Agent', da: 'Juridisk Agent', nl: 'Juridische Agent', es: 'Agente Jurídico' },
+    'Recherche intelligente de voyages et prestations': { fr: 'Recherche intelligente de voyages et prestations', en: 'Smart search for trips and services', da: 'Intelligent søgning efter rejser og ydelser', nl: 'Slim zoeken naar reizen en diensten', es: 'Búsqueda inteligente de viajes y servicios' },
+    'Actif': { fr: 'Actif', en: 'Active', da: 'Aktiv', nl: 'Actief', es: 'Activo' },
+    'Annuler la recherche': { fr: 'Annuler la recherche', en: 'Cancel search', da: 'Annullér søgning', nl: 'Zoekopdracht annuleren', es: 'Cancelar búsqueda' },
+    'Récents': { fr: 'Récents', en: 'Recent', da: 'Seneste', nl: 'Recent', es: 'Recientes' },
+
+    // ═══ JURISPRUDENCE ═══
+    'Jurisprudence': { fr: 'Jurisprudence', en: 'Case Law', da: 'Retspraksis', nl: 'Jurisprudentie', es: 'Jurisprudencia' },
+    'Recherche Légifrance': { fr: 'Recherche Légifrance', en: 'Légifrance Search', da: 'Légifrance-søgning', nl: 'Légifrance zoeken', es: 'Búsqueda Légifrance' },
+    'Ajouter un arrêt': { fr: 'Ajouter un arrêt', en: 'Add a ruling', da: 'Tilføj en afgørelse', nl: 'Voeg een uitspraak toe', es: 'Añadir una sentencia' },
+    'Articles de loi et jurisprudence officielle — API DILA/PISTE': { fr: 'Articles de loi et jurisprudence officielle — API DILA/PISTE', en: 'Legal articles and official case law — DILA/PISTE API', da: 'Lovartikler og officiel retspraksis — DILA/PISTE API', nl: 'Wetsartikelen en officiële jurisprudentie — DILA/PISTE API', es: 'Artículos de ley y jurisprudencia oficial — API DILA/PISTE' },
+    'Texte intégral': { fr: 'Texte intégral', en: 'Full text', da: 'Fuldtekst', nl: 'Volledige tekst', es: 'Texto íntegro' },
+    'Solution': { fr: 'Solution', en: 'Solution', da: 'Løsning', nl: 'Oplossing', es: 'Solución' },
+    'Toute la base': { fr: 'Toute la base', en: 'Full database', da: 'Hele databasen', nl: 'Volledige database', es: 'Toda la base' },
+    'Aucun arrêt trouvé': { fr: 'Aucun arrêt trouvé', en: 'No rulings found', da: 'Ingen afgørelser fundet', nl: 'Geen uitspraken gevonden', es: 'Sin sentencias encontradas' },
+    'Utilisez la recherche Légifrance ou ajoutez vos propres décisions.': { fr: 'Utilisez la recherche Légifrance ou ajoutez vos propres décisions.', en: 'Use Légifrance search or add your own rulings.', da: 'Brug Légifrance-søgning eller tilføj dine egne afgørelser.', nl: 'Gebruik Légifrance zoeken of voeg uw eigen uitspraken toe.', es: 'Use la búsqueda Légifrance o añada sus propias sentencias.' },
+    'Enrichissez votre base jurisprudentielle': { fr: 'Enrichissez votre base jurisprudentielle', en: 'Enrich your case law database', da: 'Berig din retspraksis-database', nl: 'Verrijk uw jurisprudentiedatabase', es: 'Enriquezca su base jurisprudencial' },
+
+    // ═══ SETTINGS ═══
+    'Abonnement': { fr: 'Abonnement', en: 'Subscription', da: 'Abonnement', nl: 'Abonnement', es: 'Suscripción' },
+    'Membre': { fr: 'Membre', en: 'Member', da: 'Medlem', nl: 'Lid', es: 'Miembro' },
+    'Services Google installés et configurés sur ce CRM': { fr: 'Services Google installés et configurés sur ce CRM', en: 'Google services installed and configured on this CRM', da: 'Google-tjenester installeret og konfigureret på dette CRM', nl: 'Google-services geïnstalleerd en geconfigureerd op dit CRM', es: 'Servicios de Google instalados y configurados en este CRM' },
 };
 
 /**

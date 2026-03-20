@@ -12,9 +12,10 @@ import { useVertical } from '@/src/contexts/VerticalContext';
 import { getIcon } from '@/src/lib/utils/iconMap';
 
 export default function CRMDashboard() {
-    const { tenantId } = useAuth();
+    const { tenantId, userProfile } = useAuth();
     const at = useAutoTranslate();
     const { vertical, vt } = useVertical();
+    const firstName = userProfile?.displayName?.split(' ')[0] || '';
     const [counts, setCounts] = useState({ leads: 0, contacts: 0, activeTrips: 0, revenue: 0 });
     const [pendingActivities, setPendingActivities] = useState<CRMActivity[]>([]);
     const [revenueData, setRevenueData] = useState<{ name: string; revenue: number }[]>([]);
@@ -22,10 +23,14 @@ export default function CRMDashboard() {
     useEffect(() => {
         const fetchKPIs = async () => {
             if (!tenantId) return;
+            const isLegal = vertical?.id === 'legal';
+            const currentVertical = isLegal ? 'legal' : 'travel';
             try {
-                const [leads, contacts, trips, activities] = await Promise.all([
+                const [allLeads, contacts, allTrips, activities] = await Promise.all([
                     getLeads(tenantId), getContacts(tenantId), getTrips(tenantId), getActivities(tenantId),
                 ]);
+                const leads = allLeads.filter(l => (l.vertical || 'travel') === currentVertical);
+                const trips = allTrips.filter(t => (t.vertical || 'travel') === currentVertical);
                 const activeTrips = trips.filter(t => t.status === 'CONFIRMED' || t.status === 'PROPOSAL' || t.status === 'IN_PROGRESS').length;
                 const revenue = trips.reduce((sum, t) => sum + (t.amount || 0), 0);
                 setCounts({ leads: leads.length, contacts: contacts.length, activeTrips, revenue });
@@ -48,7 +53,7 @@ export default function CRMDashboard() {
             }
         };
         fetchKPIs();
-    }, [tenantId]);
+    }, [tenantId, vertical]);
 
     // ═══ VERTICAL-DRIVEN KPI DATA ═══
     const kpiData: Record<string, { value: string; trend: string }> = {
@@ -64,10 +69,10 @@ export default function CRMDashboard() {
             <div className="max-w-[1600px] mx-auto w-full space-y-8  pb-20">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
                     <div className="space-y-1">
-                        <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight">Executive Dashboard</h1>
+                        <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight">Bonjour{firstName ? ` ${firstName}` : ''}</h1>
                         <div className="flex items-center gap-3">
                             <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
-                            <p className="text-label-sharp opacity-60">{vertical.branding.appName} • Synchronisation Temps Réel</p>
+                            <p className="text-label-sharp opacity-60">{vertical.branding.appName} • Dashboard</p>
                         </div>
                     </div>
                 </div>

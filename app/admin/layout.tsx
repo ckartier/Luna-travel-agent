@@ -19,7 +19,7 @@ const NAV = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const { user, userProfile, loading } = useAuth();
     const router = useRouter();
-    const pathname = usePathname();
+    const pathname = usePathname() || '/'
 
     useEffect(() => {
         if (!loading && (!user || userProfile?.role !== 'Admin')) {

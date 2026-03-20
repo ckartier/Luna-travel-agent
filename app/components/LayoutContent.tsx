@@ -16,7 +16,7 @@ function getInitials(name: string | null | undefined): string {
 }
 
 export function LayoutContent({ children }: { children: React.ReactNode }) {
-    const pathname = usePathname();
+    const pathname = usePathname() || '/';
     const { user, userProfile, logout } = useAuth();
     const showHeader = !HEADERLESS_ROUTES.some(r => pathname.startsWith(r)) && !pathname.startsWith('/crm') && !pathname.startsWith('/site-admin') && !!user;
     const [dropdownOpen, setDropdownOpen] = useState(false);

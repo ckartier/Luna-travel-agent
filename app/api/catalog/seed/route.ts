@@ -2,26 +2,301 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/src/lib/firebase/admin';
 import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 
-// ═══ PRESTATIONS LUNE DMC (ce que Lune propose aux clients) ═══
+// ═══ PRESTATIONS LUNE DMC — CATALOGUE PARIS 2026 (extracted from brochure PDF) ═══
 const LUNE_PRESTATIONS = [
-    { type: 'ACTIVITY', name: 'Itinéraire Sur-Mesure Europe', supplier: 'Lune DMC', location: 'Europe', description: 'Création d\'itinéraires sur-mesure reflétant les préférences uniques de chaque client. Fine dining, visites exclusives, activités immersives locales — chaque détail planifié et exécuté pour dépasser les attentes.', netCost: 500, recommendedMarkup: 30, currency: 'EUR' },
-    { type: 'ACTIVITY', name: 'Expérience Gastronomique Privée', supplier: 'Lune DMC', location: 'France', description: 'Dîners privés dans des restaurants étoilés, dégustations de vins exclusives, cours de cuisine avec des chefs renommés. Une immersion culinaire personnalisée.', netCost: 350, recommendedMarkup: 35, currency: 'EUR' },
-    { type: 'ACTIVITY', name: 'Visite Culturelle Guidée Premium', supplier: 'Lune DMC', location: 'Europe', description: 'Visites guidées privées de musées, monuments historiques et sites culturels avec des guides experts et accès prioritaire.', netCost: 200, recommendedMarkup: 30, currency: 'EUR' },
-    { type: 'ACTIVITY', name: 'Excursion Nature & Aventure', supplier: 'Lune DMC', location: 'Scandinavie / Alpes', description: 'Randonnées privées, fjords, aurores boréales, ski de fond, kayak — des aventures en pleine nature encadrées par des guides locaux experts.', netCost: 280, recommendedMarkup: 30, currency: 'EUR' },
-    { type: 'ACTIVITY', name: 'Journée Spa & Bien-être Luxe', supplier: 'Lune DMC', location: 'Europe', description: 'Journées complètes de détente dans les meilleurs spas européens, soins corporels haut de gamme, bains thermaux, yoga privé et programmes wellness personnalisés.', netCost: 400, recommendedMarkup: 25, currency: 'EUR' },
-    { type: 'HOTEL', name: 'Réservation Palace & 5★', supplier: 'Lune DMC — Réseau Hôtelier', location: 'Europe', description: 'Accès exclusif aux meilleurs palaces et hôtels 5 étoiles à travers l\'Europe. Tarifs négociés, surclassements, late check-out et avantages VIP.', netCost: 600, recommendedMarkup: 20, currency: 'EUR' },
-    { type: 'HOTEL', name: 'Boutique Hôtel de Charme', supplier: 'Lune DMC — Réseau Hôtelier', location: 'Europe', description: 'Sélection de boutique hôtels de charme avec caractère unique : maisons de maître, riads, châteaux et demeures historiques.', netCost: 300, recommendedMarkup: 25, currency: 'EUR' },
-    { type: 'HOTEL', name: 'Villa Privée avec Services', supplier: 'Lune DMC — Réseau Hôtelier', location: 'Méditerranée / Côte d\'Azur', description: 'Villas privées haut de gamme avec chef cuisinier, majordome, piscine privée et conciergerie dédiée.', netCost: 1200, recommendedMarkup: 20, currency: 'EUR' },
-    { type: 'TRANSFER', name: 'Transfert Aéroport VIP', supplier: 'Lune DMC — Transport', location: 'Europe', description: 'Service de transfert aéroport en berline de luxe ou van premium. Chauffeur professionnel, accueil personnalisé à l\'arrivée.', netCost: 120, recommendedMarkup: 30, currency: 'EUR' },
-    { type: 'TRANSFER', name: 'Chauffeur Privé à la Journée', supplier: 'Lune DMC — Transport', location: 'Europe', description: 'Chauffeur privé à disposition toute la journée en Mercedes Classe S, BMW Série 7 ou SUV de luxe.', netCost: 450, recommendedMarkup: 25, currency: 'EUR' },
-    { type: 'TRANSFER', name: 'Location Véhicule de Luxe', supplier: 'Lune DMC — Transport', location: 'Europe', description: 'Location de véhicules de prestige (Porsche, Range Rover, Tesla Model X) avec livraison à l\'hôtel.', netCost: 350, recommendedMarkup: 30, currency: 'EUR' },
-    { type: 'OTHER', name: 'Conciergerie Complète Voyage', supplier: 'Lune DMC — Concierge', location: 'Europe', description: 'Service de conciergerie tout inclus : restaurants, spectacles, événements exclusifs, shopping personnel, interlocuteur dédié 24/7.', netCost: 250, recommendedMarkup: 35, currency: 'EUR' },
-    { type: 'OTHER', name: 'Réservation Restaurant Étoilé', supplier: 'Lune DMC — Concierge', location: 'France / Europe', description: 'Accès aux tables les plus prisées d\'Europe, restaurants étoilés Michelin, menus dégustation personnalisés, accords mets-vins.', netCost: 80, recommendedMarkup: 25, currency: 'EUR' },
-    { type: 'OTHER', name: 'Organisation Événement Privé', supplier: 'Lune DMC — Concierge', location: 'Europe', description: 'Organisation d\'événements privés : anniversaires, demandes en mariage, célébrations en famille.', netCost: 800, recommendedMarkup: 30, currency: 'EUR' },
-    { type: 'FLIGHT', name: 'Billet Business Class Europe', supplier: 'Lune DMC — Aérien', location: 'Europe', description: 'Billets en classe affaires sur Air France, KLM, Lufthansa, Swiss. Salon VIP, embarquement prioritaire.', netCost: 900, recommendedMarkup: 15, currency: 'EUR' },
-    { type: 'FLIGHT', name: 'Vol Privé / Jet Charter', supplier: 'Lune DMC — Aérien', location: 'Europe', description: 'Organisation de vols privés et charters à travers l\'Europe. Flexibilité totale, terminal privé, service sur-mesure.', netCost: 5000, recommendedMarkup: 15, currency: 'EUR' },
-    { type: 'ACTIVITY', name: 'Accompagnateur Local Francophone', supplier: 'Lune DMC', location: 'Europe', description: 'Guide accompagnateur francophone présent sur site pendant tout le séjour. Assistance 24h/24, gestion des imprévus.', netCost: 300, recommendedMarkup: 30, currency: 'EUR' },
-    { type: 'ACTIVITY', name: 'Pack Lune de Miel / Romantique', supplier: 'Lune DMC', location: 'Europe', description: 'Forfait romantique incluant champagne, dîner aux chandelles, massage duo, excursion privée, suite junior avec vue.', netCost: 700, recommendedMarkup: 25, currency: 'EUR' },
+    // ── Guided Tours & Cultural Must-Sees ──
+    {
+        type: 'ACTIVITY', name: 'Visite Guidée Musées & Monuments',
+        supplier: 'Lune DMC', location: 'Paris',
+        description: 'Visite privée au Louvre, Musée d\'Orsay, Arc de Triomphe, Sainte-Chapelle, L\'Orangerie, Fondation LV, etc. Guide agréé, billets inclus.',
+        netCost: 539, recommendedMarkup: 11, currency: 'EUR',
+        duration: '~2h', capacity: '1-8 pers', remarks: 'Nous pouvons adapter toutes nos visites aux enfants ! Optez pour une visite du Louvre avec une chasse au trésor ludique.'
+    },
+    {
+        type: 'ACTIVITY', name: 'Tour Eiffel Sommet — Visite Privée',
+        supplier: 'Lune DMC', location: 'Paris',
+        description: 'Visite guidée privée du sommet de la Tour Eiffel, incluant accès prioritaire ascenseur et billets.',
+        netCost: 485, recommendedMarkup: 11, currency: 'EUR',
+        duration: '2h', capacity: '1-8 pers', remarks: ''
+    },
+    {
+        type: 'ACTIVITY', name: 'Notre-Dame — Visite Privée',
+        supplier: 'Lune DMC', location: 'Paris',
+        description: 'Visite privée de Notre-Dame avec guide agréé et accès prioritaire.',
+        netCost: 413, recommendedMarkup: 11, currency: 'EUR',
+        duration: '~1h30', capacity: '1-5 pers', remarks: ''
+    },
+    {
+        type: 'ACTIVITY', name: 'City Tour en Voiture Premium',
+        supplier: 'Lune DMC', location: 'Paris',
+        description: 'Explorez Paris avec un guide agréé dans un véhicule premium. Berline de luxe pour 1-3 personnes, Van luxe pour 1-6 personnes.',
+        netCost: 692, recommendedMarkup: 11, currency: 'EUR',
+        duration: '3h-7h', capacity: '1-6 pers', remarks: 'Véhicule Luxury Sedan 1-3 pers, Luxury Van 1-6 pers.'
+    },
+    {
+        type: 'ACTIVITY', name: 'Tour Paris en 2CV Vintage',
+        supplier: 'Lune DMC', location: 'Paris',
+        description: 'Découvrez Paris dans une iconique 2CV vintage avec un guide local.',
+        netCost: 206, recommendedMarkup: 11, currency: 'EUR',
+        duration: '2h-7h', capacity: '1-3 pers/voiture', remarks: 'Tarifs par voiture. Options extras : champagne, macarons, bouquet de fleurs, photographe.'
+    },
+    {
+        type: 'ACTIVITY', name: 'Paris à Pied — Balade Guidée',
+        supplier: 'Lune DMC', location: 'Paris',
+        description: 'Découvrez le Marais, Montmartre, Saint-Germain-des-Prés ou le Quartier Latin avec un guide agréé. Pause gourmande incluse.',
+        netCost: 449, recommendedMarkup: 11, currency: 'EUR',
+        duration: '2h30', capacity: '1-5 pers', remarks: ''
+    },
+    {
+        type: 'ACTIVITY', name: 'Tour Rétro en Side-Car',
+        supplier: 'Lune DMC', location: 'Paris',
+        description: 'Tour en side-car (jusqu\'à 2 passagers par véhicule) pour découvrir les highlights iconiques de Paris.',
+        netCost: 269, recommendedMarkup: 11, currency: 'EUR',
+        duration: '1h30', capacity: '1-2 pers/véhicule', remarks: 'Tarifs par véhicule.'
+    },
+    {
+        type: 'ACTIVITY', name: 'Bike Tour Privé à Paris',
+        supplier: 'Lune DMC', location: 'Paris',
+        description: 'Tour privé à vélo pour visiter les sites les plus iconiques de Paris.',
+        netCost: 608, recommendedMarkup: 11, currency: 'EUR',
+        duration: '4h', capacity: '1-8 pers', remarks: ''
+    },
+    {
+        type: 'ACTIVITY', name: 'Versailles — Demi-Journée Privée',
+        supplier: 'Lune DMC', location: 'Paris → Versailles',
+        description: 'Transfert privé A/R depuis votre hôtel Paris, entrée coupe-file, visite guidée privée du château et des jardins avec guide agréé.',
+        netCost: 674, recommendedMarkup: 11, currency: 'EUR',
+        duration: '4h', capacity: '1-7 pers', remarks: 'Enrichissez votre visite avec un pique-nique dans les jardins de Versailles, un tour à vélo ou une barque privée sur le Grand Canal.'
+    },
+
+    // ── Culinary Tours & Food Experiences ──
+    {
+        type: 'ACTIVITY', name: 'Marais Pastry Tour',
+        supplier: 'Lune DMC', location: 'Paris — Le Marais',
+        description: 'Balade guidée avec un guide local, dégustation de pâtisseries françaises classiques en explorant le Marais.',
+        netCost: 404, recommendedMarkup: 11, currency: 'EUR',
+        duration: '~2h', capacity: '1-6 pers', remarks: 'Non recommandé les lundis.'
+    },
+    {
+        type: 'ACTIVITY', name: 'Montmartre Food Tour',
+        supplier: 'Lune DMC', location: 'Paris — Montmartre',
+        description: 'Visite guidée à pied avec un guide local, dégustation de spécialités locales à Montmartre.',
+        netCost: 404, recommendedMarkup: 11, currency: 'EUR',
+        duration: '~2h', capacity: '1-6 pers', remarks: 'Non recommandé les lundis.'
+    },
+    {
+        type: 'ACTIVITY', name: 'Pique-nique Parisien — Tour Eiffel',
+        supplier: 'Lune DMC', location: 'Paris',
+        description: 'Pique-nique français élégant dans des lieux iconiques : Tour Eiffel, Parc de Bagatelle ou Parc Monceau. Fromages artisanaux, charcuterie, baguettes, champagne ou vin fin.',
+        netCost: 494, recommendedMarkup: 11, currency: 'EUR',
+        duration: '1h30-3h', capacity: '1-7 pers', remarks: 'Anniversaire, demande en mariage ? Nous personnalisons votre pique-nique avec ballons, gâteau et touches personnalisées.'
+    },
+    {
+        type: 'ACTIVITY', name: 'Cours de Cuisine Française + Marché',
+        supplier: 'Lune DMC', location: 'Paris',
+        description: 'Cours de cuisine mains dans la pâte en anglais, visite au marché local pour sélectionner des ingrédients frais. Techniques professionnelles pour préparer Coq au Vin ou Bœuf Bourguignon. Repas 3 plats servi avec vins.',
+        netCost: 242, recommendedMarkup: 11, currency: 'EUR',
+        duration: '6h', capacity: 'par personne (max 12)', remarks: ''
+    },
+    {
+        type: 'ACTIVITY', name: 'Atelier Macarons',
+        supplier: 'Lune DMC', location: 'Paris',
+        description: 'Apprenez à confectionner de délicats macarons français avec un chef professionnel. Maîtrisez la meringue, le macaronage et les garnitures. Tea time inclus + boîte à emporter.',
+        netCost: 149, recommendedMarkup: 11, currency: 'EUR',
+        duration: '3h', capacity: 'par personne', remarks: 'Convient aux enfants dès 12 ans. Option de privatisation pour enfants plus jeunes (supplément).'
+    },
+    {
+        type: 'ACTIVITY', name: 'Dégustation de Vins Privée',
+        supplier: 'Lune DMC', location: 'Paris',
+        description: 'Expérience de dégustation avec sommelier professionnel. Six vins, dont un Champagne, accompagnés de fromages et charcuterie dans un espace privé.',
+        netCost: 135, recommendedMarkup: 11, currency: 'EUR',
+        duration: '2h', capacity: '1-6 pers', remarks: 'Les vins sont disponibles à l\'achat après la dégustation.'
+    },
+    {
+        type: 'ACTIVITY', name: 'Atelier Gin — Distillerie Artisanale',
+        supplier: 'Lune DMC', location: 'Paris',
+        description: 'Atelier gin dans une distillerie artisanale. Guidé par un sommelier, découverte de la distillation et des botaniques. Création de votre propre bouteille 70cl avec étiquette personnalisée.',
+        netCost: 200, recommendedMarkup: 11, currency: 'EUR',
+        duration: '~3h', capacity: '1-8 pers', remarks: ''
+    },
+
+    // ── Seine River Experiences ──
+    {
+        type: 'ACTIVITY', name: 'Croisière Seine — The',
+        supplier: 'Lune DMC', location: 'Paris — Seine',
+        description: 'Croisière privée de 1h30 sur la Seine, vue panoramique sur les monuments parisiens. Vin rosé et macarons inclus.',
+        netCost: 719, recommendedMarkup: 11, currency: 'EUR',
+        duration: '1h30', capacity: '1-6 pers', remarks: ''
+    },
+    {
+        type: 'ACTIVITY', name: 'Croisière Seine — The Limousine',
+        supplier: 'Lune DMC', location: 'Paris — Seine',
+        description: 'Croisière privée de 1h30 sur la Seine, vue panoramique sur les monuments parisiens. Champagne et macarons inclus.',
+        netCost: 1125, recommendedMarkup: 11, currency: 'EUR',
+        duration: '1h30', capacity: '1-8 pers', remarks: ''
+    },
+    {
+        type: 'ACTIVITY', name: 'Croisière Seine — Cocktail Cruise',
+        supplier: 'Lune DMC', location: 'Paris — Seine',
+        description: 'Croisière cocktail avec options sucrées ou salées gastronomiques. Champagne vintage et boissons non-alcoolisées incluses.',
+        netCost: 1349, recommendedMarkup: 11, currency: 'EUR',
+        duration: '2h', capacity: '1-12 pers', remarks: ''
+    },
+    {
+        type: 'ACTIVITY', name: 'Croisière Seine Premium Privée',
+        supplier: 'Lune DMC', location: 'Paris — Seine',
+        description: 'Croisière sur bateau premium avec espace intérieur. Champagne vintage, macarons et amuse-bouches inclus. Vue panoramique exceptionnelle.',
+        netCost: 1259, recommendedMarkup: 11, currency: 'EUR',
+        duration: '1h30', capacity: '1-12 pers', remarks: ''
+    },
+    {
+        type: 'ACTIVITY', name: 'Croisière Seine — Déjeuner ou Dîner',
+        supplier: 'Lune DMC', location: 'Paris — Seine',
+        description: 'Croisière privée déjeuner ou dîner intime et romantique. Parfait pour une demande en mariage, un dîner en famille, un EVJF ou une soirée spéciale.',
+        netCost: 0, recommendedMarkup: 11, currency: 'EUR',
+        duration: '2-4h', capacity: 'jusqu\'à 12 pers', remarks: 'Prix sur demande.'
+    },
+
+    // ── Day Trips & Excursions ──
+    {
+        type: 'ACTIVITY', name: 'Excursion Champagne — 2 Domaines',
+        supplier: 'Lune DMC', location: 'Paris → Champagne',
+        description: 'Visite de deux domaines (Mumm ou Pommery + petit producteur), dégustations, Cathédrale de Reims, village de Dom Pérignon et Avenue de Champagne. Transport A/R depuis Paris inclus.',
+        netCost: 1322, recommendedMarkup: 11, currency: 'EUR',
+        duration: '10h', capacity: '1-7 pers', remarks: ''
+    },
+    {
+        type: 'ACTIVITY', name: 'Excursion Champagne Premium',
+        supplier: 'Lune DMC', location: 'Paris → Champagne',
+        description: 'La journée ultime en Champagne : visites privées ou semi-privées chez Moët & Chandon, Dom Pérignon, Veuve Clicquot ou Taittinger.',
+        netCost: 0, recommendedMarkup: 11, currency: 'EUR',
+        duration: '10h', capacity: '1-7 pers', remarks: 'Prix sur demande.'
+    },
+    {
+        type: 'ACTIVITY', name: 'Excursion Loire Valley',
+        supplier: 'Lune DMC', location: 'Paris → Loire Valley',
+        description: 'Journée complète privée vallée de la Loire avec guide et transport luxe A/R. Châteaux de Chambord et Cheverny, promenade à Blois, dégustation de vins.',
+        netCost: 1349, recommendedMarkup: 11, currency: 'EUR',
+        duration: '10h', capacity: '1-7 pers', remarks: ''
+    },
+    {
+        type: 'ACTIVITY', name: 'Excursion Mont-Saint-Michel',
+        supplier: 'Lune DMC', location: 'Paris → Mont-Saint-Michel',
+        description: 'Visite guidée privée du Mont-Saint-Michel et son abbaye médiévale avec guide agréé. Transport A/R et billets d\'entrée inclus.',
+        netCost: 1475, recommendedMarkup: 11, currency: 'EUR',
+        duration: '10h', capacity: '1-7 pers', remarks: 'Personnalisez avec une session d\'équitation ou une visite guidée de la baie.'
+    },
+    {
+        type: 'ACTIVITY', name: 'Excursion Normandie D-Day',
+        supplier: 'Lune DMC', location: 'Paris → Normandie',
+        description: 'Journée privée D-Day avec guide certifié et transport A/R. Mémorial de Caen, Omaha Beach, Pointe du Hoc et Cimetière américain.',
+        netCost: 1436, recommendedMarkup: 11, currency: 'EUR',
+        duration: '10h', capacity: '1-7 pers', remarks: 'Personnalisez avec un tour en Jeep d\'Omaha Beach ou un pique-nique déjeuner.'
+    },
+    {
+        type: 'ACTIVITY', name: 'Excursion Versailles + Giverny',
+        supplier: 'Lune DMC', location: 'Paris → Versailles → Giverny',
+        description: 'Journée privée au Château de Versailles et Fondation Monet à Giverny. Intérieurs, jardins, fontaines et jardins d\'eau de Monet. Guide expert et transport A/R.',
+        netCost: 1259, recommendedMarkup: 11, currency: 'EUR',
+        duration: '8h', capacity: '1-7 pers', remarks: 'Enrichissez avec un déjeuner aux Jardins des Plumes ou un pique-nique dans les jardins de Versailles.'
+    },
+    {
+        type: 'ACTIVITY', name: 'Excursion Vaux-le-Vicomte + Fontainebleau',
+        supplier: 'Lune DMC', location: 'Paris → Fontainebleau',
+        description: 'Visite guidée privée des Châteaux de Fontainebleau et Vaux-le-Vicomte avec transfert privé A/R, entrée coupe-file et temps libre pour déjeuner.',
+        netCost: 1259, recommendedMarkup: 11, currency: 'EUR',
+        duration: '8h', capacity: '1-7 pers', remarks: ''
+    },
+    {
+        type: 'ACTIVITY', name: 'Excursion Château de Chantilly',
+        supplier: 'Lune DMC', location: 'Paris → Chantilly',
+        description: 'Visite guidée privée du Château de Chantilly et ses jardins avec transfert privé A/R. Exploration de l\'histoire aristocratique française.',
+        netCost: 719, recommendedMarkup: 11, currency: 'EUR',
+        duration: '4h', capacity: '1-7 pers', remarks: 'Ajoutez un pique-nique royal ou une balade à cheval dans la forêt de Chantilly.'
+    },
+    {
+        type: 'ACTIVITY', name: 'Excursion Bruges — Journée Complète',
+        supplier: 'Lune DMC', location: 'Paris → Bruges',
+        description: 'Excursion privée à Bruges avec transport A/R depuis Paris. Visite guidée à pied de 2h, montée au Beffroi et croisière sur les canaux.',
+        netCost: 1436, recommendedMarkup: 11, currency: 'EUR',
+        duration: '12h', capacity: '1-7 pers', remarks: 'Personnalisez avec une nuit sur place, croisière privée, dégustation chocolat ou bière, atelier gaufres !'
+    },
+    {
+        type: 'ACTIVITY', name: 'Excursion Bruxelles — Journée Complète',
+        supplier: 'Lune DMC', location: 'Paris → Bruxelles',
+        description: 'Transfert privé + train grande vitesse A/R. Visite guidée à pied de 2h, déjeuner dans un restaurant local, visite du Musée Magritte ou Musées royaux.',
+        netCost: 0, recommendedMarkup: 11, currency: 'EUR',
+        duration: '~14h', capacity: '1-7 pers', remarks: 'Prix sur demande. Options : tour bière, atelier chocolat, Musée de la BD, shopping, vélo.'
+    },
+    {
+        type: 'ACTIVITY', name: 'Excursion Amsterdam — Journée Complète',
+        supplier: 'Lune DMC', location: 'Paris → Amsterdam',
+        description: 'Transfert + train grande vitesse, tour vélo privé ou groupe, visite Rijksmuseum ou Van Gogh, croisière canal. Meet & greet et transfer retour.',
+        netCost: 0, recommendedMarkup: 11, currency: 'EUR',
+        duration: '~16h', capacity: '1-10 pers', remarks: 'Prix sur demande. Options : nuit sur place, champs de tulipes, moulins de Zaanse Schans, Anne Frank House.'
+    },
+    {
+        type: 'ACTIVITY', name: 'Excursion Londres — Journée Complète',
+        supplier: 'Lune DMC', location: 'Paris → London',
+        description: 'Transfert privé + Eurostar A/R. Visite guidée à pied des highlights de Londres. Recommandations restaurants, high tea, pubs.',
+        netCost: 0, recommendedMarkup: 11, currency: 'EUR',
+        duration: '~16h', capacity: '1-10 pers', remarks: 'Prix sur demande. Options : Tower of London, British Museum, croisière Tamise, Notting Hill, nuit sur place.'
+    },
+
+    // ── Fashion & Shopping ──
+    {
+        type: 'ACTIVITY', name: 'Marché aux Puces de Saint-Ouen',
+        supplier: 'Lune DMC', location: 'Paris — Saint-Ouen',
+        description: 'Explorez le marché aux puces de Saint-Ouen avec un guide privé, découvrez des trésors cachés et des pièces vintage pendant un tour de 3h.',
+        netCost: 566, recommendedMarkup: 11, currency: 'EUR',
+        duration: '2.5-3h', capacity: '1-7 pers', remarks: ''
+    },
+    {
+        type: 'ACTIVITY', name: 'Galerie Dior — Visite Privée',
+        supplier: 'Lune DMC', location: 'Paris',
+        description: 'Visite privée de la Galerie Dior avec un expert guide.',
+        netCost: 495, recommendedMarkup: 11, currency: 'EUR',
+        duration: '~2h', capacity: '1-8 pers', remarks: ''
+    },
+    {
+        type: 'ACTIVITY', name: 'Luxury Vintage Shopping Experience',
+        supplier: 'Lune DMC', location: 'Paris — Marais / Saint-Germain',
+        description: 'Expérience privée de 3h explorant le meilleur du vintage designer : Chanel, Hermès, Dior, YSL dans des boutiques exclusives du Marais et Saint-Germain-des-Prés.',
+        netCost: 566, recommendedMarkup: 11, currency: 'EUR',
+        duration: '2.5-3h', capacity: '1-7 pers', remarks: ''
+    },
+    {
+        type: 'ACTIVITY', name: 'Samaritaine VIP Lounge — Styling Privé',
+        supplier: 'Lune DMC', location: 'Paris — La Samaritaine',
+        description: 'Session de styling privée sur rendez-vous dans le VIP Lounge historique de La Samaritaine. Champagne, sélections personnalisées, guidance experte. Options incluses : maquillage, fragrance, skincare, cognac.',
+        netCost: 495, recommendedMarkup: 11, currency: 'EUR',
+        duration: '3-4h', capacity: '1 pers', remarks: ''
+    },
+    {
+        type: 'ACTIVITY', name: 'Expérience Shopping Parisienne',
+        supplier: 'Lune DMC', location: 'Paris',
+        description: 'Explorez des boutiques cachées et des designers français émergents rarement trouvés hors de France. Itinéraire personnalisé selon vos goûts, avec analyse street-style.',
+        netCost: 585, recommendedMarkup: 11, currency: 'EUR',
+        duration: '6h', capacity: '1 pers', remarks: ''
+    },
+
+    // ── Transport ──
+    {
+        type: 'TRANSFER', name: 'Transfert Aéroport CDG',
+        supplier: 'Lune DMC — Transport', location: 'Paris — CDG',
+        description: 'Accueil en zone d\'arrivée avec panneau nominatif et transfert direct vers votre hôtel à Paris. Mercedes Classe E (1-3 pers) ou Classe V (1-7 pers).',
+        netCost: 134, recommendedMarkup: 11, currency: 'EUR',
+        pricingMode: 'ONE_WAY' as any, oneWayPrice: 134,
+        duration: '~1h', capacity: '1-7 pers', remarks: 'Mercedes E pour 1-3 pers (€149), Mercedes V pour 1-7 pers (€189).'
+    },
+    {
+        type: 'TRANSFER', name: 'Transfert Gare',
+        supplier: 'Lune DMC — Transport', location: 'Paris',
+        description: 'Accueil en gare avec panneau nominatif et transfert direct vers votre hôtel à Paris. Mercedes Classe E (1-3 pers) ou Classe V (1-7 pers).',
+        netCost: 77, recommendedMarkup: 11, currency: 'EUR',
+        pricingMode: 'ONE_WAY' as any, oneWayPrice: 77,
+        duration: '~1h', capacity: '1-7 pers', remarks: 'Mercedes E pour 1-3 pers (€85), Mercedes V pour 1-7 pers (€110).'
+    },
 ];
 
 // ═══ PRESTATAIRES — PALACES PARIS (fournisseurs externes avec concierge) ═══
@@ -60,26 +335,35 @@ export async function GET(req: Request) {
         const tenantId = await findTenantId();
         if (!tenantId) return NextResponse.json({ error: 'No tenant found' }, { status: 404 });
 
-        // 1) Clear ALL existing catalog items (previous bad seed)
+        // 1) Clear ALL existing catalog items
         const oldCatalog = await adminDb.collection('tenants').doc(tenantId).collection('catalog').get();
         const deleteBatch = adminDb.batch();
         oldCatalog.docs.forEach(d => deleteBatch.delete(d.ref));
         if (oldCatalog.docs.length > 0) await deleteBatch.commit();
 
+        // 1b) Also clear the legacy "prestations" collection
+        const oldPrestations = await adminDb.collection('tenants').doc(tenantId).collection('prestations').get();
+        if (!oldPrestations.empty) {
+            const delBatch2 = adminDb.batch();
+            oldPrestations.docs.forEach(d => delBatch2.delete(d.ref));
+            await delBatch2.commit();
+        }
+
         // 2) Seed PRESTATIONS into catalog
-        const batch1 = adminDb.batch();
         const catalogCol = adminDb.collection('tenants').doc(tenantId).collection('catalog');
         const now = new Date();
+
+        // Firestore batch max is 500 ops — we have 40, so one batch is fine
+        const batch1 = adminDb.batch();
         for (const item of LUNE_PRESTATIONS) {
             batch1.set(catalogCol.doc(), { ...item, createdAt: now, updatedAt: now });
         }
         await batch1.commit();
 
-        // 3) Seed SUPPLIERS (palaces) into suppliers
+        // 3) Seed SUPPLIERS (palaces) into suppliers — skip existing
         const batch2 = adminDb.batch();
         const suppliersCol = adminDb.collection('tenants').doc(tenantId).collection('suppliers');
 
-        // Check for existing suppliers to avoid duplicates
         const existingSuppliers = await suppliersCol.get();
         const existingNames = new Set(existingSuppliers.docs.map(d => d.data().name));
 
@@ -96,10 +380,11 @@ export async function GET(req: Request) {
             success: true,
             tenantId,
             catalogCleared: oldCatalog.docs.length,
+            prestationsCleared: oldPrestations.docs.length,
             prestationsCreated: LUNE_PRESTATIONS.length,
             suppliersCreated: addedSuppliers,
             suppliersSkipped: PALACE_SUPPLIERS.length - addedSuppliers,
-            message: `✅ ${LUNE_PRESTATIONS.length} prestations Lune → Catalog | ${addedSuppliers} palaces Paris → Suppliers`
+            message: `✅ ${LUNE_PRESTATIONS.length} prestations Paris 2026 → Catalog | ${addedSuppliers} palaces → Suppliers`
         });
     } catch (error: any) {
         console.error('Seed error:', error);

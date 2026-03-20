@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
 import { verifyAuth } from '@/src/lib/firebase/apiAuth';
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+import { generateAIJSON } from '@/src/lib/ai/provider';
 
 export async function POST(request: Request) {
     const auth = await verifyAuth(request);
@@ -14,7 +12,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Email content required' }, { status: 400 });
         }
 
-        if (!process.env.GEMINI_API_KEY) {
+        if (!process.env.GROQ_API_KEY && !process.env.GEMINI_API_KEY) {
             // Fallback mock analysis when no API key
             return NextResponse.json({
                 analysis: {
@@ -77,18 +75,11 @@ Tu DOIS répondre UNIQUEMENT en JSON valide, sans balises Markdown autour, au fo
     "priority": "HIGH" (toujours HIGH pour TRAVEL_REQUEST)
 }`;
 
-        const result = await ai.models.generateContent({ model: 'gemini-2.5-pro', contents: prompt });
-        const text = result.text || '';
-
-        try {
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: text, type: 'OTHER' };
-            return NextResponse.json({ analysis });
-        } catch {
-            return NextResponse.json({ analysis: { summary: text, type: 'OTHER', confidence: 0.5 } });
-        }
+        const result = await generateAIJSON(prompt, { model: 'fast' });
+        return NextResponse.json({ analysis: result.data });
     } catch (error: any) {
         console.error('Email Analysis Error:', error);
         return NextResponse.json({ error: error.message || 'Failed to analyze email' }, { status: 500 });
     }
 }
+

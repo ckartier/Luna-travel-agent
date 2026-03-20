@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/src/lib/firebase/admin';
-import { verifyAuth } from '@/src/lib/firebase/apiAuth';
+import { verifyAdmin } from '@/src/lib/firebase/apiAuth';
 
 export async function POST(request: Request) {
-    const auth = await verifyAuth(request);
+    const auth = await verifyAdmin(request);
     if (auth instanceof Response) return auth;
 
     try {

@@ -23,7 +23,14 @@ import {
   Compass,
   Fingerprint,
   Zap,
-  ImageIcon
+  ImageIcon,
+  Sparkles,
+  Heart,
+  Wine,
+  Briefcase,
+  Mountain,
+  TreePalm,
+  Gem
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -33,7 +40,6 @@ import { createLead, createContact, createTrip, createTripDay, CRMTripSegment } 
 import { LunaLogo } from '@/app/components/LunaLogo';
 import { PdfExport } from '@/app/components/PdfExport';
 import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
-import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 type WorkflowState = 'IDLE' | 'ANALYSING' | 'DISTRIBUTING' | 'AGENTS_WORKING' | 'VALIDATION' | 'GENERATING_PROPOSALS' | 'PROPOSALS_READY';
@@ -54,7 +60,7 @@ interface Destination {
 
 // ═══ MAPBOX 3D GLOBE BACKGROUND (shown when agents are processing) ═══
 function MapGlobeBackground() {
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const mapRef = useRef<any>(null);
   const frameRef = useRef<number>(0);
 
   const mapCallback = useCallback((node: HTMLDivElement | null) => {
@@ -62,6 +68,8 @@ function MapGlobeBackground() {
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
     if (!token) return;
 
+    (async () => {
+    const mapboxgl = (await import('mapbox-gl')).default;
     mapboxgl.accessToken = token;
     const map = new mapboxgl.Map({
       container: node,
@@ -95,6 +103,7 @@ function MapGlobeBackground() {
     };
     frameRef.current = requestAnimationFrame(spin);
     mapRef.current = map;
+    })();
   }, []);
 
   useEffect(() => {
@@ -192,6 +201,8 @@ function DashboardPage({ initialParams }: { initialParams?: Record<string, strin
   useEffect(() => {
     setMounted(true);
     // ── Restore last saved results from localStorage ──
+    // Skip restore if we have fresh initialParams from CRM pipeline
+    if (initialParams && Object.keys(initialParams).length > 0) return;
     try {
       const saved = localStorage.getItem('luna_last_results');
       if (saved && workflowState === 'IDLE') {
@@ -215,11 +226,16 @@ function DashboardPage({ initialParams }: { initialParams?: Record<string, strin
     } catch { /* silent */ }
   }, []);
 
-  // ── Pre-fill from initialParams (from CRM Agent modal opened via email dispatch) ──
+  // ── Pre-fill from initialParams (from CRM pipeline / Agent Voyage button) ──
   const initialParamsApplied = useRef(false);
   useEffect(() => {
     if (initialParams && !initialParamsApplied.current) {
       initialParamsApplied.current = true;
+      // Always reset state when coming from pipeline with fresh params
+      setWorkflowState('IDLE');
+      setAgentResults(null);
+      setValidatedAgents([]);
+      setActiveAgents([]);
       const dest = initialParams.dest;
       if (dest) {
         const destList = dest.split('|').map(d => d.trim()).filter(Boolean);
@@ -249,20 +265,20 @@ function DashboardPage({ initialParams }: { initialParams?: Record<string, strin
     // Skip URL-based pre-fill if initialParams were provided
     if (initialParams) return;
     
-    const autoStart = searchParams.get('autoStart');
-    const dest = searchParams.get('dest');
+    const autoStart = searchParams?.get('autoStart');
+    const dest = searchParams?.get('dest');
 
     // If autoStart from pipeline, allow overriding even PROPOSALS_READY
     if (autoStart === 'true' && dest) {
       const destList = dest.split('|').map(d => d.trim()).filter(Boolean);
       setDestinations(destList.map((d, i) => ({ id: String(i + 1), city: d })));
-      if (searchParams.get('from')) setDepartureCity(searchParams.get('from')!);
-      if (searchParams.get('dep')) setDepartureDate(searchParams.get('dep')!);
-      if (searchParams.get('ret')) setReturnDate(searchParams.get('ret')!);
-      if (searchParams.get('budget')) setBudget(searchParams.get('budget')!);
-      if (searchParams.get('pax')) setPax(searchParams.get('pax')!);
-      if (searchParams.get('vibe')) setVibe(searchParams.get('vibe')!);
-      if (searchParams.get('notes')) setMustHaves(searchParams.get('notes')!);
+      if (searchParams?.get('from')) setDepartureCity(searchParams?.get('from')!);
+      if (searchParams?.get('dep')) setDepartureDate(searchParams?.get('dep')!);
+      if (searchParams?.get('ret')) setReturnDate(searchParams?.get('ret')!);
+      if (searchParams?.get('budget')) setBudget(searchParams?.get('budget')!);
+      if (searchParams?.get('pax')) setPax(searchParams?.get('pax')!);
+      if (searchParams?.get('vibe')) setVibe(searchParams?.get('vibe')!);
+      if (searchParams?.get('notes')) setMustHaves(searchParams?.get('notes')!);
       setTimeout(() => {
         setValidatedAgents([]);
         setActiveAgents([]);
@@ -280,13 +296,13 @@ function DashboardPage({ initialParams }: { initialParams?: Record<string, strin
       const destList = dest.split('|').map(d => d.trim()).filter(Boolean);
       setDestinations(destList.map((d, i) => ({ id: String(i + 1), city: d })));
     }
-    if (searchParams.get('from')) setDepartureCity(searchParams.get('from')!);
-    if (searchParams.get('dep')) setDepartureDate(searchParams.get('dep')!);
-    if (searchParams.get('ret')) setReturnDate(searchParams.get('ret')!);
-    if (searchParams.get('budget')) setBudget(searchParams.get('budget')!);
-    if (searchParams.get('pax')) setPax(searchParams.get('pax')!);
-    if (searchParams.get('vibe')) setVibe(searchParams.get('vibe')!);
-    if (searchParams.get('notes')) setMustHaves(searchParams.get('notes')!);
+    if (searchParams?.get('from')) setDepartureCity(searchParams?.get('from')!);
+    if (searchParams?.get('dep')) setDepartureDate(searchParams?.get('dep')!);
+    if (searchParams?.get('ret')) setReturnDate(searchParams?.get('ret')!);
+    if (searchParams?.get('budget')) setBudget(searchParams?.get('budget')!);
+    if (searchParams?.get('pax')) setPax(searchParams?.get('pax')!);
+    if (searchParams?.get('vibe')) setVibe(searchParams?.get('vibe')!);
+    if (searchParams?.get('notes')) setMustHaves(searchParams?.get('notes')!);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, initialParams]);
 
@@ -518,15 +534,21 @@ function DashboardPage({ initialParams }: { initialParams?: Record<string, strin
             dateObj.setDate(dateObj.getDate() + i);
             const dayDateStr = dateObj.toISOString().split('T')[0];
 
+            const rawBudget = parseInt((budget || '').replace(/[^\d]/g, '')) || 0;
+            const dailyBudget = d.daysCount ? rawBudget / d.daysCount : rawBudget / agentResults.itinerary.days.length;
+            const activityBudget = Math.round(dailyBudget * 0.3) || 150; // Assume 30% of daily budget goes to activities
+            const margin = 0.35;
+            const netPrice = Math.round(activityBudget * (1 - margin));
+
             const segments: CRMTripSegment[] = [];
             if (d.morning) {
-              segments.push({ id: crypto.randomUUID(), type: 'ACTIVITY', title: 'Matin', timeSlot: 'Morning', description: d.morning, bookingUrl: d.morningUrl || '' });
+              segments.push({ id: crypto.randomUUID(), type: 'ACTIVITY', title: 'Matin', timeSlot: 'Morning', description: d.morning, bookingUrl: d.morningUrl || '', clientPrice: activityBudget, netCost: netPrice, markupPercent: Math.round(margin * 100), bookingStatus: 'PROPOSED' });
             }
             if (d.afternoon) {
-              segments.push({ id: crypto.randomUUID(), type: 'ACTIVITY', title: 'Après-midi', timeSlot: 'Afternoon', description: d.afternoon, bookingUrl: d.afternoonUrl || '' });
+              segments.push({ id: crypto.randomUUID(), type: 'ACTIVITY', title: 'Après-midi', timeSlot: 'Afternoon', description: d.afternoon, bookingUrl: d.afternoonUrl || '', clientPrice: activityBudget, netCost: netPrice, markupPercent: Math.round(margin * 100), bookingStatus: 'PROPOSED' });
             }
             if (d.evening) {
-              segments.push({ id: crypto.randomUUID(), type: 'ACTIVITY', title: 'Soir', timeSlot: 'Evening', description: d.evening, bookingUrl: d.eveningUrl || '' });
+              segments.push({ id: crypto.randomUUID(), type: 'ACTIVITY', title: 'Soir', timeSlot: 'Evening', description: d.evening, bookingUrl: d.eveningUrl || '', clientPrice: activityBudget, netCost: netPrice, markupPercent: Math.round(margin * 100), bookingStatus: 'PROPOSED' });
             }
 
             return createTripDay(tenantId!, tripId!, {
@@ -773,225 +795,274 @@ function DashboardPage({ initialParams }: { initialParams?: Record<string, strin
                 className="relative w-full pb-6" data-agent-form
               >
                 {/* Header */}
-                <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center justify-between mb-6">
                     <div>
                         <motion.h1
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
-                            className="text-xl font-medium text-[#2E2E2E] tracking-tight"
+                            className="text-[22px] font-medium text-[#2E2E2E] tracking-tight"
                         >
                             Que recherchez-vous ?
                         </motion.h1>
-                        <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#2E2E2E]/30 mt-0.5">Expert Voyages IA</p>
+                        <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-[#9CA3AF] mt-1">Expert Voyages IA</p>
                     </div>
                 </div>
 
                 <form id="voyage-form" onSubmit={handleStartAnalysis} className="w-full">
-                    {/* ── Big Destination Search ── */}
-                    <div className="space-y-2 mb-5">
-                        <div className="relative">
-                            {destinations.map((d, i) => (
-                              <div key={d.id} className="relative group mb-2">
-                                <textarea
-                                  autoFocus={i === 0}
-                                  placeholder={i === 0 ? "Ex: villa avec vue mer pour 6 personnes à Ibiza\navec chef privé et bateau pour 3 jours" : "Ajouter une destination..."}
-                                  className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-4 text-sm font-normal focus:border-[#2E2E2E] focus:ring-0 transition-all outline-none placeholder:text-gray-300 pr-12 text-gray-700 resize-none h-20"
-                                  value={d.city}
-                                  onChange={e => updateDestination(d.id, e.target.value)}
-                                  rows={2}
-                                />
-                                <div className="absolute right-4 top-4 flex items-center gap-2">
-                                  {destinations.length > 1 && (
-                                    <button type="button" onClick={() => removeDestination(d.id)} className="p-1 text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
-                                      <X size={14} />
-                                    </button>
-                                  )}
-                                  <MapPin className="text-gray-300" size={16} />
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                        {destinations.length < 4 && (
-                          <button type="button" onClick={addDestination} className="text-[10px] uppercase tracking-widest font-bold text-[#b9dae9] hover:text-[#a5cadc] flex items-center gap-1 transition-colors ml-1">
-                              <Plus size={12} /> Ajouter une destination
-                          </button>
-                        )}
-                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-8">
 
-                    {/* ── Ambiance pills (horizontal) ── */}
-                    <div className="flex flex-wrap gap-2 mb-6">
-                        {[
-                          { id: "Détente & Bien-être", icon: "🧘" },
-                          { id: "Aventure & Découverte", icon: "🏔" },
-                          { id: "Culture & Patrimoine", icon: "🏛" },
-                          { id: "Tour gastronomique", icon: "🍷" },
-                          { id: "Lune de Miel", icon: "💍" },
-                          { id: "Voyage d'Affaires", icon: "💼" },
-                        ].map(v => (
-                          <button
-                            key={v.id}
-                            type="button"
-                            onClick={() => setVibe(vibe === v.id ? '' : v.id)}
-                            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-[12px] transition-all border ${vibe === v.id
-                              ? 'bg-[#2E2E2E] text-white border-[#2E2E2E] font-medium shadow-sm'
-                              : 'bg-white text-[#2E2E2E]/60 border-[#2E2E2E]/[0.08] hover:border-[#2E2E2E]/[0.15] hover:text-[#2E2E2E]/80'
-                            }`}
-                          >
-                            <span>{v.icon}</span>
-                            {v.id}
-                          </button>
-                        ))}
-                    </div>
-
-                    {/* ── Fields row ── */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-5">
-                        {/* Départ de */}
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2E2E2E]">Départ de</label>
-                            <input
-                                type="text"
-                                placeholder="Paris"
-                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-normal focus:border-[#2E2E2E] focus:ring-0 transition-all outline-none placeholder:text-gray-300 text-gray-700"
-                                value={departureCity}
-                                onChange={e => setDepartureCity(e.target.value)}
-                            />
-                        </div>
-
-                        {/* Date départ */}
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2E2E2E]">Date départ</label>
-                            <input
-                                type="date"
-                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-normal focus:border-[#2E2E2E] focus:ring-0 transition-all outline-none [color-scheme:light] text-gray-700"
-                                value={departureDate}
-                                onChange={e => setDepartureDate(e.target.value)}
-                            />
-                        </div>
-
-                        {/* Date retour */}
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2E2E2E]">Date retour</label>
-                            <input
-                                type="date"
-                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-normal focus:border-[#2E2E2E] focus:ring-0 transition-all outline-none [color-scheme:light] text-gray-700"
-                                value={returnDate}
-                                onChange={e => setReturnDate(e.target.value)}
-                            />
-                        </div>
-
-                        {/* Budget */}
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2E2E2E]">Budget</label>
-                            <input
-                                type="text"
-                                placeholder="10 000 €"
-                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-normal focus:border-[#2E2E2E] focus:ring-0 transition-all outline-none placeholder:text-gray-300 text-gray-700"
-                                value={budget}
-                                onChange={e => setBudget(e.target.value)}
-                            />
-                        </div>
-
-                        {/* Voyageurs */}
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2E2E2E]">Voyageurs</label>
-                            <input
-                                type="text"
-                                placeholder="2 adultes"
-                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-normal focus:border-[#2E2E2E] focus:ring-0 transition-all outline-none placeholder:text-gray-300 text-gray-700"
-                                value={pax}
-                                onChange={e => setPax(e.target.value)}
-                            />
-                        </div>
-
-                        {/* Flexibilité */}
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2E2E2E]">Flexibilité</label>
-                            <div className="flex gap-1">
-                                {['Exact', '+/- 3j', 'Mois'].map(opt => (
-                                  <button
-                                    key={opt}
-                                    type="button"
-                                    onClick={() => setFlexibility(opt === 'Exact' ? 'Dates Exactes' : opt === '+/- 3j' ? '+/- 3 Jours' : 'Mois Flexible')}
-                                    className={`flex-1 px-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${
-                                      (opt === 'Exact' && flexibility === 'Dates Exactes') ||
-                                      (opt === '+/- 3j' && flexibility === '+/- 3 Jours') ||
-                                      (opt === 'Mois' && flexibility === 'Mois Flexible')
-                                        ? 'bg-[#2E2E2E] text-white'
-                                        : 'bg-white text-gray-400 border border-gray-100 hover:border-gray-200'
-                                    }`}
-                                  >
-                                    {opt}
-                                  </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* ── Notes (collapsed) & Image Upload ── */}
-                    <div className="space-y-1.5 mb-5">
-                        <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2E2E2E] flex justify-between items-center">
-                            Notes particulières
-                            <button
-                                type="button"
-                                onClick={() => imageInputRef.current?.click()}
-                                className="text-gray-400 hover:text-black transition-colors flex items-center gap-1 normal-case tracking-normal"
-                            >
-                                <ImageIcon size={12} />
-                                <span className="text-[10px]">Photo d'inspiration ({inspirationImages.length}/3)</span>
-                            </button>
-                        </label>
-                        <textarea
-                            placeholder="Vol direct, vue mer, transferts privés..."
-                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-normal focus:border-[#2E2E2E] focus:ring-0 transition-all outline-none placeholder:text-gray-300 resize-none h-16 text-gray-700"
-                            value={mustHaves}
-                            onChange={e => setMustHaves(e.target.value)}
-                        />
-                        <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            hidden
-                            ref={imageInputRef}
-                            onChange={handleImageUpload}
-                        />
-
-                        {/* Image Preview Row */}
-                        {inspirationImages.length > 0 && (
-                            <div className="flex gap-2 mt-2">
-                                {inspirationImages.map((src, i) => (
-                                    <div key={i} className="relative w-12 h-12 rounded-lg overflow-hidden border border-gray-200 group">
-                                        <img src={src} alt="Inspiration" className="w-full h-full object-cover" />
-                                        <button
-                                            type="button"
-                                            onClick={() => setInspirationImages(prev => prev.filter((_, idx) => idx !== i))}
-                                            className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* ── CTA ── */}
-                    <div className="pt-1 flex justify-center">
-                        <button
-                            type="submit"
-                            className="w-full max-w-sm py-4 rounded-full text-[11px] font-bold uppercase tracking-[0.25em] bg-[#b9dae9] text-luna-charcoal hover:bg-[#a5cadc] shadow-[0_8px_30px_-8px_rgba(185,218,233,0.5)] hover:shadow-[0_12px_40px_-8px_rgba(185,218,233,0.7)] hover:-translate-y-0.5 transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-3 relative group overflow-hidden"
+                        {/* ═══ LEFT COLUMN — Destination & Inspiration ═══ */}
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.15, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                            className="space-y-5"
                         >
-                            <Bot size={14} className="relative z-10" />
-                            <span className="relative z-10">Lancer l'expert</span>
-                            <ArrowRight size={15} className="relative z-10 group-hover:translate-x-1 transition-transform" />
-                        </button>
+                            {/* Section Label */}
+                            <div className="flex items-center gap-2 mb-1">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#b9dae9]" />
+                                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#2E2E2E]/30">Destination & Envies</span>
+                            </div>
+
+                            {/* ── Big Destination Search ── */}
+                            <div className="space-y-2">
+                                <div className="relative">
+                                    {destinations.map((d, i) => (
+                                      <div key={d.id} className="relative group mb-2">
+                                        <textarea
+                                          autoFocus={i === 0}
+                                          placeholder={i === 0 ? "Ex: villa avec vue mer pour 6 personnes à Ibiza\navec chef privé et bateau pour 3 jours" : "Ajouter une destination..."}
+                                          className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-4 text-[15px] font-normal focus:border-[#5a8fa3] focus:ring-2 focus:ring-[#b9dae9]/20 transition-all outline-none placeholder:text-gray-300 pr-12 text-gray-700 resize-none h-24 shadow-sm hover:shadow-md"
+                                          value={d.city}
+                                          onChange={e => updateDestination(d.id, e.target.value)}
+                                          rows={2}
+                                        />
+                                        <div className="absolute right-4 top-4 flex items-center gap-2">
+                                          {destinations.length > 1 && (
+                                            <button type="button" onClick={() => removeDestination(d.id)} className="p-1 text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
+                                              <X size={14} />
+                                            </button>
+                                          )}
+                                          <MapPin className="text-gray-300" size={16} />
+                                        </div>
+                                      </div>
+                                    ))}
+                                </div>
+                                {destinations.length < 4 && (
+                                  <button type="button" onClick={addDestination} className="text-[10px] uppercase tracking-widest font-bold text-[#b9dae9] hover:text-[#5a8fa3] flex items-center gap-1.5 transition-colors ml-1 group">
+                                      <Plus size={12} className="group-hover:rotate-90 transition-transform" /> Ajouter une destination
+                                  </button>
+                                )}
+                            </div>
+
+                            {/* ── Ambiance pills — SVG Icons ── */}
+                            <div>
+                                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2E2E2E] mb-2.5 block">Style de voyage</span>
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                      { id: "Détente & Bien-être", Icon: TreePalm },
+                                      { id: "Aventure & Découverte", Icon: Mountain },
+                                      { id: "Culture & Patrimoine", Icon: Gem },
+                                      { id: "Tour gastronomique", Icon: Wine },
+                                      { id: "Lune de Miel", Icon: Heart },
+                                      { id: "Voyage d'Affaires", Icon: Briefcase },
+                                    ].map((v, i) => (
+                                      <motion.button
+                                        key={v.id}
+                                        type="button"
+                                        initial={{ opacity: 0, y: 8 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.3 + i * 0.05 }}
+                                        onClick={() => setVibe(vibe === v.id ? '' : v.id)}
+                                        className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[12px] transition-all border cursor-pointer ${vibe === v.id
+                                          ? 'bg-[#2E2E2E] text-white border-[#2E2E2E] font-medium shadow-md scale-[1.03]'
+                                          : 'bg-white text-[#2E2E2E]/60 border-gray-200 hover:border-[#5a8fa3]/30 hover:text-[#2E2E2E]/80 hover:shadow-sm'
+                                        }`}
+                                      >
+                                        <v.Icon size={14} className={vibe === v.id ? 'text-white/80' : 'text-[#9CA3AF]'} />
+                                        {v.id}
+                                      </motion.button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* ── Notes & Images (moved here for narrative flow) ── */}
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2E2E2E] flex justify-between items-center">
+                                    Notes particulières
+                                    <button
+                                        type="button"
+                                        onClick={() => imageInputRef.current?.click()}
+                                        className="text-gray-400 hover:text-[#5a8fa3] transition-colors flex items-center gap-1 normal-case tracking-normal"
+                                    >
+                                        <ImageIcon size={12} />
+                                        <span className="text-[10px]">Photo d'inspiration ({inspirationImages.length}/3)</span>
+                                    </button>
+                                </label>
+                                <textarea
+                                    placeholder="Vol direct, vue mer, transferts privés..."
+                                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-normal focus:border-[#5a8fa3] focus:ring-2 focus:ring-[#b9dae9]/20 transition-all outline-none placeholder:text-gray-300 resize-none h-16 text-gray-700 shadow-sm"
+                                    value={mustHaves}
+                                    onChange={e => setMustHaves(e.target.value)}
+                                />
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    hidden
+                                    ref={imageInputRef}
+                                    onChange={handleImageUpload}
+                                />
+                                {/* Image Preview Row */}
+                                {inspirationImages.length > 0 && (
+                                    <div className="flex gap-2 mt-2">
+                                        {inspirationImages.map((src, i) => (
+                                            <div key={i} className="relative w-14 h-14 rounded-xl overflow-hidden border border-gray-200 group shadow-sm">
+                                                <img src={src} alt="Inspiration" className="w-full h-full object-cover" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setInspirationImages(prev => prev.filter((_, idx) => idx !== i))}
+                                                    className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+
+                        {/* ═══ RIGHT COLUMN — Parameters ═══ */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.25, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                            className="space-y-5"
+                        >
+                            {/* Section Label */}
+                            <div className="flex items-center gap-2 mb-1">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#5a8fa3]" />
+                                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#2E2E2E]/30">Paramètres du voyage</span>
+                            </div>
+
+                            {/* Params container with subtle card */}
+                            <div className="bg-[#FAFBFC] rounded-2xl border border-gray-100 p-5 space-y-4 shadow-sm">
+
+                                {/* Departure + Budget row */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2E2E2E]">Départ de</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Paris"
+                                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-normal focus:border-[#5a8fa3] focus:ring-2 focus:ring-[#b9dae9]/20 transition-all outline-none placeholder:text-gray-300 text-gray-700 shadow-sm"
+                                            value={departureCity}
+                                            onChange={e => setDepartureCity(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2E2E2E]">Budget</label>
+                                        <input
+                                            type="text"
+                                            placeholder="10 000 €"
+                                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-normal focus:border-[#5a8fa3] focus:ring-2 focus:ring-[#b9dae9]/20 transition-all outline-none placeholder:text-gray-300 text-gray-700 shadow-sm"
+                                            value={budget}
+                                            onChange={e => setBudget(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Dates row */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2E2E2E]">Date départ</label>
+                                        <input
+                                            type="date"
+                                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-normal focus:border-[#5a8fa3] focus:ring-2 focus:ring-[#b9dae9]/20 transition-all outline-none [color-scheme:light] text-gray-700 shadow-sm"
+                                            value={departureDate}
+                                            onChange={e => setDepartureDate(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2E2E2E]">Date retour</label>
+                                        <input
+                                            type="date"
+                                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-normal focus:border-[#5a8fa3] focus:ring-2 focus:ring-[#b9dae9]/20 transition-all outline-none [color-scheme:light] text-gray-700 shadow-sm"
+                                            value={returnDate}
+                                            onChange={e => setReturnDate(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Pax + Flexibility row */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2E2E2E]">Voyageurs</label>
+                                        <input
+                                            type="text"
+                                            placeholder="2 adultes"
+                                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-normal focus:border-[#5a8fa3] focus:ring-2 focus:ring-[#b9dae9]/20 transition-all outline-none placeholder:text-gray-300 text-gray-700 shadow-sm"
+                                            value={pax}
+                                            onChange={e => setPax(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2E2E2E]">Flexibilité</label>
+                                        <div className="flex gap-1">
+                                            {['Exact', '+/- 3j', 'Mois'].map(opt => (
+                                              <button
+                                                key={opt}
+                                                type="button"
+                                                onClick={() => setFlexibility(opt === 'Exact' ? 'Dates Exactes' : opt === '+/- 3j' ? '+/- 3 Jours' : 'Mois Flexible')}
+                                                className={`flex-1 px-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${
+                                                  (opt === 'Exact' && flexibility === 'Dates Exactes') ||
+                                                  (opt === '+/- 3j' && flexibility === '+/- 3 Jours') ||
+                                                  (opt === 'Mois' && flexibility === 'Mois Flexible')
+                                                    ? 'bg-[#2E2E2E] text-white shadow-sm'
+                                                    : 'bg-white text-gray-400 border border-gray-100 hover:border-gray-200'
+                                                }`}
+                                              >
+                                                {opt}
+                                              </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* ── CTA — premium gradient ── */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.5 }}
+                                className="pt-2"
+                            >
+                                <button
+                                    type="submit"
+                                    className="w-full py-4 rounded-2xl text-[12px] font-bold uppercase tracking-[0.2em] bg-gradient-to-r from-[#5a8fa3] to-[#3d7a91] text-white hover:shadow-[0_16px_50px_-8px_rgba(90,143,163,0.5)] hover:-translate-y-1 transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-3 relative group overflow-hidden cursor-pointer shadow-lg shadow-[#5a8fa3]/20"
+                                >
+                                    <Sparkles size={16} className="relative z-10" />
+                                    <span className="relative z-10">Lancer l'expert</span>
+                                    <ArrowRight size={16} className="relative z-10 group-hover:translate-x-1.5 transition-transform duration-300" />
+                                    {/* Shimmer effect */}
+                                    <motion.div
+                                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                                        animate={{ x: ['-100%', '200%'] }}
+                                        transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+                                    />
+                                </button>
+                            </motion.div>
+                        </motion.div>
+
                     </div>
                 </form>
               </motion.div>
             )}
 
 
-            {/* ═══ PROCESSING: HORIZONTAL NODE ROW — PULL/CAPSULES DESIGN ═══ */}
+            {/* ═══ PROCESSING: 5 RECTANGULAR AGENT CARDS ═══ */}
             {
               isProcessing && (
                 <motion.div
@@ -999,324 +1070,218 @@ function DashboardPage({ initialParams }: { initialParams?: Record<string, strin
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 30 }}
                   transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                  className="flex items-center justify-center relative z-20 w-full py-10 px-4 md:px-0"
+                  className="relative z-20 w-full py-6 px-2"
                 >
-                  {/* Scaling container to keep the horizontal pills intact on smaller screens */}
-                  <div className="flex items-center justify-center -space-x-5 md:-space-x-8 lg:-space-x-12 scale-[0.35] min-[400px]:scale-[0.45] min-[500px]:scale-[0.55] sm:scale-75 md:scale-90 lg:scale-100 origin-center transition-transform duration-500">
-                    {/* We render all 5 nodes in order: Transport, Accommodation, SuperAgent, Itinerary, Client */}
-                    {(['transport', 'accommodation', 'super', 'itinerary', 'client'] as const).map((nodeKey, i) => {
-                      const isSuper = nodeKey === 'super';
-                      const isInner = i === 1 || i === 3;
-                      const isOuter = i === 0 || i === 4;
+                  {/* ── Super Agent Header Card ── */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1, type: 'spring', stiffness: 300, damping: 25 }}
+                    className="mb-5"
+                  >
+                    <div className={`relative bg-white rounded-3xl border overflow-hidden transition-all duration-500 ${
+                      workflowState === 'PROPOSALS_READY' 
+                        ? 'border-emerald-200 shadow-[0_8px_40px_-8px_rgba(16,185,129,0.15)]' 
+                        : 'border-[#b9dae9]/30 shadow-[0_8px_40px_-8px_rgba(185,218,233,0.2)]'
+                    }`}>
+                      <div className="flex items-center gap-5 px-7 py-5">
+                        {/* Logo */}
+                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 ${
+                          workflowState === 'PROPOSALS_READY'
+                            ? 'bg-gradient-to-br from-emerald-50 to-emerald-100'
+                            : 'bg-gradient-to-br from-[#b9dae9]/20 to-[#a5cadc]/30'
+                        }`}>
+                          {workflowState === 'PROPOSALS_READY' ? (
+                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 15 }}>
+                              <CheckCircle2 size={32} className="text-emerald-500" />
+                            </motion.div>
+                          ) : (
+                            <LunaLogo size={40} />
+                          )}
+                        </div>
 
-                      const zIndex = isSuper ? 50 : isInner ? 40 : 30;
-                      const floatDur = isSuper ? 12 : 8 + Math.random() * 6;
+                        {/* Text */}
+                        <div className="flex-1 min-w-0">
+                          <h2 className="text-[20px] font-bold text-[#0B1220] tracking-tight">
+                            {workflowState === 'PROPOSALS_READY' ? 'Voyage Prêt' : 'Super Agent'}
+                          </h2>
+                          <p className="text-[12px] text-[#667085] font-medium mt-0.5">
+                            {workflowState === 'PROPOSALS_READY' ? 'Curation IA Validée' : 'Orchestration 2026'}
+                          </p>
+                          {/* Route summary */}
+                          <div className="flex items-center gap-1 mt-2 flex-wrap">
+                            {destinations.filter(d => d.city.trim()).map((d, i) => (
+                              <span key={d.id} className="flex items-center text-[11px] font-medium text-[#0B1220]/60">
+                                {i > 0 && <ArrowRight size={9} className="mx-1 text-[#b9dae9]" />}
+                                <MapPin size={9} className="mr-0.5 text-[#b9dae9]" />{d.city.split(',')[0]}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
 
-                      // Proportions — super agent 30% bigger for impact
-                      const styleObj = isSuper ? {
-                        width: '416px', height: '700px', borderRadius: '208px', icon: 44, title: '22px', sub: '13px'
-                      } : isInner ? {
-                        width: '250px', height: '420px', borderRadius: '125px', icon: 32, title: '16px', sub: '11px'
-                      } : {
-                        width: '190px', height: '340px', borderRadius: '95px', icon: 24, title: '13px', sub: '10px'
-                      };
-
-                      if (isSuper) {
-                        return (
-                          <motion.div
-                            key="super-agent"
-                            initial={{ opacity: 0, scale: 0.7 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.15, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                            className="relative"
-                            style={{ animation: 'superFloat 12s cubic-bezier(0.22,1,0.36,1) infinite', zIndex }}
-                          >
-                            <div
-                              className={`relative flex flex-col items-center justify-center text-center bg-white ${workflowState === 'PROPOSALS_READY' ? 'super-agent-success' : 'super-agent-glow'}`}
-                              style={{
-                                width: styleObj.width,
-                                height: styleObj.height,
-                                borderRadius: styleObj.borderRadius,
-                                border: workflowState === 'PROPOSALS_READY' ? '2px solid rgba(47,128,237,0.3)' : '1px solid rgba(47,128,237,0.1)',
-                                padding: '50px 24px',
-                                fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-                              }}
-                            >
-                              {/* Pulsing rings — only in success state */}
-                              {workflowState === 'PROPOSALS_READY' && (
-                                <>
-                                  <div className="absolute left-1/2 top-1/2 pointer-events-none" style={{
-                                    width: '108%', height: '108%',
-                                    borderRadius: styleObj.borderRadius,
-                                    border: '2px solid rgba(47,128,237,0.15)',
-                                    animation: 'successRing 3s ease-in-out infinite',
-                                  }} />
-                                  <div className="absolute left-1/2 top-1/2 pointer-events-none" style={{
-                                    width: '116%', height: '116%',
-                                    borderRadius: styleObj.borderRadius,
-                                    border: '1px solid rgba(47,128,237,0.08)',
-                                    animation: 'successRing 3s ease-in-out 0.5s infinite',
-                                  }} />
-                                </>
-                              )}
-
-                              {/* Orbital ring + orbiting particles — during processing */}
-                              {workflowState !== 'PROPOSALS_READY' && (
-                                <>
-                                  <div className="absolute left-1/2 top-1/2 pointer-events-none" style={{
-                                    width: '110%', height: '110%',
-                                    borderRadius: '50%',
-                                    border: '1.5px dashed rgba(47,128,237,0.2)',
-                                    animation: 'orbitalRing 8s linear infinite',
-                                  }} />
-                                  {/* 3 orbiting particle dots */}
-                                  {[1, 2, 3].map((n) => (
-                                    <div key={n} className="absolute left-1/2 top-1/2 pointer-events-none" style={{
-                                      width: '100%', height: '100%',
-                                      animation: `orbitParticle${n} ${5 + n * 0.5}s linear infinite`,
-                                    }}>
-                                      <div style={{
-                                        position: 'absolute', top: '50%', left: '50%',
-                                        width: `${6 + n}px`, height: `${6 + n}px`,
-                                        borderRadius: '50%',
-                                        background: n === 1 ? '#2F80ED' : n === 2 ? '#6366f1' : '#b9dae9',
-                                        boxShadow: `0 0 ${8 + n * 3}px ${3 + n}px ${n === 1 ? 'rgba(47,128,237,0.5)' : n === 2 ? 'rgba(99,102,241,0.5)' : 'rgba(185,218,233,0.5)'}`,
-                                      }} />
-                                    </div>
-                                  ))}
-                                </>
-                              )}
-
-                              {/* Pin dot at the top edge */}
-                              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-[45%] w-6 h-6 rounded-full bg-[#f0f9ff] border-4 border-white shadow-sm z-10" />
-
-                              {workflowState === 'PROPOSALS_READY' ? (
-                                <>
-                                  {/* ═══ RESULTS INLINE — Super Agent shows final results ═══ */}
-                                  {/* Celebration confetti burst */}
-                                  <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ borderRadius: styleObj.borderRadius }}>
-                                    {Array.from({ length: 12 }).map((_, idx) => (
-                                      <motion.div
-                                        key={idx}
-                                        initial={{ opacity: 0, scale: 0 }}
-                                        animate={{ opacity: [0, 1, 0], scale: [0, 1, 0.5], y: [-20, -60 - Math.random() * 40], x: [(Math.random() - 0.5) * 80, (Math.random() - 0.5) * 160] }}
-                                        transition={{ delay: idx * 0.08, duration: 1.5, ease: 'easeOut' }}
-                                        style={{
-                                          position: 'absolute',
-                                          top: '40%',
-                                          left: `${30 + Math.random() * 40}%`,
-                                          width: `${4 + Math.random() * 6}px`,
-                                          height: `${4 + Math.random() * 6}px`,
-                                          borderRadius: Math.random() > 0.5 ? '50%' : '2px',
-                                          background: ['#2F80ED', '#10b981', '#6366f1', '#f59e0b', '#ec4899', '#b9dae9'][idx % 6],
-                                        }}
-                                      />
-                                    ))}
-                                  </div>
-
-                                  <div className="flex items-center justify-center mb-4 pt-4">
-                                    <motion.div
-                                      initial={{ scale: 0 }} animate={{ scale: 1 }}
-                                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                                      className="bg-emerald-50 p-3 rounded-full border-2 border-emerald-200"
-                                    >
-                                      <CheckCircle2 size={32} className="text-emerald-600" />
-                                    </motion.div>
-                                  </div>
-
-                                  <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#0B1220', letterSpacing: '-0.02em', textTransform: 'uppercase' }}>
-                                    Voyage Prêt
-                                  </h3>
-                                  <p style={{ fontSize: '11px', fontWeight: 600, color: '#667085', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                    Curation IA Validée
-                                  </p>
-
-                                  {/* Route summary */}
-                                  <div className="flex items-center justify-center gap-1 mt-4 flex-wrap px-4">
-                                    {destinations.filter(d => d.city.trim()).map((d, i) => (
-                                      <span key={d.id} className="flex items-center text-xs font-medium text-luna-charcoal">
-                                        {i > 0 && <ArrowRight size={10} className="mx-1 text-[#b9dae9]" />}
-                                        <MapPin size={10} className="mr-0.5 text-[#b9dae9]" />{d.city.split(',')[0]}
-                                      </span>
-                                    ))}
-                                  </div>
-
-                                  {/* Mini result cards */}
-                                  <div className="grid grid-cols-2 gap-2 mt-6 px-4 w-full">
-                                    {[
-                                      { icon: '✈️', label: 'Vol', value: agentResults?.transport?.flights?.[0]?.airline || 'Vol trouvé', sub: agentResults?.transport?.flights?.[0]?.price || '' },
-                                      { icon: '🏨', label: 'Hôtel', value: agentResults?.accommodation?.hotels?.[0]?.name?.substring(0, 15) || 'Hôtel trouvé', sub: agentResults?.accommodation?.hotels?.[0]?.pricePerNight || '' },
-                                      { icon: '📅', label: 'Planning', value: `${agentResults?.itinerary?.days?.length || '?'} jours`, sub: 'Optimisé' },
-                                      { icon: '👤', label: 'Profil', value: agentResults?.client?.profile?.segment || 'Analysé', sub: 'IA' },
-                                    ].map((item, idx) => (
-                                      <motion.div key={idx}
-                                        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.2 + idx * 0.1 }}
-                                        className="bg-gray-50/80 rounded-xl p-2.5 border border-gray-100 text-center"
-                                      >
-                                        <span className="text-lg">{item.icon}</span>
-                                        <p className="text-[11px] font-semibold text-gray-800 mt-1 truncate">{item.value}</p>
-                                        <p className="text-[10px] text-gray-400">{item.sub}</p>
-                                      </motion.div>
-                                    ))}
-                                  </div>
-
-                                  {/* Action buttons */}
-                                  <div className="flex flex-col gap-2 mt-6 px-6 w-full">
-                                    <button onClick={handleExportToCRM} disabled={isExporting}
-                                      className="w-full py-3 bg-luna-charcoal hover:bg-[#1a1a1a] text-white font-medium text-sm tracking-wider uppercase rounded-2xl transition-all flex justify-center items-center gap-2 shadow-lg disabled:opacity-70">
-                                      {isExporting ? 'Exportation...' : 'Exporter vers CRM'} <Send size={14} />
-                                    </button>
-                                    <button onClick={resetWorkflow}
-                                      className="w-full py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 font-medium text-xs rounded-2xl transition-all">
-                                      Nouveau Voyage
-                                    </button>
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  {/* ═══ PROCESSING STATE — Normal Super Agent ═══ */}
-                                  <div className="flex items-center justify-center mb-6 pt-4">
-                                    <LunaLogo size={64} />
-                                  </div>
-
-                                  <h3 style={{ fontSize: styleObj.title, fontWeight: 700, color: '#0B1220', letterSpacing: '-0.02em', lineHeight: 1.2, textTransform: 'uppercase' }}>
-                                    Super Agent
-                                  </h3>
-                                  <p style={{ fontSize: styleObj.sub, fontWeight: 600, color: '#667085', marginTop: '6px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                                    Orchestration 2026
-                                  </p>
-
-                                  <div className="flex items-center gap-2 mt-10 bg-[#b9dae9]/10 px-4 py-2 rounded-full border border-[#b9dae9]/20">
-                                    <span className="relative flex h-2.5 w-2.5">
-                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-50 bg-[#b9dae9]" />
-                                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#b9dae9]" />
-                                    </span>
-                                    <span style={{ fontSize: '13px', fontWeight: 500, color: '#0B1220' }}>
-                                      {workflowState === 'ANALYSING' && 'Analyse en cours…'}
-                                      {workflowState === 'DISTRIBUTING' && 'Distribution en cours…'}
-                                      {workflowState === 'AGENTS_WORKING' && 'Recherche parallèle…'}
-                                      {workflowState === 'VALIDATION' && `${validatedAgents.length}/4 agents validés`}
-                                      {workflowState === 'GENERATING_PROPOSALS' && 'Finalisation du devis…'}
-                                    </span>
-                                  </div>
-
-                                  {/* Magic Progress bar */}
-                                  <div style={{ width: '60%', height: '4px', background: '#F2F4F7', borderRadius: '2px', marginTop: '24px', overflow: 'hidden' }}>
-                                    <div style={{
-                                      width: workflowState === 'VALIDATION' ? '100%' : workflowState === 'AGENTS_WORKING' ? '60%' : '30%',
-                                      height: '100%', borderRadius: '2px', background: '#2F80ED',
-                                      transition: 'width 1s ease',
-                                    }} />
-                                  </div>
-
-                                  <div className="flex items-center gap-2 mt-6">
-                                    <span style={{ fontSize: '12px', fontWeight: 600, color: '#2F80ED', background: 'rgba(47,128,237,0.08)', padding: '4px 12px', borderRadius: '14px' }}>
-                                      4 Agents
-                                    </span>
-                                  </div>
-                                </>
-                              )}
+                        {/* Status / Progress */}
+                        <div className="flex flex-col items-end gap-2 shrink-0">
+                          {workflowState !== 'PROPOSALS_READY' && (
+                            <>
+                              <div className="flex items-center gap-2 bg-[#b9dae9]/10 px-3.5 py-1.5 rounded-full border border-[#b9dae9]/20">
+                                <span className="relative flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-50 bg-[#b9dae9]" />
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#b9dae9]" />
+                                </span>
+                                <span className="text-[11px] font-semibold text-[#0B1220]">
+                                  {workflowState === 'ANALYSING' && 'Analyse…'}
+                                  {workflowState === 'DISTRIBUTING' && 'Distribution…'}
+                                  {workflowState === 'AGENTS_WORKING' && 'Recherche…'}
+                                  {workflowState === 'VALIDATION' && `${validatedAgents.length}/4`}
+                                  {workflowState === 'GENERATING_PROPOSALS' && 'Finalisation…'}
+                                </span>
+                              </div>
+                              {/* Mini progress bar */}
+                              <div className="w-24 h-1.5 bg-[#F2F4F7] rounded-full overflow-hidden">
+                                <motion.div
+                                  className="h-full rounded-full bg-[#b9dae9]"
+                                  animate={{
+                                    width: workflowState === 'VALIDATION' ? '100%' : workflowState === 'AGENTS_WORKING' ? '60%' : workflowState === 'GENERATING_PROPOSALS' ? '90%' : '30%'
+                                  }}
+                                  transition={{ duration: 1, ease: 'easeOut' }}
+                                />
+                              </div>
+                            </>
+                          )}
+                          {workflowState === 'PROPOSALS_READY' && (
+                            <div className="flex gap-2">
+                              <button onClick={handleExportToCRM} disabled={isExporting}
+                                className="px-5 py-2.5 bg-[#0B1220] hover:bg-[#1a2535] text-white font-semibold text-[11px] tracking-wider uppercase rounded-2xl transition-all flex items-center gap-2 shadow-lg disabled:opacity-70">
+                                {isExporting ? 'Export…' : 'Exporter CRM'} <Send size={13} />
+                              </button>
+                              <button onClick={resetWorkflow}
+                                className="px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-500 font-semibold text-[11px] rounded-2xl transition-all">
+                                Nouveau
+                              </button>
                             </div>
-                          </motion.div>
-                        );
-                      }
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
 
-                      // ── SATELLITE AGENT ──
-                      const agentKey = nodeKey as AgentKey;
+                  {/* ── 4 Agent Cards Grid ── */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {(['transport', 'accommodation', 'itinerary', 'client'] as AgentKey[]).map((agentKey, idx) => {
                       const meta = agentMeta[agentKey];
                       const Icon = meta.icon;
                       const isActive = activeAgents.includes(agentKey);
                       const isValidated = validatedAgents.includes(agentKey);
-                      const canValidate = workflowState === 'VALIDATION' && !isValidated && agentResults;
                       const isReady = workflowState === 'PROPOSALS_READY' || workflowState === 'GENERATING_PROPOSALS';
                       const canInspect = isReady && agentResults;
+
+                      // Mini result preview data
+                      const resultPreview = agentResults ? {
+                        transport: { value: agentResults?.transport?.flights?.[0]?.airline || 'Vol trouvé', sub: agentResults?.transport?.flights?.[0]?.price || '', emoji: '✈️' },
+                        accommodation: { value: agentResults?.accommodation?.hotels?.[0]?.name?.substring(0, 20) || 'Hôtel trouvé', sub: agentResults?.accommodation?.hotels?.[0]?.pricePerNight || '', emoji: '🏨' },
+                        itinerary: { value: `${agentResults?.itinerary?.days?.length || '?'} jours`, sub: 'Planning optimisé', emoji: '📅' },
+                        client: { value: agentResults?.client?.profile?.segment || 'Analysé', sub: 'Profil IA', emoji: '👤' },
+                      }[agentKey] : null;
 
                       return (
                         <motion.div
                           key={agentKey}
-                          initial={{ opacity: 0, scale: 0.6, y: 20 }}
-                          animate={{
-                            opacity: isReady ? 0.85 : isActive ? 1 : 0.4,
-                            scale: isReady ? 0.7 : isActive ? 1 : 0.95,
-                            y: 0,
-                          }}
-                          transition={isReady
-                            ? { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
-                            : { delay: 0.3 + i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }
-                          }
-                          className={`relative ${(canValidate || canInspect) ? 'cursor-pointer' : ''}`}
-                          onClick={() => (canValidate || canInspect) && setSelectedAgent(agentKey)}
-                          style={{ animation: isActive && !isValidated && !isReady ? `agentFloat ${floatDur}s cubic-bezier(0.22,1,0.36,1) infinite` : undefined, zIndex }}
+                          initial={{ opacity: 0, y: 25, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ delay: 0.2 + idx * 0.1, type: 'spring', stiffness: 280, damping: 22 }}
+                          whileHover={canInspect ? { y: -4, scale: 1.02 } : {}}
+                          onClick={() => canInspect && setSelectedAgent(agentKey)}
+                          className={`relative group ${canInspect ? 'cursor-pointer' : ''}`}
                         >
-                          <div
-                            className={`relative flex flex-col items-center justify-center text-center transition-all duration-300 bg-white ${isActive && !isValidated ? 'agent-active-glow' : ''} ${isValidated ? 'agent-validated-glow' : ''} ${canInspect ? 'hover:shadow-xl hover:scale-105' : ''}`}
-                            style={{
-                              width: styleObj.width,
-                              height: styleObj.height,
-                              borderRadius: styleObj.borderRadius,
-                              border: canInspect ? '1px solid rgba(47,128,237,0.25)' : isValidated ? '1px solid rgba(16,185,129,0.3)' : isActive ? '1px solid rgba(47,128,237,0.15)' : '1px solid rgba(0,0,0,0.03)',
-                              boxShadow: isValidated
-                                ? '0 0 0 4px rgba(16,185,129,0.05), 0 20px 40px -10px rgba(16,185,129,0.1)'
-                                : '0 20px 40px -10px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.02)',
-                              padding: isInner ? '40px 16px' : '30px 12px',
-                              fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-                              transform: canValidate ? 'scale(1.02)' : 'scale(1)',
-                            }}
-                          >
-                            {/* Pin dot at the top edge */}
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-[45%] w-5 h-5 rounded-full bg-[#f8fafc] border-[3px] border-white shadow-sm z-10" />
+                          <div className={`relative bg-white rounded-3xl border p-5 flex flex-col min-h-[200px] transition-all duration-300 ${
+                            isValidated
+                              ? 'border-emerald-200 shadow-[0_8px_30px_-8px_rgba(16,185,129,0.12)]'
+                              : isActive
+                                ? 'border-[#b9dae9]/40 shadow-[0_8px_30px_-8px_rgba(185,218,233,0.2)]'
+                                : 'border-gray-100 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.04)]'
+                          } ${canInspect ? 'hover:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.1)] hover:border-[#b9dae9]/50' : ''}`}>
 
-                            {/* Status badge */}
-                            <div className="absolute top-8 left-1/2 -translate-x-1/2 z-10 h-6">
-                              {isValidated ? (
-                                <div className="relative">
-                                  {/* Shockwave ring */}
-                                  <div className="absolute inset-0 w-8 h-8 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 rounded-full border-2 border-emerald-400 agent-shockwave" />
-                                  {/* Bouncing check */}
-                                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 15 }} className="rounded-full bg-emerald-50 text-emerald-500 p-0.5 shadow-sm check-bounce">
-                                    <CheckCircle2 size={isInner ? 18 : 14} />
+                            {/* Top Row: Icon + Status */}
+                            <div className="flex items-start justify-between mb-4">
+                              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${
+                                isValidated
+                                  ? 'bg-emerald-50'
+                                  : isActive
+                                    ? 'bg-[#b9dae9]/15'
+                                    : 'bg-gray-50'
+                              }`}>
+                                <Icon size={22} strokeWidth={1.5} className={`transition-colors duration-500 ${
+                                  isValidated ? 'text-emerald-500' : isActive ? 'text-[#5a8fa3]' : 'text-gray-300'
+                                }`} />
+                              </div>
+
+                              <div className="h-6 flex items-center">
+                                {isValidated ? (
+                                  <motion.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                                    className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200"
+                                  >
+                                    <CheckCircle2 size={12} className="text-emerald-500" />
+                                    <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider">Prêt</span>
                                   </motion.div>
-                                </div>
-                              ) : canValidate ? (
-                                <div className="w-3 h-3 rounded-full animate-pulse bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.5)] mt-1" />
-                              ) : isActive ? (
-                                <Loader2 size={14} className="animate-spin text-slate-400 mt-1" />
-                              ) : null}
+                                ) : isActive ? (
+                                  <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#b9dae9]/10 border border-[#b9dae9]/20">
+                                    <Loader2 size={10} className="animate-spin text-[#5a8fa3]" />
+                                    <span className="text-[9px] font-bold text-[#5a8fa3] uppercase tracking-wider">En cours</span>
+                                  </div>
+                                ) : (
+                                  <div className="w-2 h-2 rounded-full bg-gray-200" />
+                                )}
+                              </div>
                             </div>
 
-                            {/* Icon */}
-                            <div className="flex items-center justify-center flex-shrink-0 mb-4 mt-12">
-                              <Icon size={styleObj.icon} strokeWidth={1.5} style={{ color: isValidated ? '#10b981' : '#2F80ED' }} />
-                            </div>
+                            {/* Title + Subtitle */}
+                            <h3 className={`text-[15px] font-bold tracking-tight transition-colors duration-300 ${
+                              isActive || isValidated ? 'text-[#0B1220]' : 'text-gray-400'
+                            }`}>{meta.title}</h3>
+                            <p className={`text-[10px] font-semibold uppercase tracking-wider mt-0.5 transition-colors duration-300 ${
+                              isActive || isValidated ? 'text-[#667085]' : 'text-gray-300'
+                            }`}>{meta.subtitle}</p>
 
-                            <h3 style={{ fontSize: styleObj.title, fontWeight: 700, color: '#0B1220', letterSpacing: '-0.02em', lineHeight: 1.3, textTransform: 'uppercase' }}>
-                              {meta.title}
-                            </h3>
-                            <p style={{ fontSize: styleObj.sub, fontWeight: 600, color: '#667085', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                              {meta.subtitle}
-                            </p>
+                            {/* Description */}
+                            <p className={`text-[11px] leading-relaxed mt-2 transition-colors duration-300 line-clamp-2 ${
+                              isActive || isValidated ? 'text-[#667085]/80' : 'text-gray-300'
+                            }`}>{meta.desc}</p>
 
-                            {!isOuter && (
-                              <p style={{ fontSize: '13px', color: '#667085', opacity: 0.7, marginTop: '16px', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden', padding: '0 8px' }}>
-                                {meta.desc}
-                              </p>
-                            )}
+                            {/* Result Preview (animated stagger) */}
+                            <div className="mt-auto pt-3">
+                              <AnimatePresence>
+                                {isValidated && resultPreview && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    transition={{ delay: 0.15 + idx * 0.08, type: 'spring', stiffness: 300, damping: 22 }}
+                                    className="bg-gray-50/80 rounded-2xl p-3 border border-gray-100"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-base">{resultPreview.emoji}</span>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="text-[12px] font-semibold text-[#0B1220] truncate">{resultPreview.value}</p>
+                                        <p className="text-[10px] text-gray-400">{resultPreview.sub}</p>
+                                      </div>
+                                      {canInspect && (
+                                        <ArrowRight size={14} className="text-gray-300 group-hover:text-[#5a8fa3] transition-colors shrink-0" />
+                                      )}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
 
-                            {/* Progress animation — shimmer bar when active */}
-                            <div className="mt-auto mb-4 w-full flex justify-center">
+                              {/* Progress bar when active */}
                               {isActive && !isValidated && (
-                                <div style={{ width: '50%', height: '3px', background: '#F2F4F7', borderRadius: '2px', overflow: 'hidden' }}>
-                                  <div style={{
-                                    width: '40%', height: '100%', borderRadius: '2px',
-                                    background: 'linear-gradient(90deg, rgba(47,128,237,0.3), rgba(47,128,237,0.7), rgba(47,128,237,0.3))',
+                                <div className="w-full h-1.5 bg-[#F2F4F7] rounded-full overflow-hidden">
+                                  <div className="h-full rounded-full" style={{
+                                    width: '40%',
+                                    background: 'linear-gradient(90deg, rgba(90,143,163,0.3), rgba(90,143,163,0.7), rgba(90,143,163,0.3))',
                                     animation: 'shimmerProgress 1.5s ease-in-out infinite',
                                   }} />
-                                </div>
-                              )}
-                              {isValidated && (
-                                <div style={{ width: '50%', height: '3px', background: '#ECFDF5', borderRadius: '2px', overflow: 'hidden' }}>
-                                  <div style={{ width: '100%', height: '100%', borderRadius: '2px', background: '#10b981' }} />
                                 </div>
                               )}
                             </div>

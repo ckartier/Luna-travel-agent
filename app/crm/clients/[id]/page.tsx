@@ -8,6 +8,7 @@ import { useAuth } from '@/src/contexts/AuthContext';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Link from 'next/link';
+import { T } from '@/src/components/T';
 
 export default function ClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
     const { id: clientId } = use(params);
@@ -116,7 +117,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
     return (
         <div className="w-full">
             <button onClick={() => router.back()} className="text-sm text-[#6B7280] mt-1 font-medium">
-                <ArrowLeft size={16} /> Retour
+                <ArrowLeft size={16} /> <T>Retour</T>
             </button>
 
             {/* Top Profile Header */}
@@ -308,7 +309,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                     <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
                         <h3 className="font-medium text-luna-charcoal mb-5 flex items-center gap-2 text-base">
                             <Star size={18} className="text-amber-500" />
-                            Préférences Strictes
+                            <T>Préférences Strictes</T>
                         </h3>
 
                         <div className="space-y-5">
@@ -340,7 +341,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                                         </span>
                                     ))
                                 ) : (
-                                    <span className="text-sm text-[#6B7280] mt-1 font-medium">Aucun tag</span>
+                                    <span className="text-sm text-[#6B7280] mt-1 font-medium"><T>Aucun tag</T></span>
                                 )}
                             </div>
                         </div>
@@ -456,7 +457,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
 
                         <div className="space-y-3">
                             {leads.length === 0 ? (
-                                <p className="text-sm text-[#6B7280] mt-1 font-medium">Aucune opportunité active.</p>
+                                <p className="text-sm text-[#6B7280] mt-1 font-medium"><T>Aucune opportunité active.</T></p>
                             ) : leads.map(lead => (
                                 <Link href="/crm/pipeline" key={lead.id} className="flex items-center justify-between p-4 bg-gray-50 hover:bg-sky-50 transition-colors border border-gray-100 rounded-xl group">
                                     <div className="flex gap-4 items-center">

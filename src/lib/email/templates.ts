@@ -1039,3 +1039,881 @@ export function generatePaymentReminderEmail(data: PaymentReminderEmailData): st
     return lunaWrapper(data, content);
 }
 
+
+// ═══════════════════════════════════════════════════════════════════════
+//  LEGAL EMAIL TEMPLATE SYSTEM — Navy + Gold accents, Serif headings
+// ═══════════════════════════════════════════════════════════════════════
+
+interface LegalEmailConfig {
+    firmName?: string;
+    logoUrl?: string;
+    accentColor?: string;
+}
+
+const LEGAL_DEFAULTS: Required<LegalEmailConfig> = {
+    firmName: 'Votre Cabinet',
+    logoUrl: '/luna-logo-noir.png',
+    accentColor: '#A07850',
+};
+
+function legalWrapper(cfg: LegalEmailConfig, content: string): string {
+    const c = { ...LEGAL_DEFAULTS, ...cfg };
+    const year = new Date().getFullYear();
+
+    return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#F0F2F5;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F0F2F5;padding:40px 20px;">
+<tr><td align="center">
+
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+
+    <!-- Logo Header -->
+    <tr>
+        <td style="padding:32px 48px 20px 48px;border-bottom:2px solid #1e293b;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td>
+                        <img src="${c.logoUrl}" alt="${c.firmName}" width="120" height="36" style="display:block;height:36px;width:auto;" />
+                    </td>
+                    <td align="right" style="vertical-align:middle;">
+                        <span style="font-size:9px;color:#64748b;letter-spacing:2.5px;text-transform:uppercase;font-weight:600;">Cabinet d'Avocats</span>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    ${content}
+
+    <!-- Footer -->
+    <tr>
+        <td style="padding:28px 48px;border-top:2px solid #1e293b;text-align:center;background-color:#F8FAFC;">
+            <img src="${c.logoUrl}" alt="${c.firmName}" width="60" height="18" style="display:inline-block;height:16px;width:auto;opacity:0.25;margin-bottom:10px;" />
+            <p style="margin:0 0 4px 0;font-size:11px;color:#1e293b;font-weight:500;">${c.firmName}</p>
+            <p style="margin:0;font-size:9px;color:rgba(100,116,139,0.6);letter-spacing:1.5px;">
+                © ${year} · Ce message est confidentiel et destiné exclusivement à son destinataire.
+            </p>
+        </td>
+    </tr>
+
+</table>
+
+</td></tr>
+</table>
+
+</body>
+</html>`;
+}
+
+function legalButton(text: string, url: string, color: string = '#1e293b'): string {
+    return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+    <tr>
+        <td style="background-color:${color};border-radius:10px;padding:13px 32px;">
+            <a href="${url}" target="_blank" style="color:#FFFFFF;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-decoration:none;display:inline-block;">${text}</a>
+        </td>
+    </tr>
+</table>`;
+}
+
+// ─────────────────────────────────────────────────
+// LEGAL 1. DOSSIER NOTIFICATION — Ouverture / Mise à jour
+// ─────────────────────────────────────────────────
+export interface LegalDossierEmailData extends LegalEmailConfig {
+    clientName: string;
+    caseNumber: string;
+    title: string;
+    type: string;
+    status: string;
+    jurisdiction?: string;
+    opposingParty?: string;
+    nextStep?: string;
+    dossierUrl?: string;
+}
+
+export function generateLegalDossierEmail(data: LegalDossierEmailData): string {
+    const firstName = data.clientName.split(' ')[0] || data.clientName;
+    const accent = data.accentColor || LEGAL_DEFAULTS.accentColor;
+
+    const content = `
+    <tr>
+        <td style="padding:0;height:4px;background:linear-gradient(90deg, #1e293b, ${accent}, #1e293b);"></td>
+    </tr>
+
+    <tr>
+        <td style="padding:40px 48px 0 48px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr>
+                    <td style="background-color:#EFF6FF;border-radius:30px;padding:6px 18px;">
+                        <span style="font-size:9px;color:#1e40af;letter-spacing:2px;text-transform:uppercase;font-weight:700;">⚖️ Dossier N° ${data.caseNumber}</span>
+                    </td>
+                </tr>
+            </table>
+            <h1 style="margin:0 0 20px 0;font-size:26px;font-weight:300;color:#1e293b;letter-spacing:-0.5px;line-height:1.3;">
+                Bonjour ${firstName},
+            </h1>
+            <p style="margin:0 0 24px 0;font-size:14px;color:#475569;line-height:1.7;">
+                Nous vous informons de la mise à jour de votre dossier <strong style="color:#1e293b;">${data.title}</strong>.
+            </p>
+        </td>
+    </tr>
+
+    <!-- Dossier Summary -->
+    <tr>
+        <td style="padding:0 48px 24px 48px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8FAFC;border-radius:14px;border:1px solid #E2E8F0;padding:20px 24px;">
+                <tr><td style="padding:0 0 12px 0;font-size:9px;color:#64748b;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Récapitulatif du dossier</td></tr>
+                <tr>
+                    <td style="padding:8px 0;border-bottom:1px solid #F1F5F9;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td style="font-size:12px;color:#64748b;width:120px;">Type</td>
+                                <td style="font-size:13px;color:#1e293b;font-weight:600;">${data.type}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:8px 0;border-bottom:1px solid #F1F5F9;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td style="font-size:12px;color:#64748b;width:120px;">Statut</td>
+                                <td style="font-size:13px;color:#1e293b;font-weight:600;">${data.status}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                ${data.jurisdiction ? `
+                <tr>
+                    <td style="padding:8px 0;border-bottom:1px solid #F1F5F9;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td style="font-size:12px;color:#64748b;width:120px;">Juridiction</td>
+                                <td style="font-size:13px;color:#1e293b;font-weight:600;">${data.jurisdiction}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                ` : ''}
+                ${data.opposingParty ? `
+                <tr>
+                    <td style="padding:8px 0;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td style="font-size:12px;color:#64748b;width:120px;">Partie adverse</td>
+                                <td style="font-size:13px;color:#1e293b;font-weight:600;">${data.opposingParty}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                ` : ''}
+            </table>
+        </td>
+    </tr>
+
+    ${data.nextStep ? `
+    <tr>
+        <td style="padding:0 48px 24px 48px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FFFBEB;border-radius:12px;border:1px solid #FDE68A;padding:16px 24px;">
+                <tr>
+                    <td>
+                        <p style="margin:0 0 4px 0;font-size:9px;color:#92400e;letter-spacing:2px;text-transform:uppercase;font-weight:700;">📌 Prochaine étape</p>
+                        <p style="margin:0;font-size:13px;color:#78350f;line-height:1.6;">${data.nextStep}</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    ` : ''}
+
+    ${data.dossierUrl ? `
+    <tr>
+        <td style="padding:8px 48px 40px 48px;text-align:center;">
+            ${legalButton('Consulter Mon Dossier', data.dossierUrl)}
+        </td>
+    </tr>
+    ` : ''}
+
+    <tr>
+        <td style="padding:0 48px 32px 48px;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.7;text-align:center;">
+                N'hésitez pas à nous contacter pour toute question relative à votre dossier.
+            </p>
+        </td>
+    </tr>`;
+
+    return legalWrapper(data, content);
+}
+
+// ─────────────────────────────────────────────────
+// LEGAL 2. HEARING EMAIL — Convocation / Rappel audience
+// ─────────────────────────────────────────────────
+export interface LegalHearingEmailData extends LegalEmailConfig {
+    clientName: string;
+    caseNumber: string;
+    dossierTitle: string;
+    hearingDate: string;
+    hearingTime?: string;
+    tribunal: string;
+    hearingType: string;
+    address?: string;
+    notes?: string;
+}
+
+export function generateLegalHearingEmail(data: LegalHearingEmailData): string {
+    const firstName = data.clientName.split(' ')[0] || data.clientName;
+    const accent = data.accentColor || LEGAL_DEFAULTS.accentColor;
+
+    const content = `
+    <tr>
+        <td style="padding:0;height:4px;background:linear-gradient(90deg, #d97706, ${accent}, #d97706);"></td>
+    </tr>
+
+    <tr>
+        <td style="padding:40px 48px 0 48px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr>
+                    <td style="background-color:#FFFBEB;border-radius:30px;padding:6px 18px;">
+                        <span style="font-size:9px;color:#92400e;letter-spacing:2px;text-transform:uppercase;font-weight:700;">🏛 Convocation — Audience</span>
+                    </td>
+                </tr>
+            </table>
+            <h1 style="margin:0 0 20px 0;font-size:26px;font-weight:300;color:#1e293b;letter-spacing:-0.5px;">
+                Bonjour ${firstName},
+            </h1>
+            <p style="margin:0 0 24px 0;font-size:14px;color:#475569;line-height:1.7;">
+                Nous vous informons qu'une audience est fixée pour votre dossier <strong style="color:#1e293b;">${data.dossierTitle}</strong> (N° ${data.caseNumber}).
+            </p>
+        </td>
+    </tr>
+
+    <!-- Hearing Details Card -->
+    <tr>
+        <td style="padding:0 48px 24px 48px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#1e293b;border-radius:16px;overflow:hidden;">
+                <tr>
+                    <td style="padding:28px 32px;text-align:center;">
+                        <p style="margin:0 0 4px 0;font-size:9px;color:rgba(255,255,255,0.4);letter-spacing:3px;text-transform:uppercase;font-weight:700;">Date de l'audience</p>
+                        <p style="margin:0 0 8px 0;font-size:28px;color:#FFFFFF;font-weight:300;letter-spacing:-1px;">${data.hearingDate}</p>
+                        ${data.hearingTime ? `<p style="margin:0;font-size:16px;color:${accent};font-weight:500;">${data.hearingTime}</p>` : ''}
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    <tr>
+        <td style="padding:0 48px 24px 48px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8FAFC;border-radius:14px;border:1px solid #E2E8F0;padding:20px 24px;">
+                <tr>
+                    <td style="padding:8px 0;border-bottom:1px solid #F1F5F9;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td style="font-size:12px;color:#64748b;width:120px;">Type</td>
+                                <td style="font-size:13px;color:#1e293b;font-weight:600;">${data.hearingType}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:8px 0;border-bottom:1px solid #F1F5F9;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td style="font-size:12px;color:#64748b;width:120px;">Tribunal</td>
+                                <td style="font-size:13px;color:#1e293b;font-weight:600;">${data.tribunal}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                ${data.address ? `
+                <tr>
+                    <td style="padding:8px 0;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td style="font-size:12px;color:#64748b;width:120px;">Adresse</td>
+                                <td style="font-size:13px;color:#1e293b;font-weight:500;">${data.address}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                ` : ''}
+            </table>
+        </td>
+    </tr>
+
+    ${data.notes ? `
+    <tr>
+        <td style="padding:0 48px 24px 48px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#EFF6FF;border-radius:12px;border:1px solid #BFDBFE;padding:16px 24px;">
+                <tr>
+                    <td>
+                        <p style="margin:0 0 4px 0;font-size:9px;color:#1e40af;letter-spacing:2px;text-transform:uppercase;font-weight:700;">📋 Notes importantes</p>
+                        <p style="margin:0;font-size:13px;color:#1e3a5f;line-height:1.6;">${data.notes}</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    ` : ''}
+
+    <tr>
+        <td style="padding:0 48px 32px 48px;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.7;text-align:center;">
+                Votre présence est requise. En cas d'impossibilité, veuillez nous contacter au plus vite pour que nous puissions prendre les dispositions nécessaires.
+            </p>
+        </td>
+    </tr>`;
+
+    return legalWrapper(data, content);
+}
+
+// ─────────────────────────────────────────────────
+// LEGAL 3. FEE INVOICE — Facture d'honoraires
+// ─────────────────────────────────────────────────
+export interface LegalFeeInvoiceEmailData extends LegalEmailConfig {
+    clientName: string;
+    invoiceNumber: string;
+    caseNumber: string;
+    dossierTitle: string;
+    totalAmount: number;
+    amountPaid?: number;
+    dueDate?: string;
+    invoiceUrl: string;
+    items?: { description: string; hours?: number; rate?: number; total: number }[];
+    feeType?: string;
+}
+
+export function generateLegalFeeInvoiceEmail(data: LegalFeeInvoiceEmailData): string {
+    const firstName = data.clientName.split(' ')[0] || data.clientName;
+    const remaining = data.totalAmount - (data.amountPaid || 0);
+
+    const itemsHtml = (data.items || []).map(it => `
+        <tr>
+            <td style="padding:8px 0;font-size:13px;color:#1e293b;border-bottom:1px solid #F1F5F9;">${it.description}</td>
+            ${it.hours ? `<td style="padding:8px 8px;font-size:12px;color:#64748b;text-align:center;border-bottom:1px solid #F1F5F9;">${it.hours}h</td>` : ''}
+            <td style="padding:8px 0;font-size:13px;color:#1e293b;text-align:right;font-weight:600;border-bottom:1px solid #F1F5F9;">${it.total.toLocaleString('fr-FR')} €</td>
+        </tr>
+    `).join('');
+
+    const content = `
+    <tr>
+        <td style="padding:0;height:4px;background:linear-gradient(90deg, #059669, ${data.accentColor || LEGAL_DEFAULTS.accentColor}, #059669);"></td>
+    </tr>
+
+    <tr>
+        <td style="padding:40px 48px 0 48px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr>
+                    <td style="background-color:#ecfdf5;border-radius:30px;padding:6px 18px;">
+                        <span style="font-size:9px;color:#059669;letter-spacing:2px;text-transform:uppercase;font-weight:700;">🧾 Note d'Honoraires N° ${data.invoiceNumber}</span>
+                    </td>
+                </tr>
+            </table>
+            <h1 style="margin:0 0 20px 0;font-size:26px;font-weight:300;color:#1e293b;letter-spacing:-0.5px;">
+                Bonjour ${firstName},
+            </h1>
+            <p style="margin:0 0 24px 0;font-size:14px;color:#475569;line-height:1.7;">
+                Veuillez trouver ci-joint votre note d'honoraires relative au dossier <strong style="color:#1e293b;">${data.dossierTitle}</strong> (N° ${data.caseNumber}).
+                ${data.feeType ? `<br/><span style="font-size:12px;color:#64748b;">Type : ${data.feeType}</span>` : ''}
+            </p>
+        </td>
+    </tr>
+
+    ${data.items && data.items.length > 0 ? `
+    <tr>
+        <td style="padding:0 48px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8FAFC;border-radius:14px;border:1px solid #E2E8F0;padding:20px 24px;margin-bottom:20px;">
+                <tr><td ${data.items[0]?.hours ? 'colspan="3"' : 'colspan="2"'} style="padding:0 0 12px 0;font-size:9px;color:#64748b;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Détail des honoraires</td></tr>
+                ${itemsHtml}
+                <tr>
+                    <td style="padding:14px 0 0 0;font-size:14px;color:#1e293b;font-weight:600;">Total HT</td>
+                    ${data.items[0]?.hours ? '<td></td>' : ''}
+                    <td style="padding:14px 0 0 0;font-size:18px;color:#1e293b;text-align:right;font-weight:700;">${data.totalAmount.toLocaleString('fr-FR')} €</td>
+                </tr>
+                ${(data.amountPaid || 0) > 0 ? `
+                <tr>
+                    <td style="padding:6px 0 0 0;font-size:13px;color:#059669;">Déjà réglé</td>
+                    ${data.items[0]?.hours ? '<td></td>' : ''}
+                    <td style="padding:6px 0 0 0;font-size:13px;color:#059669;text-align:right;font-weight:600;">-${(data.amountPaid || 0).toLocaleString('fr-FR')} €</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 0 0 0;font-size:15px;color:#1e293b;font-weight:700;">Reste à payer</td>
+                    ${data.items[0]?.hours ? '<td></td>' : ''}
+                    <td style="padding:6px 0 0 0;font-size:18px;color:#1e293b;text-align:right;font-weight:700;">${remaining.toLocaleString('fr-FR')} €</td>
+                </tr>
+                ` : ''}
+            </table>
+        </td>
+    </tr>
+    ` : `
+    <tr>
+        <td style="padding:0 48px 20px 48px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#1e293b;border-radius:14px;">
+                <tr>
+                    <td style="padding:24px 28px;">
+                        <p style="margin:0 0 4px 0;font-size:9px;color:rgba(255,255,255,0.4);letter-spacing:2px;text-transform:uppercase;font-weight:700;">Montant des honoraires</p>
+                        <p style="margin:0;font-size:28px;color:#FFFFFF;font-weight:300;">${data.totalAmount.toLocaleString('fr-FR')} €</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    `}
+
+    ${data.dueDate ? `
+    <tr>
+        <td style="padding:0 48px 8px 48px;">
+            <p style="margin:0;font-size:11px;color:#64748b;text-align:center;">📅 Échéance : <strong>${data.dueDate}</strong></p>
+        </td>
+    </tr>
+    ` : ''}
+
+    <tr>
+        <td style="padding:20px 48px 40px 48px;text-align:center;">
+            ${legalButton('Voir Ma Note d\'Honoraires', data.invoiceUrl, '#059669')}
+        </td>
+    </tr>
+
+    <tr>
+        <td style="padding:0 48px 32px 48px;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.7;text-align:center;">
+                Si vous avez déjà effectué le règlement, vous pouvez ignorer ce message. Pour toute question, n'hésitez pas à nous contacter.
+            </p>
+        </td>
+    </tr>`;
+
+    return legalWrapper(data, content);
+}
+
+// ─────────────────────────────────────────────────
+// LEGAL 4. MISE EN DEMEURE — Formal demand letter
+// ─────────────────────────────────────────────────
+export interface LegalMiseEnDemeureEmailData extends LegalEmailConfig {
+    clientName: string;
+    recipientName: string;
+    caseNumber: string;
+    dossierTitle: string;
+    amount?: number;
+    obligation: string;
+    deadline: string;
+    consequences?: string;
+}
+
+export function generateLegalMiseEnDemeureEmail(data: LegalMiseEnDemeureEmailData): string {
+    const accent = data.accentColor || LEGAL_DEFAULTS.accentColor;
+
+    const content = `
+    <tr>
+        <td style="padding:0;height:4px;background:linear-gradient(90deg, #dc2626, ${accent}, #dc2626);"></td>
+    </tr>
+
+    <tr>
+        <td style="padding:40px 48px 0 48px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr>
+                    <td style="background-color:#FEF2F2;border-radius:30px;padding:6px 18px;">
+                        <span style="font-size:9px;color:#dc2626;letter-spacing:2px;text-transform:uppercase;font-weight:700;">📧 Mise en Demeure</span>
+                    </td>
+                </tr>
+            </table>
+            <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:400;color:#1e293b;letter-spacing:-0.3px;line-height:1.3;">
+                LETTRE RECOMMANDÉE AVEC ACCUSÉ DE RÉCEPTION
+            </h1>
+            <p style="margin:0 0 24px 0;font-size:12px;color:#64748b;">Dossier N° ${data.caseNumber} — ${data.dossierTitle}</p>
+        </td>
+    </tr>
+
+    <tr>
+        <td style="padding:0 48px 24px 48px;">
+            <p style="margin:0 0 16px 0;font-size:14px;color:#1e293b;line-height:1.7;">
+                Madame, Monsieur <strong>${data.recipientName}</strong>,
+            </p>
+            <p style="margin:0 0 16px 0;font-size:14px;color:#475569;line-height:1.8;">
+                Agissant en qualité de conseil de <strong style="color:#1e293b;">${data.clientName}</strong>, je vous mets en demeure par la présente de bien vouloir <strong style="color:#1e293b;">${data.obligation}</strong>.
+            </p>
+            ${data.amount ? `
+            <p style="margin:0 0 16px 0;font-size:14px;color:#475569;line-height:1.8;">
+                Le montant réclamé s'élève à <strong style="color:#1e293b;">${data.amount.toLocaleString('fr-FR')} €</strong>, somme qui demeure impayée à ce jour.
+            </p>
+            ` : ''}
+        </td>
+    </tr>
+
+    <!-- Deadline Card -->
+    <tr>
+        <td style="padding:0 48px 24px 48px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#dc2626;border-radius:14px;">
+                <tr>
+                    <td style="padding:24px 28px;text-align:center;">
+                        <p style="margin:0 0 4px 0;font-size:9px;color:rgba(255,255,255,0.5);letter-spacing:3px;text-transform:uppercase;font-weight:700;">Délai imparti</p>
+                        <p style="margin:0;font-size:24px;color:#FFFFFF;font-weight:300;">${data.deadline}</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    <tr>
+        <td style="padding:0 48px 24px 48px;">
+            <p style="margin:0 0 16px 0;font-size:14px;color:#475569;line-height:1.8;">
+                ${data.consequences || 'À défaut de réponse de votre part dans le délai imparti, mon client se réserve le droit d\'engager toute procédure judiciaire qu\'il jugera utile pour faire valoir ses droits, et ce sans nouvel avis de ma part.'}
+            </p>
+            <p style="margin:0;font-size:14px;color:#475569;line-height:1.8;">
+                Je vous prie de croire, Madame, Monsieur, en l'expression de mes salutations distinguées.
+            </p>
+        </td>
+    </tr>
+
+    <tr>
+        <td style="padding:0 48px 32px 48px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8FAFC;border-radius:12px;border:1px solid #E2E8F0;padding:16px 24px;">
+                <tr>
+                    <td>
+                        <p style="margin:0 0 2px 0;font-size:12px;color:#1e293b;font-weight:600;">${data.firmName || LEGAL_DEFAULTS.firmName}</p>
+                        <p style="margin:0;font-size:11px;color:#64748b;">Avocat au Barreau</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>`;
+
+    return legalWrapper(data, content);
+}
+
+// ─────────────────────────────────────────────────
+// 6. WELCOME EMAIL — Bienvenue nouveau client
+// ─────────────────────────────────────────────────
+export interface WelcomeEmailData extends LunaEmailConfig {
+    clientName: string;
+    portalUrl?: string;
+}
+
+export function generateWelcomeEmail(data: WelcomeEmailData): string {
+    const firstName = data.clientName.split(' ')[0] || data.clientName;
+    const accent = data.accentColor || DEFAULTS.accentColor;
+
+    const content = `
+    <tr>
+        <td style="padding:0;height:4px;background:linear-gradient(90deg, ${accent}, #bcdeea, ${accent});"></td>
+    </tr>
+
+    <tr>
+        <td style="padding:40px 48px 0 48px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr>
+                    <td style="background-color:#E0F2FE;border-radius:30px;padding:6px 18px;">
+                        <span style="font-size:9px;color:#0284c7;letter-spacing:2px;text-transform:uppercase;font-weight:700;">🎉 Bienvenue</span>
+                    </td>
+                </tr>
+            </table>
+            <h1 style="margin:0 0 20px 0;font-size:26px;font-weight:300;color:#2E2E2E;letter-spacing:-0.5px;line-height:1.3;">
+                Bienvenue ${firstName} !
+            </h1>
+            <p style="margin:0 0 20px 0;font-size:14px;color:#4A4A4A;line-height:1.7;">
+                Nous sommes ravis de vous accueillir au sein de notre conciergerie. Votre espace personnel est désormais prêt — vous y retrouverez vos voyages, devis et documents en un clin d'œil.
+            </p>
+        </td>
+    </tr>
+
+    <tr>
+        <td style="padding:0 48px 24px 48px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAFAF8;border-radius:14px;border:1px solid #F0EBE4;padding:20px 24px;">
+                <tr><td style="padding:0 0 12px 0;font-size:9px;color:#8B7355;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Ce que vous pouvez faire</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid #F5F3F0;font-size:13px;color:#2E2E2E;">✈️ Demander un voyage sur mesure</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid #F5F3F0;font-size:13px;color:#2E2E2E;">📋 Consulter vos devis et factures</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid #F5F3F0;font-size:13px;color:#2E2E2E;">🗺 Accéder à votre carnet de voyage interactif</td></tr>
+                <tr><td style="padding:8px 0;font-size:13px;color:#2E2E2E;">💬 Contacter votre concierge dédié à tout moment</td></tr>
+            </table>
+        </td>
+    </tr>
+
+    ${data.portalUrl ? `
+    <tr>
+        <td style="padding:8px 48px 40px 48px;text-align:center;">
+            ${lunaButton('Accéder à Mon Espace', data.portalUrl, '#0284c7')}
+        </td>
+    </tr>
+    ` : ''}
+
+    <tr>
+        <td style="padding:0 48px 32px 48px;">
+            <p style="margin:0;font-size:12px;color:#9CA3AF;line-height:1.7;text-align:center;">
+                N'hésitez pas à répondre directement à cet email pour toute question. Votre concierge est à votre écoute.
+            </p>
+        </td>
+    </tr>`;
+
+    return lunaWrapper(data, content);
+}
+
+// ─────────────────────────────────────────────────
+// 7. POST-TRIP THANK YOU — Merci après voyage
+// ─────────────────────────────────────────────────
+export interface PostTripEmailData extends LunaEmailConfig {
+    clientName: string;
+    destination: string;
+    tripDates?: string;
+    nextTripUrl?: string;
+}
+
+export function generatePostTripEmail(data: PostTripEmailData): string {
+    const firstName = data.clientName.split(' ')[0] || data.clientName;
+    const accent = data.accentColor || DEFAULTS.accentColor;
+
+    const content = `
+    <tr>
+        <td style="padding:0;height:4px;background:linear-gradient(90deg, ${accent}, #C4956A, ${accent});"></td>
+    </tr>
+
+    <tr>
+        <td style="padding:40px 48px 0 48px;text-align:center;">
+            <p style="margin:0 0 16px 0;font-size:48px;">🌍</p>
+            <h1 style="margin:0 0 20px 0;font-size:26px;font-weight:300;color:#2E2E2E;letter-spacing:-0.5px;line-height:1.3;">
+                Bon retour, ${firstName} !
+            </h1>
+            <p style="margin:0 0 24px 0;font-size:14px;color:#4A4A4A;line-height:1.7;">
+                Nous espérons que votre séjour à <strong style="color:#2E2E2E;">${data.destination}</strong>${data.tripDates ? ` (${data.tripDates})` : ''} a été à la hauteur de vos attentes. Chaque voyage est unique et le vôtre nous tenait particulièrement à cœur.
+            </p>
+        </td>
+    </tr>
+
+    <tr>
+        <td style="padding:0 48px 24px 48px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#2E2E2E;border-radius:14px;">
+                <tr>
+                    <td style="padding:24px 28px;text-align:center;">
+                        <p style="margin:0 0 4px 0;font-size:9px;color:rgba(255,255,255,0.4);letter-spacing:2px;text-transform:uppercase;font-weight:700;">Votre prochain voyage vous attend</p>
+                        <p style="margin:0;font-size:16px;color:#FFFFFF;font-weight:300;">Profitez de <strong style="color:${accent};">-10%</strong> sur votre prochaine réservation</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    ${data.nextTripUrl ? `
+    <tr>
+        <td style="padding:8px 48px 40px 48px;text-align:center;">
+            ${lunaButton('Préparer Mon Prochain Voyage', data.nextTripUrl, '#C4956A')}
+        </td>
+    </tr>
+    ` : ''}
+
+    <tr>
+        <td style="padding:0 48px 32px 48px;">
+            <p style="margin:0;font-size:12px;color:#9CA3AF;line-height:1.7;text-align:center;">
+                Merci de votre confiance. À très bientôt pour de nouvelles aventures !
+            </p>
+        </td>
+    </tr>`;
+
+    return lunaWrapper(data, content);
+}
+
+// ─────────────────────────────────────────────────
+// 8. REVIEW REQUEST — Demande d'avis
+// ─────────────────────────────────────────────────
+export interface ReviewRequestEmailData extends LunaEmailConfig {
+    clientName: string;
+    destination: string;
+    reviewUrl?: string;
+}
+
+export function generateReviewRequestEmail(data: ReviewRequestEmailData): string {
+    const firstName = data.clientName.split(' ')[0] || data.clientName;
+    const accent = data.accentColor || DEFAULTS.accentColor;
+
+    const content = `
+    <tr>
+        <td style="padding:0;height:4px;background:linear-gradient(90deg, #f59e0b, ${accent}, #f59e0b);"></td>
+    </tr>
+
+    <tr>
+        <td style="padding:40px 48px 0 48px;text-align:center;">
+            <p style="margin:0 0 16px 0;font-size:48px;">⭐</p>
+            <h1 style="margin:0 0 20px 0;font-size:26px;font-weight:300;color:#2E2E2E;letter-spacing:-0.5px;line-height:1.3;">
+                ${firstName}, votre avis compte !
+            </h1>
+            <p style="margin:0 0 24px 0;font-size:14px;color:#4A4A4A;line-height:1.7;">
+                Votre retour sur votre voyage à <strong style="color:#2E2E2E;">${data.destination}</strong> nous aide à offrir une expérience toujours plus personnalisée. Cela ne prend que 2 minutes.
+            </p>
+        </td>
+    </tr>
+
+    <tr>
+        <td style="padding:0 48px 24px 48px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FFFBEB;border-radius:14px;border:1px solid #FDE68A;padding:20px 24px;">
+                <tr><td style="padding:0 0 12px 0;font-size:9px;color:#92400e;letter-spacing:2px;text-transform:uppercase;font-weight:700;">💬 Quelques questions rapides</td></tr>
+                <tr><td style="padding:6px 0;font-size:13px;color:#2E2E2E;">Comment s'est passée l'organisation ?</td></tr>
+                <tr><td style="padding:6px 0;font-size:13px;color:#2E2E2E;">Les hébergements étaient-ils à la hauteur ?</td></tr>
+                <tr><td style="padding:6px 0;font-size:13px;color:#2E2E2E;">Recommanderiez-vous notre conciergerie ?</td></tr>
+            </table>
+        </td>
+    </tr>
+
+    <tr>
+        <td style="padding:8px 48px 40px 48px;text-align:center;">
+            ${lunaButton('Laisser Mon Avis', data.reviewUrl || '#', '#f59e0b')}
+            <p style="margin:12px 0 0 0;font-size:11px;color:#9CA3AF;">Ou répondez simplement à cet email avec vos impressions</p>
+        </td>
+    </tr>`;
+
+    return lunaWrapper(data, content);
+}
+
+// ─────────────────────────────────────────────────
+// 9. BIRTHDAY / ANNIVERSARY — Fidélisation
+// ─────────────────────────────────────────────────
+export interface BirthdayEmailData extends LunaEmailConfig {
+    clientName: string;
+    occasionType?: 'birthday' | 'anniversary';
+    offerUrl?: string;
+}
+
+export function generateBirthdayEmail(data: BirthdayEmailData): string {
+    const firstName = data.clientName.split(' ')[0] || data.clientName;
+    const accent = data.accentColor || DEFAULTS.accentColor;
+    const isBirthday = data.occasionType !== 'anniversary';
+
+    const content = `
+    <tr>
+        <td style="padding:0;height:4px;background:linear-gradient(90deg, #ec4899, ${accent}, #8b5cf6);"></td>
+    </tr>
+
+    <tr>
+        <td style="padding:40px 48px 0 48px;text-align:center;">
+            <p style="margin:0 0 16px 0;font-size:56px;">${isBirthday ? '🎂' : '🎉'}</p>
+            <h1 style="margin:0 0 20px 0;font-size:26px;font-weight:300;color:#2E2E2E;letter-spacing:-0.5px;line-height:1.3;">
+                ${isBirthday ? `Joyeux anniversaire, ${firstName} !` : `Merci pour votre fidélité, ${firstName} !`}
+            </h1>
+            <p style="margin:0 0 24px 0;font-size:14px;color:#4A4A4A;line-height:1.7;">
+                ${isBirthday
+                    ? 'Toute notre équipe vous souhaite une merveilleuse journée. Pour fêter cela, nous avons préparé une attention spéciale rien que pour vous.'
+                    : 'Cela fait déjà un an que vous nous faites confiance. Pour célébrer cette belle aventure ensemble, nous avons une surprise pour vous.'
+                }
+            </p>
+        </td>
+    </tr>
+
+    <tr>
+        <td style="padding:0 48px 24px 48px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg, #fdf2f8, #faf5ff);border-radius:14px;border:1px solid #f3e8ff;">
+                <tr>
+                    <td style="padding:28px;text-align:center;">
+                        <p style="margin:0 0 8px 0;font-size:9px;color:#a855f7;letter-spacing:2px;text-transform:uppercase;font-weight:700;">🎁 Offre exclusive</p>
+                        <p style="margin:0;font-size:22px;color:#2E2E2E;font-weight:300;">
+                            <strong style="color:#ec4899;">-15%</strong> sur votre prochain voyage
+                        </p>
+                        <p style="margin:8px 0 0 0;font-size:11px;color:#9CA3AF;">Valable 30 jours · Code : LUNA${isBirthday ? 'BDAY' : 'ANNIV'}</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    ${data.offerUrl ? `
+    <tr>
+        <td style="padding:8px 48px 40px 48px;text-align:center;">
+            ${lunaButton('Profiter de Mon Offre', data.offerUrl, '#ec4899')}
+        </td>
+    </tr>
+    ` : ''}
+
+    <tr>
+        <td style="padding:0 48px 32px 48px;">
+            <p style="margin:0;font-size:12px;color:#9CA3AF;line-height:1.7;text-align:center;">
+                ${isBirthday ? 'Encore une fois, joyeux anniversaire ! 🥂' : 'Merci de faire partie de la famille Luna ! 💙'}
+            </p>
+        </td>
+    </tr>`;
+
+    return lunaWrapper(data, content);
+}
+
+// ─────────────────────────────────────────────────
+// 10. NEWSLETTER / INSPIRATION — Destinations
+// ─────────────────────────────────────────────────
+export interface NewsletterEmailData extends LunaEmailConfig {
+    clientName: string;
+    season?: string;
+    destinations?: { name: string; imageUrl: string; tagline: string; priceFrom?: number }[];
+}
+
+export function generateNewsletterEmail(data: NewsletterEmailData): string {
+    const firstName = data.clientName.split(' ')[0] || data.clientName;
+    const accent = data.accentColor || DEFAULTS.accentColor;
+    const season = data.season || 'Printemps';
+
+    const defaultDestinations = [
+        { name: 'Bali, Indonésie', imageUrl: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600&h=300&fit=crop', tagline: 'Temples, rizières & villa privée', priceFrom: 2800 },
+        { name: 'Santorin, Grèce', imageUrl: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=600&h=300&fit=crop', tagline: 'Couchers de soleil & gastronomie', priceFrom: 3200 },
+        { name: 'Marrakech, Maroc', imageUrl: 'https://images.unsplash.com/photo-1489749798305-4fea3ae63d43?w=600&h=300&fit=crop', tagline: 'Riads de charme & souks', priceFrom: 1800 },
+    ];
+
+    const dests = data.destinations || defaultDestinations;
+
+    const destCards = dests.slice(0, 3).map(d => `
+        <tr>
+            <td style="padding:0 0 16px 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius:14px;overflow:hidden;border:1px solid #F0EBE4;">
+                    <tr>
+                        <td style="padding:0;">
+                            <img src="${d.imageUrl}" alt="${d.name}" width="504" style="display:block;width:100%;height:160px;object-fit:cover;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:16px 20px;">
+                            <p style="margin:0 0 4px 0;font-size:16px;color:#2E2E2E;font-weight:600;">${d.name}</p>
+                            <p style="margin:0 0 8px 0;font-size:12px;color:#8B7355;">${d.tagline}</p>
+                            ${d.priceFrom ? `<p style="margin:0;font-size:13px;color:#2E2E2E;">À partir de <strong>${d.priceFrom.toLocaleString('fr-FR')} €</strong> /pers.</p>` : ''}
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    `).join('');
+
+    const content = `
+    <tr>
+        <td style="padding:0;height:4px;background:linear-gradient(90deg, #06b6d4, ${accent}, #8b5cf6);"></td>
+    </tr>
+
+    <tr>
+        <td style="padding:40px 48px 0 48px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr>
+                    <td style="background-color:#ECFEFF;border-radius:30px;padding:6px 18px;">
+                        <span style="font-size:9px;color:#0891b2;letter-spacing:2px;text-transform:uppercase;font-weight:700;">🌸 Inspiration ${season}</span>
+                    </td>
+                </tr>
+            </table>
+            <h1 style="margin:0 0 20px 0;font-size:26px;font-weight:300;color:#2E2E2E;letter-spacing:-0.5px;line-height:1.3;">
+                ${firstName}, envie d'évasion ?
+            </h1>
+            <p style="margin:0 0 24px 0;font-size:14px;color:#4A4A4A;line-height:1.7;">
+                Découvrez nos destinations coup de cœur de la saison, sélectionnées par nos concierges pour des expériences inoubliables.
+            </p>
+        </td>
+    </tr>
+
+    <tr>
+        <td style="padding:0 48px 24px 48px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                ${destCards}
+            </table>
+        </td>
+    </tr>
+
+    <tr>
+        <td style="padding:8px 48px 40px 48px;text-align:center;">
+            ${lunaButton('Voir Toutes les Destinations', '#', '#0891b2')}
+            <p style="margin:12px 0 0 0;font-size:11px;color:#9CA3AF;">Ou répondez à cet email pour nous parler de votre prochaine envie</p>
+        </td>
+    </tr>`;
+
+    return lunaWrapper(data, content);
+}

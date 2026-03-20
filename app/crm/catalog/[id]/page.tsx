@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
 import { useLogo } from '@/src/hooks/useSiteConfig';
+import { T } from '@/src/components/T';
 
 const TYPES = [
     { value: 'HOTEL', label: 'Hôtel', icon: Hotel, color: 'bg-indigo-50 text-indigo-600 border-indigo-200', gradient: 'from-indigo-500 to-violet-500' },
@@ -329,6 +330,32 @@ export default function PrestationDetailPage({ params }: { params: Promise<{ id:
 
             const newId = await createSupplierBooking(tenantId, bookingData);
             console.log('[Booking] Created with ID:', newId);
+
+            // ── AUTO-SEND WHATSAPP TO SUPPLIER ──
+            if (linkedSupplier?.phone) {
+                try {
+                    const dateStr = format(new Date(bookingData.date), 'dd MMMM yyyy', { locale: fr });
+                    const clientName = bookingData.clientName || '';
+                    await fetchWithAuth('/api/whatsapp/send', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            to: linkedSupplier.phone,
+                            message: `😊 Bonjour ${linkedSupplier.contactName || linkedSupplier.name} !\n\nOn aurait besoin de vous pour une prestation 🌟\n\n🎨 *${item.name}*\n📅 *Date :* ${dateStr}\n⏰ *Horaire :* ${bookingData.startTime || '09:00'} - ${bookingData.endTime || ''}\n💰 *Prix :* ${bookingData.rate} €\n${bookingData.numberOfGuests ? `👥 *Pax :* ${bookingData.numberOfGuests}\n` : ''}${clientName ? `👤 *Client :* ${clientName}\n` : ''}${bookingData.pickupLocation ? `📍 *Pick-up :* ${bookingData.pickupLocation}\n` : ''}\n🙏 Merci de confirmer avec les boutons ci-dessous !\n_✨ Luna CRM - On compte sur vous !_`,
+                            recipientType: 'SUPPLIER',
+                            clientName: linkedSupplier.name,
+                            clientId: linkedSupplier.id,
+                            interactiveButtons: true,
+                            bookingId: newId,
+                            prestationName: item.name,
+                        })
+                    });
+                    console.log('[Booking] WhatsApp sent to supplier:', linkedSupplier.name);
+                } catch (waErr) {
+                    console.error('[Booking] WhatsApp auto-send failed:', waErr);
+                }
+            }
+
             setBookingSuccess('Réservation créée !');
 
             // Try to reload bookings list — may fail if Firebase index missing (non-blocking)
@@ -519,7 +546,7 @@ export default function PrestationDetailPage({ params }: { params: Promise<{ id:
         </div>
     );
 
-    if (!item) return <div className="p-20 text-center text-gray-400">Prestation introuvable</div>;
+    if (!item) return <div className="p-20 text-center text-gray-400"><T>Prestation introuvable</T></div>;
 
     const typeConf = getTypeConfig(item.type);
     const clientPrice = Math.round(item.netCost * (1 + item.recommendedMarkup / 100));
@@ -541,7 +568,7 @@ export default function PrestationDetailPage({ params }: { params: Promise<{ id:
                             <div className="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500">
                                 <DollarSign size={20} />
                             </div>
-                            <h2 className="text-sm font-semibold text-luna-charcoal tracking-tight">Frais & Marges</h2>
+                            <h2 className="text-sm font-semibold text-luna-charcoal tracking-tight"><T>Frais & Marges</T></h2>
                         </div>
 
                         <div className="space-y-4">
@@ -933,7 +960,7 @@ export default function PrestationDetailPage({ params }: { params: Promise<{ id:
                                 <div className="p-8 pb-0">
                                     <div className="flex justify-between items-start mb-6">
                                         <div>
-                                            <h2 className="text-2xl font-normal leading-tight tracking-tighter uppercase">Lier un Prestataire</h2>
+                                            <h2 className="text-2xl font-normal leading-tight tracking-tighter uppercase"><T>Lier un Prestataire</T></h2>
                                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Filtrez vos Luna Friends par catégorie</p>
                                         </div>
                                         <button onClick={() => { setShowSupplierModal(false); setSupplierFilterCat('ALL'); setSupplierSearch(''); }} className="p-3 hover:bg-gray-100 rounded-full transition-colors text-gray-400"><X size={20} /></button>
@@ -1048,7 +1075,7 @@ export default function PrestationDetailPage({ params }: { params: Promise<{ id:
                             <div className="p-8">
                                 <div className="flex justify-between items-center mb-8">
                                     <div>
-                                        <h2 className="text-2xl font-normal">Nouvelle Réservation</h2>
+                                        <h2 className="text-2xl font-normal"><T>Nouvelle Réservation</T></h2>
                                         <p className="text-xs text-gray-500 font-sans">Enregistrer un créneau au planning de {linkedSupplier?.name}</p>
                                     </div>
                                     <button onClick={() => setShowBookingModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} /></button>
@@ -1163,7 +1190,7 @@ export default function PrestationDetailPage({ params }: { params: Promise<{ id:
                                                 <div className="space-y-3 pt-2">
                                                     <div className="flex items-center gap-2">
                                                         <ArrowRight size={14} className="text-orange-400" />
-                                                        <span className="text-[10px] font-bold uppercase tracking-widest text-orange-500">Retour</span>
+                                                        <span className="text-[10px] font-bold uppercase tracking-widest text-orange-500"><T>Retour</T></span>
                                                     </div>
                                                     <div className="grid grid-cols-3 gap-3">
                                                         <div>
