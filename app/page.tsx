@@ -367,6 +367,7 @@ export default function HubPage() {
     const [isMuted, setIsMuted] = useState(true);
     const [terminalDone, setTerminalDone] = useState(false);
     const [isVideoEnded, setIsVideoEnded] = useState(false);
+    const [videoSrc, setVideoSrc] = useState('/Platforms_random_up_down_movement_delpmaspu_.mp4');
     const videoRef = useRef<HTMLVideoElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const { scrollYProgress } = useScroll({ target: containerRef });
@@ -388,16 +389,27 @@ export default function HubPage() {
     // Removed scrubbing logic because video seeking is inherently choppy on compressed web video.
     // We will use pure Autoplay + Smooth Parallax instead.
 
+    // Randomize video on mount
+    useEffect(() => {
+        const videos = [
+            '/Platforms_random_up_down_movement_delpmaspu_.mp4',
+            '/The_bear_walks_4c936ce790.mp4'
+        ];
+        const randomVideo = videos[Math.floor(Math.random() * videos.length)];
+        setVideoSrc(randomVideo);
+    }, []);
+
     // Start video only AFTER loading screen has fully exited
     useEffect(() => {
         if (!contentReady) return;
         const video = videoRef.current;
         if (!video) return;
         const t = setTimeout(() => {
+            video.load(); // Ensure new src is loaded
             video.play().catch(() => {});
         }, 300);
         return () => clearTimeout(t);
-    }, [contentReady]);
+    }, [contentReady, videoSrc]);
 
     // Auto-unmute on first user interaction
     useEffect(() => {
@@ -460,11 +472,12 @@ export default function HubPage() {
                             ref={videoRef}
                             muted
                             playsInline
+                            loop
                             onEnded={() => setIsVideoEnded(true)}
                             className="absolute inset-0 w-full h-full object-cover brightness-[1.15]"
                         >
+                            <source src={videoSrc} type="video/mp4" />
                             <source src="/hero-bg.webm" type="video/webm" />
-                            <source src="/Platforms_random_up_down_movement_delpmaspu_.mp4" type="video/mp4" />
                         </video>
                         {/* Subtle dark overlay for contrast — fades in when loading ends */}
                         <motion.div

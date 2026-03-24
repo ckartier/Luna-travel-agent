@@ -42,6 +42,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: '**' },
     ],
+    unoptimized: true,
   },
 
   // Rate limit large body payloads
