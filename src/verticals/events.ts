@@ -90,6 +90,8 @@ export const eventsVertical: VerticalConfig = {
         bookingPlural: { fr: 'Réservations', en: 'Bookings', es: 'Reservas' },
         itinerary: { fr: 'Programme', en: 'Program', es: 'Programa' },
         destination: { fr: 'Lieu', en: 'Venue', es: 'Lugar' },
+        lead: { fr: 'Opportunité', en: 'Opportunity', es: 'Oportunidad' },
+        leadPlural: { fr: 'Opportunités', en: 'Opportunities', es: 'Oportunidades' },
     },
 
     dashboardWidgets: [

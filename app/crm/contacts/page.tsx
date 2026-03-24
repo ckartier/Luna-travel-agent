@@ -80,7 +80,7 @@ function parseCSVLine(line: string): string[] {
 
 export default function CRMContacts() {
   const { tenantId } = useAuth();
-  const { vertical } = useVertical();
+  const { vertical, vEntity, vt } = useVertical();
   const isLegal = vertical.id === 'legal';
   const [contacts, setContacts] = useState<CRMContact[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,7 +183,7 @@ export default function CRMContacts() {
 
   const exportAllDataCSV = async () => {
     const allRows: string[][] = [];
-    const headers = ['Prénom', 'Nom', 'Email', 'Téléphone', 'VIP', 'Préférences', 'Leads', isLegal ? 'Dossiers' : 'Voyages', 'Activités'];
+    const headers = [vt('Prénom'), vt('Nom'), 'Email', vt('Téléphone'), 'VIP', vt('Préférences'), vEntity('leadPlural'), vEntity('tripPlural'), vt('Activités')];
     for (const c of contacts) {
       try {
         const [leads, trips, activities] = await Promise.all([
@@ -357,8 +357,8 @@ export default function CRMContacts() {
         <div className={`flex-1 flex flex-col ${selectedContact ? 'hidden md:flex' : ''} space-y-6 md:space-y-8`}>
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div className="space-y-1">
-              <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight"><T>Clients</T></h1>
-              <p className="text-sm text-[#6B7280] mt-1 font-medium">Gestion Relation Client 360° • <span className="text-[#5a8fa3]">{contacts.length} Clients</span></p>
+              <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight"><T>{vEntity('participantPlural')}</T></h1>
+              <p className="text-sm text-[#6B7280] mt-1 font-medium"><T>Gestion Relation Client 360°</T> • <span className="text-[#5a8fa3]">{contacts.length} {vEntity('participantPlural')}</span></p>
             </div>
             <div className="flex items-center gap-3 w-full lg:w-auto">
               <button onClick={() => setIsImportOpen(true)} className="inline-flex items-center justify-center px-5 py-2.5 rounded-[12px] text-[14px] font-medium transition-colors cursor-pointer border border-[#E5E7EB] bg-white text-[#2E2E2E] hover:bg-[#F5F5F5] gap-2 flex-1 lg:flex-none">
@@ -511,10 +511,10 @@ export default function CRMContacts() {
                     {/* Trips / Dossiers */}
                     <div>
                       <h4 className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-6 flex items-center gap-2">
-                        {isLegal ? <Briefcase size={14} /> : <Plane size={14} />} {isLegal ? 'Dossiers en cours' : 'Voyages en cours'} ({contactTrips.length})
+                        {isLegal ? <Briefcase size={14} /> : <Plane size={14} />} {vEntity('tripPlural')} <T>en cours</T> ({contactTrips.length})
                       </h4>
                       {contactTrips.length === 0 ? (
-                        <p className="text-xs text-gray-300 font-sans italic">{isLegal ? 'Aucun dossier actif' : 'Aucun voyage actif'}</p>
+                        <p className="text-xs text-gray-300 font-sans italic"><T>Aucun</T> {vEntity('trip').toLowerCase()} <T>actif</T></p>
                       ) : (
                         <div className="space-y-3">
                           {contactTrips.map(trip => (

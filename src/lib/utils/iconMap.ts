@@ -10,7 +10,7 @@ import {
     TrendingUp, Target, PlaneTakeoff, Star, Globe, Menu, X,
     ChevronDown, ChevronLeft, ChevronRight, Lock, Crown,
     Scale, Gavel, BookOpen, Briefcase, ScrollText, FileSearch,
-    Landmark, Layout,
+    Landmark, Layout, HardHat, Hammer,
     type LucideIcon,
 } from 'lucide-react';
 
@@ -56,6 +56,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
     FileSearch,
     Landmark,
     Layout,
+    HardHat,
+    Hammer,
 };
 
 /**

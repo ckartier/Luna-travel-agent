@@ -79,13 +79,16 @@ service cloud.firestore {
       // Contacts, Trips, Leads, Activities, Calendar, Messages, Documents
       // All authenticated tenant members can read/write
       match /contacts/{document=**} {
-        allow read, write: if request.auth != null && isTenantMember(tenantId);
+        allow read, create, update: if request.auth != null && isTenantMember(tenantId);
+        allow delete: if request.auth != null && isTenantMember(tenantId) && isManagerOrAbove();
       }
       match /leads/{document=**} {
-        allow read, write: if request.auth != null && isTenantMember(tenantId);
+        allow read, create, update: if request.auth != null && isTenantMember(tenantId);
+        allow delete: if request.auth != null && isTenantMember(tenantId) && isManagerOrAbove();
       }
       match /trips/{document=**} {
-        allow read, write: if request.auth != null && isTenantMember(tenantId);
+        allow read, create, update: if request.auth != null && isTenantMember(tenantId);
+        allow delete: if request.auth != null && isTenantMember(tenantId) && isManagerOrAbove();
       }
       match /activities/{document=**} {
         allow read, write: if request.auth != null && isTenantMember(tenantId);

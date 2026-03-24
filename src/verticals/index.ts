@@ -10,6 +10,7 @@ import { travelVertical } from './travel';
 import { propertyVertical } from './property';
 import { eventsVertical } from './events';
 import { legalVertical } from './legal';
+import { monumVertical } from './monum';
 
 // ═══ REGISTRY ═══
 export const VERTICALS: Record<string, VerticalConfig> = {
@@ -17,6 +18,7 @@ export const VERTICALS: Record<string, VerticalConfig> = {
     property: propertyVertical,
     events: eventsVertical,
     legal: legalVertical,
+    monum: monumVertical,
 };
 
 export const DEFAULT_VERTICAL = 'travel';

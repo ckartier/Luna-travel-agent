@@ -70,6 +70,9 @@ export interface VerticalEntities {
     itinerary: LocalizedString;
     /** What "Destination" is called */
     destination: LocalizedString;
+    /** What "Lead / Pipeline item" is called */
+    lead: LocalizedString;
+    leadPlural: LocalizedString;
 }
 
 // ═══ BRANDING ═══

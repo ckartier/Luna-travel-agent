@@ -48,7 +48,11 @@ interface ChatMessage {
    UNIFIED LEGAL AGENT (CHAT + VOICE)
    ═══════════════════════════════════════════════════════════════ */
 
-function UnifiedLegalAgent() {
+import { getIcon } from '@/src/lib/utils/iconMap';
+
+function IndustryAIAgent() {
+    const { vertical, vEntity, vt } = useVertical();
+    const VIcon = getIcon(vertical.icon);
     const { userProfile, user } = useAuth();
     const displayName = userProfile?.displayName || user?.displayName || 'Utilisateur';
     const firstName = displayName.split(' ')[0];
@@ -64,8 +68,8 @@ function UnifiedLegalAgent() {
         { id: 'email', label: 'Rédiger un email', icon: Mail, prompt: 'Rédige une correspondance formelle au client en utilisant mon style et ma signature enregistrés. Demande-moi le sujet.' },
         { id: 'summary', label: 'Synthèse du dossier', icon: FileText, prompt: 'Fais une synthèse claire et concise de ce dossier.' },
         { id: 'risks', label: 'Analyse des risques', icon: AlertTriangle, prompt: 'Fais une analyse des risques juridiques liés à cette affaire.' },
-        { id: 'deadlines', label: 'Vérifier les échéances', icon: Calendar, prompt: 'Vérifie les échéances légales et procédurales à venir.' },
-        { id: 'unpaid', label: 'Gestion des impayés', icon: Euro, prompt: 'Prépare une mise en demeure pour les factures impayées de ce client.' }
+        { id: 'deadlines', label: vt('Vérifier les échéances'), icon: Calendar, prompt: 'Vérifie les échéances légales et procédurales à venir.' },
+        { id: 'unpaid', label: vt('Gestion des impayés'), icon: Euro, prompt: 'Prépare une relance pour les factures impayées.' }
     ];
 
     // ─── Single Voice Agent session — drives both text and voice ───
@@ -76,7 +80,7 @@ function UnifiedLegalAgent() {
         sendText,
         transcript,
         audioLevel,
-    } = useVoiceAgent({ pageContext: 'Agent IA', vertical: 'legal' });
+    } = useVoiceAgent({ pageContext: vt(vertical.aiAgent.name), vertical: vertical.id });
 
     const isConnected = voiceState !== 'idle' && voiceState !== 'error' && voiceState !== 'connecting';
     const isConnecting = voiceState === 'connecting';
@@ -152,15 +156,15 @@ function UnifiedLegalAgent() {
                 <div className="flex flex-col items-center text-center mb-8 shrink-0 relative z-10 pt-4">
                     <div className="relative mb-5">
                         <div className="w-20 h-20 rounded-[24px] flex items-center justify-center bg-white shadow-[0_8px_30px_rgba(160,120,80,0.12)] border border-[#A07850]/20 relative">
-                            <motion.div className="absolute inset-0 rounded-[28px] border-2 border-[#A07850]/30 flex items-center justify-center"
+                            <motion.div className="absolute inset-0 rounded-[28px] border-2 border-[#bcdeea]/30 flex items-center justify-center"
                                 animate={{ opacity: [0.3, 0.8, 0.3], scale: [0.98, 1.05, 0.98] }}
                                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                             />
-                            <Scale size={40} className="text-[#A07850]" strokeWidth={1.5} />
+                            <VIcon size={40} className="text-[#5a8fa3]" strokeWidth={1.5} />
                         </div>
                     </div>
                     <div className="flex flex-col items-center gap-2 mb-2">
-                        <h1 className="text-[42px] font-light text-[#2E2E2E] tracking-tight leading-none"><T>Agent Juridique</T></h1>
+                        <h1 className="text-[42px] font-light text-[#2E2E2E] tracking-tight leading-none"><T>{vt(vertical.aiAgent.name)}</T></h1>
                         <motion.div 
                             initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                             className="px-3 py-1.5 rounded-full text-white shadow-lg mx-auto flex items-center gap-2"
@@ -183,10 +187,10 @@ function UnifiedLegalAgent() {
                             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
                                 <div className="flex items-end gap-4 max-w-[85%]">
                                     <div className="w-10 h-10 rounded-[14px] bg-[#2E2E2E] flex items-center justify-center shrink-0 shadow-md">
-                                        <Scale size={18} className="text-white" />
+                                        <VIcon size={18} className="text-white" />
                                     </div>
                                     <div className="px-6 py-4 text-[15.5px] leading-relaxed shadow-sm bg-[#FAFAF8] text-[#2E2E2E] rounded-[28px] rounded-bl-[8px] border border-[#E5E7EB]">
-                                        Bonjour Maître {firstName}, que puis-je faire pour vous ?
+                                        <T>Bonjour</T> {firstName}, <T>que puis-je faire pour vous ?</T>
                                     </div>
                                 </div>
                             </motion.div>
@@ -202,7 +206,7 @@ function UnifiedLegalAgent() {
                                 <div className={`flex items-end gap-4 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                                     {msg.role === 'model' && (
                                         <div className="w-10 h-10 rounded-[14px] bg-[#2E2E2E] flex items-center justify-center shrink-0 shadow-md relative">
-                                            <Scale size={18} className="text-white" />
+                                            <VIcon size={18} className="text-white" />
                                             {i === transcript.length - 1 && voiceState !== 'thinking' && (
                                                 <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-[2.5px] border-white z-10" />
                                             )}
@@ -227,7 +231,7 @@ function UnifiedLegalAgent() {
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
                             <div className="flex items-end gap-4">
                                 <div className="w-10 h-10 rounded-[14px] bg-[#2E2E2E] flex items-center justify-center shrink-0 shadow-md">
-                                    <Scale size={18} className="text-white" />
+                                    <VIcon size={18} className="text-white" />
                                 </div>
                                 <div className="bg-[#FAFAF8] border border-[#E5E7EB] rounded-[28px] rounded-bl-[8px] px-6 py-5 flex items-center gap-2 shadow-sm">
                                     {[0, 1, 2].map(i => (
@@ -480,7 +484,8 @@ async function saveConversation(transcript: any[], user: any) {
 export default function AgentIAPage() {
     const { vertical } = useVertical();
     const isLegal = vertical?.id === 'legal';
-    if (isLegal) return <UnifiedLegalAgent />;
+    // If industry has a specific unified agent or not travel
+    if (vertical.id !== 'travel') return <IndustryAIAgent />;
     return <TravelAgentPage />;
 }
 

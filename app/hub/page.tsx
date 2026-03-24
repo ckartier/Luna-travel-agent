@@ -24,14 +24,13 @@ const T = {
     titlePre:        { fr: 'On conçoit vos', en: 'We build your' },
     titlePost:       { fr: 'de A à Z', en: 'from A to Z' },
     subtitle:        { fr: 'Plateformes SaaS · CRM intelligents · Applications sur mesure', en: 'SaaS platforms · Smart CRMs · Custom applications' },
-    demoLabel:       { fr: '// 4 verticales CRM — démos live', en: '// 4 CRM verticals — live demos' },
-    demo1:           { fr: '[01] Travel   → Conciergerie de voyage, pipeline, itinéraires IA', en: '[01] Travel   → Travel concierge, pipeline, AI itineraries' },
-    demo2:           { fr: '[02] Legal    → Cabinet d\u2019avocats, analyse dossiers, jurisprudence', en: '[02] Legal    → Law firm, case analysis, case law' },
-    demo3:           { fr: '[03] Events   → \u00c9v\u00e9nementiel, gestion RSVP, planning temps r\u00e9el', en: '[03] Events   → Events, RSVP management, real-time planning' },
-    demo4:           { fr: '[04] Property → Immobilier, mandats, visites, portail client', en: '[04] Property → Real estate, listings, visits, client portal' },
+    demoLabel:       { fr: '// 3 verticales CRM — démos live', en: '// 3 CRM verticals — live demos' },
+    demo1:           { fr: '[01] Luna DMC   → Conciergerie B2B & Itinéraires IA', en: '[01] Luna DMC   → B2B Concierge & AI itineraries' },
+    demo2:           { fr: '[02] Lawyer Agent    → Analyse juridique & Jurisprudence', en: '[02] Lawyer Agent    → Legal analysis & Case law' },
+    demo3:           { fr: '[03] Monum   → Suivi chantiers & Budgets HQE', en: '[03] Monum   → Construction tracking & Budgets' },
     travelDesc:      { fr: '>> CRM IA optimis\u00e9 pour les agences de voyage. Int\u00e9gration pipeline B2B et g\u00e9n\u00e9ration d\'itin\u00e9raires.', en: '>> AI-powered CRM for travel agencies. B2B pipeline integration and itinerary generation.' },
     legalDesc:       { fr: '>> CRM Avocats. Analyse NLP performante de dossiers et base de jurisprudence temps r\u00e9el.', en: '>> Law firm CRM. High-performance NLP case analysis and real-time case law database.' },
-    datarnivoreDesc: { fr: '>> Suivi permis de construire, analyse DVF et cartographie des rénovations à Paris.', en: '>> Building permits tracking, DVF analysis and renovation mapping in Paris.' },
+    monumDesc:       { fr: '>> Suivi de chantiers HQE, gestion des artisans, devis, plannings et Agent Travaux IA.', en: '>> Construction site tracking, supplier management, budgets, and AI Construction Agent.' },
 } as const;
 
 function useLocale(): Locale {
@@ -315,29 +314,29 @@ function TypewriterTitle({ locale }: { locale: Locale }) {
 function getProducts(locale: Locale) {
     return [
         {
-            id: 'travel', name: 'Luna Travel', tagline: 'sys.concierge_voyage',
+            id: 'travel', name: 'Luna DMC', tagline: 'sys.concierge_voyage',
             desc: t('travelDesc', locale),
-            loginHref: '/landing?vertical=travel', crmHref: '/crm/luna?vertical=travel',
+            loginHref: '/landing?vertical=travel', crmHref: '/crm?vertical=travel',
             accentColor: 'text-red-500', hoverBorder: 'hover:border-red-500/50',
             glowColor: 'rgba(239,68,68,0.15)', borderGlow: 'rgba(239,68,68,0.4)',
             features: ['[OK] Agents_IA_Voyage', '[OK] Pipeline_B2B', '[OK] Routing_J/J'],
         },
         {
-            id: 'legal', name: 'Le Droit Agent', tagline: 'sys.ia_juridique',
+            id: 'legal', name: 'Lawyer Agent', tagline: 'sys.ia_juridique',
             desc: t('legalDesc', locale),
-            loginHref: '/landing-legal?vertical=legal', crmHref: '/crm/avocat?vertical=legal',
+            loginHref: '/landing-legal?vertical=legal', crmHref: '/crm?vertical=legal',
             accentColor: 'text-red-500', hoverBorder: 'hover:border-red-500/50',
             glowColor: 'rgba(239,68,68,0.15)', borderGlow: 'rgba(239,68,68,0.4)',
             features: ['[OK] Analyse_Dossiers', '[OK] Jurisprudence_RT', '[OK] Auth_Secret_Pro'],
         },
         {
-            id: 'renovtracker', name: 'Paris RenovTracker', tagline: 'sys.renov_tracker',
-            desc: t('datarnivoreDesc', locale),
-            loginHref: 'https://datarnivore-renovtracker.web.app', crmHref: 'https://datarnivore-renovtracker.web.app',
+            id: 'monum', name: 'Monum', tagline: 'sys.renov_tracker',
+            desc: t('monumDesc', locale),
+            loginHref: '/landing-monum?vertical=monum', crmHref: '/crm?vertical=monum',
             accentColor: 'text-red-500', hoverBorder: 'hover:border-red-500/50',
             glowColor: 'rgba(239,68,68,0.15)', borderGlow: 'rgba(239,68,68,0.4)',
-            features: ['[OK] DVF_Open_Data', '[OK] Permis_Tracker', '[OK] Analyse_Marché'],
-            isExternal: true,
+            features: ['[OK] Suivi_Chantiers', '[OK] Plannings_Gantt', '[OK] Agent_Travaux'],
+            isExternal: false,
         },
     ];
 }
@@ -464,7 +463,7 @@ export default function HubPage() {
     const brandName = business?.name || "Datarnivore";
     const accentColor = globalConfig?.accentColor || '#ef4444'; // default red-500
 
-    const contentText = contentBlock?.text || `${t('demo1', locale)}\n${t('demo2', locale)}\n${t('demo3', locale)}\n${t('demo4', locale)}`;
+    const contentText = contentBlock?.text || `${t('demo1', locale)}\n${t('demo2', locale)}\n${t('demo3', locale)}`;
     const contentLines = contentText.split('\n').filter(Boolean);
 
     // Responsive hero shift based on viewport

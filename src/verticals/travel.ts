@@ -9,7 +9,7 @@ import type { VerticalConfig } from './types';
 
 export const travelVertical: VerticalConfig = {
     id: 'travel',
-    name: 'Luna Travel',
+    name: 'Luna DMC',
     description: {
         fr: 'Plateforme CRM pour les professionnels du voyage',
         en: 'CRM platform for travel professionals',
@@ -18,7 +18,7 @@ export const travelVertical: VerticalConfig = {
     icon: 'Plane',
 
     branding: {
-        appName: 'Luna Travel',
+        appName: 'Luna DMC',
         tagline: {
             fr: 'Concierge Voyage Premium',
             en: 'Premium Travel Concierge',
@@ -95,6 +95,8 @@ export const travelVertical: VerticalConfig = {
         bookingPlural: { fr: 'Réservations', en: 'Bookings', es: 'Reservas' },
         itinerary: { fr: 'Itinéraire', en: 'Itinerary', es: 'Itinerario' },
         destination: { fr: 'Destination', en: 'Destination', es: 'Destino' },
+        lead: { fr: 'Demande', en: 'Lead' },
+        leadPlural: { fr: 'Demandes', en: 'Leads' },
     },
 
     dashboardWidgets: [

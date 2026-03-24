@@ -90,6 +90,8 @@ export const propertyVertical: VerticalConfig = {
         bookingPlural: { fr: 'Réservations', en: 'Bookings', es: 'Reservas' },
         itinerary: { fr: "Guide d'Accueil", en: 'Welcome Guide', es: 'Guía de Bienvenida' },
         destination: { fr: 'Bien', en: 'Property', es: 'Propiedad' },
+        lead: { fr: 'Demande', en: 'Inquiry', es: 'Reserva' },
+        leadPlural: { fr: 'Demandes', en: 'Inquiries', es: 'Reservas' },
     },
 
     dashboardWidgets: [

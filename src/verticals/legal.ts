@@ -6,7 +6,7 @@ import type { VerticalConfig } from './types';
 
 export const legalVertical: VerticalConfig = {
     id: 'legal',
-    name: 'Le Droit Agent',
+    name: 'Lawyer Agent',
     description: {
         fr: 'Plateforme CRM pour cabinets d\'avocats et professionnels du droit',
         en: 'CRM platform for law firms and legal professionals',
@@ -17,17 +17,17 @@ export const legalVertical: VerticalConfig = {
     accentColorLight: '#EDE0D4',  // very light pastel brown background
 
     branding: {
-        appName: 'Le Droit Agent',
+        appName: 'Lawyer Agent',
         tagline: {
             fr: 'L\'IA au service du Droit',
             en: 'AI-Powered Legal Practice',
             es: 'IA al servicio del Derecho',
         },
-        metaTitle: 'Le Droit Agent | IA Juridique',
+        metaTitle: 'Lawyer Agent | IA Juridique',
         metaDescription: {
-            fr: 'Analysez vos dossiers, recherchez la jurisprudence et planifiez vos procédures avec l\'IA — Le Droit Agent',
-            en: 'Analyze cases, research jurisprudence and plan procedures with AI — Le Droit Agent',
-            es: 'Analice expedientes, investigue jurisprudencia y planifique procedimientos con IA — Le Droit Agent',
+            fr: 'Analysez vos dossiers, recherchez la jurisprudence et planifiez vos procédures avec l\'IA — Lawyer Agent',
+            en: 'Analyze cases, research jurisprudence and plan procedures with AI — Lawyer Agent',
+            es: 'Analice expedientes, investigue jurisprudencia y planifique procedimientos con IA — Lawyer Agent',
         },
     },
 
@@ -94,6 +94,8 @@ export const legalVertical: VerticalConfig = {
         bookingPlural: { fr: 'Missions', en: 'Engagements', es: 'Encargos' },
         itinerary: { fr: 'Timeline', en: 'Timeline', es: 'Cronología' },
         destination: { fr: 'Juridiction', en: 'Jurisdiction', es: 'Jurisdicción' },
+        lead: { fr: 'Dossier', en: 'Case', es: 'Expediente' },
+        leadPlural: { fr: 'Dossiers', en: 'Cases', es: 'Expedientes' },
     },
 
     dashboardWidgets: [
@@ -155,7 +157,7 @@ export const legalVertical: VerticalConfig = {
         'FLIGHT': { fr: 'PROCÉDURE', en: 'PROCEDURE', es: 'PROCEDIMIENTO' },
         'HOTEL': { fr: 'CONSEIL', en: 'CONSULTATION', es: 'CONSULTORÍA' },
         'ACTIVITY': { fr: 'AUDIENCE', en: 'HEARING', es: 'AUDIENCIA' },
-        'TRANSFER': { fr: 'EXPERTISE', en: 'EXPERT', es: 'PERITAJE' },
+        'TRANSFER': { fr: 'EXPERT', en: 'EXPERT', es: 'PERITAJE' },
         'ALL': { fr: 'TOUT', en: 'ALL', es: 'TODO' },
         'Voir Réservations': { fr: 'Voir Dossiers', en: 'View Cases', es: 'Ver Expedientes' },
         'Réservations Liées': { fr: 'Dossiers Liés', en: 'Related Cases', es: 'Expedientes Relacionados' },
@@ -183,7 +185,7 @@ export const legalVertical: VerticalConfig = {
 
         // ═══ AI AGENT ═══
         'Expert Voyages IA': { fr: 'Expert Juridique IA', en: 'AI Legal Expert', es: 'Experto Jurídico IA' },
-        'Luna Conciergerie': { fr: 'Le Droit Agent', en: 'Le Droit Agent', es: 'Le Droit Agent' },
+        'Luna Conciergerie': { fr: 'Lawyer Agent', en: 'Lawyer Agent', es: 'Lawyer Agent' },
         'Votre Conciergerie': { fr: 'Votre Cabinet', en: 'Your Firm', es: 'Su Despacho' },
 
         // ═══ CONTACTS ═══

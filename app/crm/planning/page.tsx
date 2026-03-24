@@ -110,7 +110,7 @@ const emptyTrip = (): Omit<CRMTrip, 'id' | 'createdAt' | 'updatedAt'> => ({
 // ═══ MAIN COMPONENT ═══
 export default function PlanningPage() {
   const { tenantId } = useAuth();
-  const { vertical } = useVertical();
+  const { vertical, vEntity, vt } = useVertical();
   const isLegal = vertical.id === 'legal';
   const today = new Date();
   const [currentDate, setCurrentDate] = useState(today);
@@ -250,12 +250,12 @@ export default function PlanningPage() {
         {/* ═══ HEADER ═══ */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div>
-            <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight"><T>{isLegal ? 'Agenda Cabinet' : 'Planning Voyages'}</T></h1>
-            <p className="text-sm text-[#6B7280] mt-1 font-medium"><T>{isLegal ? 'Dossiers Récents' : 'Conciergerie'}</T> • {format(currentDate, 'MMMM yyyy', { locale: fr })}</p>
+            <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight"><T>{vt(vertical.aiAgent.subtitle)}</T></h1>
+            <p className="text-sm text-[#6B7280] mt-1 font-medium">{vEntity('tripPlural')} • {format(currentDate, 'MMMM yyyy', { locale: fr })}</p>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => openNewTrip()} className="flex items-center gap-2 px-6 py-3 bg-[#bcdeea] text-[#2E2E2E] rounded-[16px] text-xs font-bold uppercase tracking-widest hover:scale-[1.02] transition-all shadow-lg active:scale-95">
-              <Plus size={16} /> <T>{isLegal ? 'Nouveau Dossier' : 'Nouveau Voyage'}</T>
+              <Plus size={16} /> <T>Nouveau</T> {vEntity('trip')}
             </button>
             <div className="flex items-center bg-white p-1.5 rounded-[16px] border border-[#E5E7EB] shadow-sm gap-1">
               <button title="Dézoomer" onClick={() => setZoomLevel(Math.max(30, zoomLevel - 10))} className="p-2 text-[#9CA3AF] hover:text-[#2E2E2E] hover:bg-gray-50 rounded-lg transition-all active:scale-90"><ZoomOut size={16} /></button>
@@ -271,9 +271,9 @@ export default function PlanningPage() {
         {/* ═══ STATS ═══ */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
-            { label: isLegal ? 'AUDIENCES' : 'VOYAGES', value: monthTrips.length, icon: isLegal ? Briefcase : Plane },
-            { label: 'Revenus', value: `${totalRevenue.toLocaleString('fr-FR')}€`, icon: CreditCard },
-            { label: 'PRESTATIONS', value: monthBookings.length, icon: Briefcase },
+            { label: vEntity('tripPlural').toUpperCase(), value: monthTrips.length, icon: isLegal ? Briefcase : Plane },
+            { label: vt('Revenus'), value: `${totalRevenue.toLocaleString('fr-FR')}€`, icon: CreditCard },
+            { label: vEntity('bookingPlural').toUpperCase(), value: monthBookings.length, icon: Briefcase },
             { label: 'Validées', value: monthBookings.filter(b => b.status === 'CONFIRMED').length, icon: CheckCircle2 },
             { label: 'En attente', value: monthBookings.filter(b => b.status === 'PROPOSED').length, icon: Clock },
           ].map((s, i) => (
@@ -373,7 +373,7 @@ export default function PlanningPage() {
                         >
                           <div className="flex items-center gap-2">
                             {isLegal ? <Briefcase size={13} className="text-[#A07850]" /> : <Plane size={13} className="text-[#bcdeea]" />}
-                            <span className={`text-[9px] font-bold uppercase tracking-widest ${isLegal ? 'text-[#A07850]' : 'text-[#bcdeea]'}`}>{dayTrips.length} {isLegal ? 'Dossier' : 'Voyage'}{dayTrips.length > 1 ? 's' : ''} en cours</span>
+                            <span className={`text-[9px] font-bold uppercase tracking-widest ${isLegal ? 'text-[#A07850]' : 'text-[#bcdeea]'}`}>{dayTrips.length} {vEntity('trip')}{dayTrips.length > 1 ? 's' : ''} <T>en cours</T></span>
                           </div>
                           <ChevronDown size={14} className={`text-[#bcdeea] transition-transform duration-300 ${expandedTripsDays[ds] ? 'rotate-180' : ''}`} />
                         </button>

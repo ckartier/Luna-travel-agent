@@ -102,7 +102,7 @@ const formatCreatedAt = (ts: any): string => {
 export default function CRMPipeline() {
   const router = useRouter();
   const { tenantId } = useAuth();
-  const { vertical } = useVertical();
+  const { vertical, vEntity, vt: vtFunc } = useVertical();
   const isLegal = vertical.id === 'legal';
   const at = useAutoTranslate();
   const [deals, setDeals] = useState<any[]>([]);
@@ -310,7 +310,7 @@ export default function CRMPipeline() {
 
       // Auto-create follow-up activity
       await createActivity(tenantId!, {
-        title: isLegal ? `Organiser le dossier ${d.destination} pour ${d.client}` : `Organiser le voyage ${d.destination} pour ${d.client}`,
+        title: isLegal ? `Organiser le dossier ${d.destination} pour ${d.client}` : `Organiser le ${vEntity('trip').toLowerCase()} ${d.destination} pour ${d.client}`,
         time: "Cette semaine",
         type: "meeting",
         status: "PENDING",
@@ -335,7 +335,7 @@ export default function CRMPipeline() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div>
             <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight">
-              <T>Pipeline</T>
+              {vEntity('lead')}
             </h1>
             <p className="text-sm text-[#6B7280] mt-1 font-medium hidden sm:block">
               <T>Gérez vos leads du premier contact au closing.</T>
@@ -511,7 +511,7 @@ export default function CRMPipeline() {
                             ? 'bg-amber-50 text-amber-600 border border-amber-200/50'
                             : 'bg-sky-50 text-sky-600 border border-sky-200/50'
                             }`}>
-                            <span className="flex items-center gap-1">{isDealPrestation(deal) ? <><Palette size={11} /> Prestation</> : <><Plane size={11} /> {isLegal ? 'Nouveau Dossier' : <T>Nouveau Voyage</T>}</>}</span>
+                            <span className="flex items-center gap-1">{isDealPrestation(deal) ? <><Palette size={11} /> <T>Prestation</T></> : <><Plane size={11} /> {isLegal ? 'Nouveau Dossier' : <><T>Nouveau</T> {vEntity('trip')}</>}</>}</span>
                           </span>
                           {/* Lead Score Badge */}
                           {(() => {
@@ -584,7 +584,7 @@ export default function CRMPipeline() {
 
                       <details className="mt-2 mb-4 group cursor-pointer">
                         <summary className="list-none flex items-center justify-between text-[10px] text-gray-400 font-bold uppercase tracking-widest border-t border-gray-100 pt-3 pb-1 hover:text-[#2E2E2E] transition-colors">
-                          Voir la demande
+                          <T>Voir la demande</T>
                           <ChevronDown size={12} className="group-open:rotate-180 transition-transform" />
                         </summary>
                         <div className="pt-3 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">

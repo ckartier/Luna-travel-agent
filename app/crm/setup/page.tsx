@@ -146,7 +146,7 @@ const SETUP_STEPS: SetupStep[] = [
 
 export default function SetupPage() {
     const { tenantId, user } = useAuth();
-    const { vertical, vt } = useVertical();
+    const { vertical, vt, switchVertical } = useVertical();
     const [currentStep, setCurrentStep] = useState(0);
     const [formData, setFormData] = useState<Record<string, string>>({});
     const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
@@ -188,10 +188,14 @@ export default function SetupPage() {
         try {
             const ref = doc(db, 'tenants', tenantId);
             await updateDoc(ref, { vertical: verticalId, updatedAt: new Date() });
+            // Instant UI switch
+            switchVertical(verticalId);
         } catch (e) {
             try {
                 const ref = doc(db, 'tenants', tenantId);
                 await setDoc(ref, { vertical: verticalId, updatedAt: new Date() }, { merge: true });
+                // Instant UI switch
+                switchVertical(verticalId);
             } catch (e2) {
                 console.error('Failed to save vertical:', e2);
             }

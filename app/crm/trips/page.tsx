@@ -13,6 +13,8 @@ import ConfirmModal from '@/src/components/ConfirmModal';
 import { CRMSkeleton } from '@/app/components/CRMSkeleton';
 import { CRMEmptyState } from '@/app/components/CRMEmptyState';
 import { T, useAutoTranslate } from '@/src/components/T';
+import { useVertical } from '@/src/contexts/VerticalContext';
+import { getIcon } from '@/src/lib/utils/iconMap';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -35,12 +37,14 @@ const STATUS_LABELS: Record<string, string> = {
 export default function TripsPage() {
     const router = useRouter();
     const { tenantId } = useAuth();
+    const { vertical, vEntity, vt } = useVertical();
     const at = useAutoTranslate();
     const [trips, setTrips] = useState<CRMTrip[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState('ALL');
     const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+    const VIcon = getIcon(vertical.icon);
 
     const loadTrips = useCallback(async () => {
         if (!tenantId) return;
@@ -84,17 +88,17 @@ export default function TripsPage() {
                     <div className="space-y-2">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-2xl bg-[#bcdeea]/50 flex items-center justify-center">
-                                <Plane size={20} className="text-[#5a8fa3]" />
+                                <VIcon size={20} className="text-[#5a8fa3]" />
                             </div>
-                            <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight">Voyages</h1>
+                            <h1 className="text-4xl font-light text-[#2E2E2E] tracking-tight">{vEntity('trip')}</h1>
                         </div>
                         <p className="text-sm text-[#6B7280] font-medium">
-                            {trips.length} voyages — <span className="text-emerald-600">{totalRevenue.toLocaleString('fr-FR')} € total</span>
+                            {trips.length} {vEntity('trip').toLowerCase()} — <span className="text-emerald-600">{totalRevenue.toLocaleString('fr-FR')} € total</span>
                         </p>
                     </div>
                     <button onClick={() => router.push('/crm/pipeline')}
                         className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-widest text-white shadow-lg active:scale-95 transition-all bg-[#2E2E2E] hover:bg-black">
-                        <Plus size={16} /> Nouveau Voyage
+                        <Plus size={16} /> <T>Nouveau</T> {vEntity('trip')}
                     </button>
                 </motion.div>
 
@@ -111,7 +115,7 @@ export default function TripsPage() {
                         {['ALL', 'DRAFT', 'IN_PROGRESS', 'CONFIRMED', 'COMPLETED', 'CANCELLED'].map(s => (
                             <button key={s} onClick={() => setFilterStatus(s)}
                                 className={`px-3 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-widest whitespace-nowrap transition-all ${filterStatus === s ? 'bg-[#2E2E2E] text-white' : 'text-gray-400 hover:text-gray-600'}`}>
-                                {s === 'ALL' ? 'Tous' : STATUS_LABELS[s] || s}
+                                {s === 'ALL' ? vt('Tous') : vt(STATUS_LABELS[s] || s)}
                             </button>
                         ))}
                     </div>
@@ -120,10 +124,10 @@ export default function TripsPage() {
                 {/* Trips Grid */}
                 {filtered.length === 0 ? (
                     <CRMEmptyState
-                        icon={Plane}
-                        title="Aucun voyage trouvé"
-                        description="Créez un voyage depuis le Pipeline pour le voir apparaître ici."
-                        actionLabel="Nouveau Voyage"
+                        icon={VIcon}
+                        title={vt(`Aucun ${vEntity('trip').toLowerCase()} trouvé`)}
+                        description={vt(`Créez un ${vEntity('trip').toLowerCase()} depuis le Pipeline pour le voir apparaître ici.`)}
+                        actionLabel={vt(`Nouveau ${vEntity('trip')}`)}
                         actionHref="/crm/pipeline"
                     />
                 ) : (
@@ -188,8 +192,8 @@ export default function TripsPage() {
                 open={!!deleteTarget}
                 onCancel={() => setDeleteTarget(null)}
                 onConfirm={confirmDelete}
-                title="Supprimer le voyage"
-                message="Êtes-vous sûr de vouloir supprimer ce voyage ? Cette action est irréversible."
+                title={vt(`Supprimer le ${vEntity('trip').toLowerCase()}`)}
+                message={vt(`Êtes-vous sûr de vouloir supprimer ce ${vEntity('trip').toLowerCase()} ? Cette action est irréversible.`)}
             />
         </div>
     );

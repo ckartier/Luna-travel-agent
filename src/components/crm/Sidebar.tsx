@@ -59,51 +59,7 @@ interface NavSection {
     links: NavLink[];
 }
 
-// ═══ LEGAL CRM — hardcoded sidebar (no vertical context needed) ═══
-const LEGAL_PATHS = ['/crm/avocat', '/crm/dossiers', '/crm/jurisprudence'];
-
-const LEGAL_SIDEBAR: NavSection[] = [
-    {
-        label: '',
-        collapsible: false,
-        links: [
-            { name: 'Dashboard', href: '/crm/avocat', icon: LayoutDashboard, featureKey: 'dashboard' },
-            { name: 'Boîte de Réception', href: '/crm/mails', icon: Mail, featureKey: 'mails' },
-            { name: 'Pipeline', href: '/crm/pipeline', icon: Trello, featureKey: 'pipeline' },
-            { name: 'Agenda', href: '/crm/planning', icon: Calendar, featureKey: 'planning' },
-            { name: 'Clients', href: '/crm/contacts', icon: Users, featureKey: 'contacts' },
-        ],
-    },
-    {
-        label: 'Dossiers',
-        collapsible: true,
-        links: [
-            { name: 'Dossiers', href: '/crm/dossiers', icon: getIcon('Briefcase'), featureKey: 'bookings' },
-            { name: 'Jurisprudence', href: '/crm/jurisprudence', icon: getIcon('ScrollText'), featureKey: 'dashboard' },
-            { name: 'Documents', href: '/crm/documents', icon: FileText, featureKey: 'dashboard' },
-        ],
-    },
-    {
-        label: 'Finance',
-        collapsible: true,
-        links: [
-            { name: 'Honoraires', href: '/crm/quotes', icon: FileSignature, featureKey: 'quotes' },
-            { name: 'Factures', href: '/crm/invoices', icon: FileText, featureKey: 'invoices' },
-            { name: 'Paiements', href: '/crm/payments', icon: CreditCard, featureKey: 'payments' },
-        ],
-    },
-    {
-        label: 'Gestion',
-        collapsible: true,
-        links: [
-            { name: 'Collaborateurs', href: '/crm/suppliers', icon: getIcon('Scale'), featureKey: 'suppliers' },
-            { name: 'Banque', href: '/crm/banking', icon: getIcon('Landmark'), featureKey: 'payments' },
-            { name: 'Équipe', href: '/crm/team', icon: UsersRound, featureKey: 'team' },
-            { name: 'Analytics', href: '/crm/analytics', icon: BarChart3, featureKey: 'analytics' },
-            { name: 'Paramètres', href: '/crm/settings', icon: Settings, featureKey: 'settings' },
-        ],
-    },
-];
+// ═══ NAVIGATION SECTIONS — Resolved from vertical config ═══
 
 interface CRMSidebarProps {
 }
@@ -120,8 +76,8 @@ export function CRMSidebar({}: CRMSidebarProps) {
 
     const [customLogo, setCustomLogo] = useState<string | null>(null);
 
-    // ═══ DETECT CRM MODE — Legal or Travel ═══
-    const isLegal = vertical?.id === 'legal' || LEGAL_PATHS.some(r => pathname.startsWith(r));
+    // ═══ DETECT CRM MODE ═══
+    const isLegal = vertical?.id === 'legal';
 
     // Fetch custom logo from site-config (travel only)
     useEffect(() => {
@@ -145,21 +101,19 @@ export function CRMSidebar({}: CRMSidebarProps) {
     const displayName = userProfile?.displayName || user?.displayName || 'Utilisateur';
     const email = userProfile?.email || user?.email || '';
 
-    // ═══ NAVIGATION — Legal uses hardcoded sidebar, Travel uses vertical config ═══
-    const allSections: NavSection[] = isLegal
-        ? LEGAL_SIDEBAR
-        : vertical.sidebar.map(section => ({
-            label: typeof section.label === 'string' ? section.label : vt(section.label),
-            collapsible: section.collapsible,
-            links: section.links.map(link => ({
-                name: vt(link.name),
-                href: link.href,
-                icon: getIcon(link.icon),
-                featureKey: link.featureKey,
-            })),
-        }));
-    const accent = isLegal ? '#A07850' : (vertical.accentColor || '#5a8fa3');
-    const accentLight = isLegal ? '#E8D5C0' : (vertical.accentColorLight || '#bcdeea');
+    // ═══ NAVIGATION — Generic based on vertical config ═══
+    const allSections: NavSection[] = vertical.sidebar.map(section => ({
+        label: typeof section.label === 'string' ? section.label : vt(section.label),
+        collapsible: section.collapsible,
+        links: section.links.map(link => ({
+            name: vt(link.name),
+            href: link.href,
+            icon: getIcon(link.icon),
+            featureKey: link.featureKey,
+        })),
+    }));
+    const accent = vertical.accentColor || '#5a8fa3';
+    const accentLight = vertical.accentColorLight || '#bcdeea';
 
     const sidebarContent = (
         <>
@@ -171,13 +125,9 @@ export function CRMSidebar({}: CRMSidebarProps) {
                     </button>
                 </div>
 
-                {/* Logo — LUNA LEGAL for legal CRM, custom/vertical for travel */}
+                {/* Logo — Custom or Vertical Branding */}
                 <div className="pt-6 pb-8 flex justify-center text-center">
-                    {isLegal ? (
-                        <span className="text-[15px] font-semibold uppercase text-[#2E2E2E]" style={{ letterSpacing: '0.2em' }}>
-                            LUNA LEGAL
-                        </span>
-                    ) : customLogo ? (
+                    {customLogo ? (
                         <img src={customLogo} alt="Logo" className="h-5 w-auto object-contain brightness-0" onError={() => setCustomLogo(null)} />
                     ) : (
                         <span className="text-[15px] font-semibold uppercase text-[#2E2E2E]" style={{ letterSpacing: '0.2em' }}>
@@ -234,11 +184,11 @@ export function CRMSidebar({}: CRMSidebarProps) {
                             <span
                                 className="uppercase tracking-[0.15em] text-[13px] font-semibold transition-colors"
                                 style={{ color: pathname === '/crm/agent-ia' ? accent : '#2E2E2E' }}
-                            >{isLegal ? 'Agent Juridique' : vt(vertical.aiAgent.name)}</span>
+                            >{vt(vertical.aiAgent.name)}</span>
                             <span
                                 className="text-[9px] tracking-wider transition-colors"
                                 style={{ color: pathname === '/crm/agent-ia' ? `${accent}99` : '#6B728099' }}
-                            >{isLegal ? 'Droit & Jurisprudence' : vt(vertical.aiAgent.subtitle)}</span>
+                            >{vt(vertical.aiAgent.subtitle)}</span>
                         </div>
                     </Link>
                 </div>
