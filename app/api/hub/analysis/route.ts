@@ -1,7 +1,8 @@
 export const dynamic = "force-dynamic";
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/src/lib/firebase/admin';
 import { GoogleGenAI } from '@google/genai';
+import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
@@ -10,13 +11,51 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
  * Runs Gemini analysis on all CRM data + bug reports
  * Returns structured analysis with action proposals
  */
-export async function POST() {
+async function resolveTenantIdFromRequest(request: NextRequest): Promise<string | Response | null> {
+    const authHeader = request.headers.get('Authorization');
+
+    if (authHeader?.startsWith('Bearer ')) {
+        const auth = await verifyAuth(request);
+        if (auth instanceof Response) return auth;
+        if (!auth.tenantId) {
+            return NextResponse.json({ error: 'Tenant required' }, { status: 403 });
+        }
+        return auth.tenantId;
+    }
+
+    const tenantIdFromQuery = request.nextUrl.searchParams.get('tenantId');
+    if (tenantIdFromQuery) return tenantIdFromQuery;
+
+    const tenantsSnap = await adminDb.collection('tenants').limit(1).get();
+    if (tenantsSnap.empty) return null;
+    return tenantsSnap.docs[0].id;
+}
+
+async function fetchBugReportsForTenant(tenantId: string) {
+    const tenantBugRef = adminDb.collection('tenants').doc(tenantId).collection('bug_reports');
     try {
+        const tenantSnap = await tenantBugRef.orderBy('createdAt', 'desc').limit(50).get();
+        return tenantSnap;
+    } catch {
+        return tenantBugRef.limit(50).get();
+    }
+}
+
+export async function POST(request: NextRequest) {
+    try {
+        const resolvedTenant = await resolveTenantIdFromRequest(request);
+        if (resolvedTenant instanceof Response) return resolvedTenant;
+        if (!resolvedTenant) {
+            return NextResponse.json({ error: 'No tenant found', analysis: 'Aucun tenant trouvé.' }, { status: 404 });
+        }
+        const tenantId = resolvedTenant;
+        const tenantRef = adminDb.collection('tenants').doc(tenantId);
+
         // Fetch all relevant data
         const [bugSnap, leadsSnap, tripsSnap] = await Promise.all([
-            adminDb.collection('bug_reports').orderBy('createdAt', 'desc').limit(50).get(),
-            adminDb.collection('leads').limit(200).get(),
-            adminDb.collection('trips').limit(200).get(),
+            fetchBugReportsForTenant(tenantId),
+            tenantRef.collection('leads').limit(200).get(),
+            tenantRef.collection('trips').limit(200).get(),
         ]);
 
         const bugs = bugSnap.docs.map((d: any) => {

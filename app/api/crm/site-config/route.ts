@@ -1,9 +1,32 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/src/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 
 export const dynamic = 'force-dynamic';
+
+async function resolveTenantIdFromRequest(request: NextRequest): Promise<string | Response | null> {
+    const authHeader = request.headers.get('Authorization');
+
+    // Authenticated CRM calls must resolve to the caller tenant.
+    if (authHeader?.startsWith('Bearer ')) {
+        const auth = await verifyAuth(request);
+        if (auth instanceof Response) return auth;
+        if (!auth.tenantId) {
+            return NextResponse.json({ error: 'Tenant required' }, { status: 403 });
+        }
+        return auth.tenantId;
+    }
+
+    // Public storefront calls can pass tenantId explicitly.
+    const tenantIdFromQuery = request.nextUrl.searchParams.get('tenantId');
+    if (tenantIdFromQuery) return tenantIdFromQuery;
+
+    // Backward-compatible fallback for single-tenant deployments.
+    const tenantsSnap = await adminDb.collection('tenants').limit(1).get();
+    if (tenantsSnap.empty) return null;
+    return tenantsSnap.docs[0].id;
+}
 
 // ── Default site config (seed data) ──
 const DEFAULT_SITE_CONFIG = {
@@ -138,13 +161,15 @@ const DEFAULT_SITE_CONFIG = {
 };
 
 // ── GET: Read site config ──
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
-        const tenantsSnap = await adminDb.collection('tenants').limit(1).get();
-        if (tenantsSnap.empty) {
+        const resolvedTenant = await resolveTenantIdFromRequest(request);
+        if (resolvedTenant instanceof Response) return resolvedTenant;
+        if (!resolvedTenant) {
             return NextResponse.json(DEFAULT_SITE_CONFIG);
         }
-        const tenantId = tenantsSnap.docs[0].id;
+        const tenantId = resolvedTenant;
+
         const configDoc = await adminDb.collection('tenants').doc(tenantId).collection('site_config').doc('main').get();
 
         if (!configDoc.exists) {
@@ -175,18 +200,17 @@ export async function GET() {
 }
 
 // ── PUT: Update site config ──
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
     try {
         // Auth check
         const auth = await verifyAuth(request);
         if (auth instanceof Response) return auth;
+        if (!auth.tenantId) {
+            return NextResponse.json({ error: 'Tenant required' }, { status: 403 });
+        }
 
         const body = await request.json();
-        const tenantsSnap = await adminDb.collection('tenants').limit(1).get();
-        if (tenantsSnap.empty) {
-            return NextResponse.json({ error: 'No tenant' }, { status: 404 });
-        }
-        const tenantId = tenantsSnap.docs[0].id;
+        const tenantId = auth.tenantId;
 
         await adminDb.collection('tenants').doc(tenantId).collection('site_config').doc('main').set({
             ...body,

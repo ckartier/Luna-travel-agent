@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/src/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { verifyAuth } from '@/src/lib/firebase/apiAuth';
@@ -112,21 +112,54 @@ const DEFAULT_HUB_CONFIG = {
     },
 };
 
-// ── GET: Read hub config ──
-export async function GET() {
-    try {
-        const configDoc = await adminDb.collection('hub_config').doc('main').get();
+async function resolveTenantIdFromRequest(request: NextRequest): Promise<string | Response | null> {
+    const authHeader = request.headers.get('Authorization');
 
-        if (!configDoc.exists) {
-            await adminDb.collection('hub_config').doc('main').set({
+    // Authenticated calls must use caller tenant.
+    if (authHeader?.startsWith('Bearer ')) {
+        const auth = await verifyAuth(request);
+        if (auth instanceof Response) return auth;
+        if (!auth.tenantId) {
+            return NextResponse.json({ error: 'Tenant required' }, { status: 403 });
+        }
+        return auth.tenantId;
+    }
+
+    // Public calls can pass tenantId explicitly.
+    const tenantIdFromQuery = request.nextUrl.searchParams.get('tenantId');
+    if (tenantIdFromQuery) return tenantIdFromQuery;
+
+    // Backward-compatible fallback for single-tenant setups.
+    const tenantsSnap = await adminDb.collection('tenants').limit(1).get();
+    if (tenantsSnap.empty) return null;
+    return tenantsSnap.docs[0].id;
+}
+
+// ── GET: Read hub config ──
+export async function GET(request: NextRequest) {
+    try {
+        const resolvedTenant = await resolveTenantIdFromRequest(request);
+        if (resolvedTenant instanceof Response) return resolvedTenant;
+        if (!resolvedTenant) {
+            return NextResponse.json(DEFAULT_HUB_CONFIG);
+        }
+        const tenantId = resolvedTenant;
+        const configRef = adminDb.collection('tenants').doc(tenantId).collection('hub_config').doc('main');
+
+        let data: Record<string, any> = {};
+        const configDoc = await configRef.get();
+
+        if (configDoc.exists) {
+            data = (configDoc.data() || {}) as Record<string, any>;
+        } else {
+            data = DEFAULT_HUB_CONFIG as Record<string, any>;
+            await configRef.set({
                 ...DEFAULT_HUB_CONFIG,
                 createdAt: FieldValue.serverTimestamp(),
                 updatedAt: FieldValue.serverTimestamp(),
             });
-            return NextResponse.json(DEFAULT_HUB_CONFIG);
         }
 
-        const data = configDoc.data() || {};
         const merged = {
             ...DEFAULT_HUB_CONFIG,
             ...data,
@@ -142,14 +175,17 @@ export async function GET() {
 }
 
 // ── PUT: Update hub config ──
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
     try {
         const auth = await verifyAuth(request);
         if (auth instanceof Response) return auth;
+        if (!auth.tenantId) {
+            return NextResponse.json({ error: 'Tenant required' }, { status: 403 });
+        }
 
         const body = await request.json();
 
-        await adminDb.collection('hub_config').doc('main').set({
+        await adminDb.collection('tenants').doc(auth.tenantId).collection('hub_config').doc('main').set({
             ...body,
             updatedAt: FieldValue.serverTimestamp(),
         }, { merge: true });

@@ -8,16 +8,19 @@ export async function GET(request: Request) {
     const auth = await verifyAdmin(request);
     if (auth instanceof Response) return auth;
     try {
-        const [usersSnap, leadsSnap, contactsSnap, tripsSnap, subsSnap] = await Promise.all([
+        const [usersSnap, subsSnap, leadsCountSnap, contactsCountSnap, tripsCountSnap] = await Promise.all([
             adminDb.collection('users').get(),
-            adminDb.collection('leads').get(),
-            adminDb.collection('contacts').get(),
-            adminDb.collection('trips').get(),
             adminDb.collection('subscriptions').get(),
+            adminDb.collectionGroup('leads').count().get(),
+            adminDb.collectionGroup('contacts').count().get(),
+            adminDb.collectionGroup('trips').count().get(),
         ]);
 
         const users = usersSnap.docs.map(d => ({ uid: d.id, ...d.data() }));
         const subscriptions = subsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const totalLeads = leadsCountSnap.data().count || 0;
+        const totalContacts = contactsCountSnap.data().count || 0;
+        const totalTrips = tripsCountSnap.data().count || 0;
 
         const activeSubscriptions = subscriptions.filter((s: any) => s.status === 'active');
         const mrr = activeSubscriptions.reduce((sum: number, s: any) => {
@@ -28,9 +31,9 @@ export async function GET(request: Request) {
         return NextResponse.json({
             stats: {
                 totalUsers: usersSnap.size,
-                totalLeads: leadsSnap.size,
-                totalContacts: contactsSnap.size,
-                totalTrips: tripsSnap.size,
+                totalLeads,
+                totalContacts,
+                totalTrips,
                 totalSubscriptions: subsSnap.size,
                 activeSubscriptions: activeSubscriptions.length,
                 mrr,

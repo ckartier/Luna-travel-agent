@@ -9,6 +9,7 @@ import { ProductTour } from '@/src/components/crm/ProductTour';
 import { CRMPageGuard } from '@/src/components/crm/CRMPageGuard';
 import { VoiceAgentPanel } from '@/src/components/crm/VoiceAgentPanel';
 import { AIHub } from '@/src/components/crm/AIHub';
+import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 import { ReactNode } from 'react';
 
 export default function CRMLayout({ children }: { children: ReactNode }) {
@@ -28,15 +29,17 @@ export default function CRMLayout({ children }: { children: ReactNode }) {
     const [bgConfig, setBgConfig] = useState<{type: string, url?: string, color?: string} | null>(null);
 
     useEffect(() => {
-        fetch('/api/hub/config').then(res => res.json()).then(data => {
-            if (data?.global?.crmBgType) {
-                setBgConfig({
-                    type: data.global.crmBgType,
-                    url: data.global.crmBgUrl,
-                    color: data.global.crmBgColor || '#ffffff'
-                });
-            }
-        }).catch(() => {});
+        fetchWithAuth('/api/hub/config')
+            .then(res => res.json())
+            .then(data => {
+                if (data?.global?.crmBgType) {
+                    setBgConfig({
+                        type: data.global.crmBgType,
+                        url: data.global.crmBgUrl,
+                        color: data.global.crmBgColor || '#ffffff'
+                    });
+                }
+            }).catch(() => {});
     }, []);
 
     return (
@@ -75,4 +78,3 @@ export default function CRMLayout({ children }: { children: ReactNode }) {
         </div>
     );
 }
-

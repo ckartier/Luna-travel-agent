@@ -62,7 +62,12 @@ export default function HubDashboardPage() {
     // Fetch health data
     const fetchHealth = useCallback(async () => {
         setLoading(true);
-        try { const res = await fetch('/api/hub/health'); setHealth(await res.json()); } catch { setHealth(null); }
+        try {
+            const res = await fetchWithAuth('/api/hub/health');
+            setHealth(await res.json());
+        } catch {
+            setHealth(null);
+        }
         setLoading(false);
     }, []);
 

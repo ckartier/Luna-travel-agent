@@ -75,6 +75,9 @@ const CODES = [
     { id: 'propriete_intellectuelle', label: 'Propriété Intellectuelle' },
 ];
 
+const NOTES_ENTITY_TYPE = 'jurisprudence';
+const NOTES_ENTITY_ID = 'library';
+
 export default function JurisprudencePage() {
     const { } = useAuth();
     const [entries, setEntries] = useState<JurisprudenceEntry[]>([]);
@@ -99,10 +102,35 @@ export default function JurisprudencePage() {
     useEffect(() => {
         const load = async () => {
             try {
-                const res = await fetchWithAuth('/api/crm/notes?collection=jurisprudence');
+                const res = await fetchWithAuth(`/api/crm/notes?entityType=${NOTES_ENTITY_TYPE}&entityId=${NOTES_ENTITY_ID}`);
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.notes?.length) setEntries(data.notes);
+                    const mapped: JurisprudenceEntry[] = (data.notes || []).map((note: any) => {
+                        let parsed: any = {};
+                        if (typeof note.content === 'string') {
+                            try {
+                                parsed = JSON.parse(note.content);
+                            } catch {
+                                parsed = {};
+                            }
+                        }
+
+                        const src = Object.keys(parsed).length > 0 ? parsed : note;
+                        return {
+                            id: src.id || note.id,
+                            title: src.title || '',
+                            court: src.court || 'Cour de Cassation',
+                            date: src.date || '',
+                            number: src.number || '',
+                            domain: src.domain || 'civil',
+                            summary: src.summary || '',
+                            url: src.url || '',
+                            starred: !!src.starred,
+                            tags: Array.isArray(src.tags) ? src.tags : [],
+                            addedAt: src.addedAt || note.createdAt || new Date().toISOString(),
+                        };
+                    });
+                    setEntries(mapped);
                 }
             } catch { /* fallback: empty */ }
         };
@@ -149,7 +177,7 @@ export default function JurisprudencePage() {
         return matchSearch && matchDomain;
     }).sort((a, b) => +b.starred - +a.starred);
 
-    const addEntry = () => {
+    const addEntry = async () => {
         const entry: JurisprudenceEntry = {
             id: Date.now().toString(),
             title: newEntry.title || '',
@@ -163,28 +191,63 @@ export default function JurisprudencePage() {
             tags: newEntry.tags || [],
             addedAt: new Date().toISOString(),
         };
-        const updated = [entry, ...entries];
-        setEntries(updated);
-        // Save to Firestore
-        fetchWithAuth('/api/crm/notes', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection: 'jurisprudence', note: entry }),
-        }).catch(console.error);
+
+        try {
+            const res = await fetchWithAuth('/api/crm/notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    entityType: NOTES_ENTITY_TYPE,
+                    entityId: NOTES_ENTITY_ID,
+                    content: JSON.stringify(entry),
+                    isPinned: entry.starred,
+                }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setEntries(prev => [{ ...entry, id: data.id || entry.id }, ...prev]);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+
         setShowAdd(false);
         setNewEntry({ title: '', court: 'Cour de Cassation', date: '', number: '', domain: 'civil', summary: '', url: '', tags: [], starred: false });
     };
 
-    const toggleStar = (id: string) => {
+    const toggleStar = async (id: string) => {
         const updated = entries.map(e => e.id === id ? { ...e, starred: !e.starred } : e);
         setEntries(updated);
-        if (selected?.id === id) setSelected(prev => prev ? { ...prev, starred: !prev.starred } : null);
+        const target = updated.find(e => e.id === id);
+        if (selected?.id === id && target) setSelected(target);
+
+        if (!target) return;
+        try {
+            await fetchWithAuth(`/api/crm/notes?id=${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    content: JSON.stringify(target),
+                    isPinned: target.starred,
+                }),
+            });
+        } catch (e) {
+            console.error(e);
+        }
     };
 
-    const deleteEntry = (id: string) => {
+    const deleteEntry = async (id: string) => {
+        const previous = entries;
         const updated = entries.filter(e => e.id !== id);
         setEntries(updated);
         if (selected?.id === id) setSelected(null);
+
+        try {
+            await fetchWithAuth(`/api/crm/notes?id=${id}`, { method: 'DELETE' });
+        } catch (e) {
+            console.error(e);
+            setEntries(previous);
+        }
     };
 
     const copyToClipboard = (text: string) => {

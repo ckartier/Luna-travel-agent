@@ -27,24 +27,24 @@ export async function GET(req: NextRequest) {
     // Auth check
     const auth = await verifyAuth(req);
     if (auth instanceof Response) return auth;
+    if (!auth.tenantId) {
+        return NextResponse.json({ error: 'Tenant required' }, { status: 403 });
+    }
 
     const template = req.nextUrl.searchParams.get('template') || 'master';
     const embed = req.nextUrl.searchParams.get('embed') === 'true';
     const origin = req.nextUrl.origin || 'http://localhost:3000';
+    const tenantId = auth.tenantId;
 
     // Fetch branding from site_config (logo + agency name)
     let logoUrl = `${origin}/luna-logo-noir.png`;
     let agencyName = 'Luna Conciergerie';
     try {
-        const tenantsSnap = await adminDb.collection('tenants').limit(1).get();
-        if (!tenantsSnap.empty) {
-            const tenantId = tenantsSnap.docs[0].id;
-            const configDoc = await adminDb.collection('tenants').doc(tenantId).collection('site_config').doc('main').get();
-            const cfgData = configDoc.data();
-            if (cfgData?.global?.logo) logoUrl = cfgData.global.logo.startsWith('http') ? cfgData.global.logo : `${origin}${cfgData.global.logo}`;
-            if (cfgData?.business?.name) agencyName = cfgData.business.name;
-            else if (cfgData?.global?.siteName) agencyName = cfgData.global.siteName;
-        }
+        const configDoc = await adminDb.collection('tenants').doc(tenantId).collection('site_config').doc('main').get();
+        const cfgData = configDoc.data();
+        if (cfgData?.global?.logo) logoUrl = cfgData.global.logo.startsWith('http') ? cfgData.global.logo : `${origin}${cfgData.global.logo}`;
+        if (cfgData?.business?.name) agencyName = cfgData.business.name;
+        else if (cfgData?.global?.siteName) agencyName = cfgData.global.siteName;
     } catch { /* fallback to defaults */ }
 
     const sampleConfig = {

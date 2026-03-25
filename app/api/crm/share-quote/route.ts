@@ -16,6 +16,9 @@ export async function POST(request: Request) {
         // Auth check
         const auth = await verifyAuth(request);
         if (auth instanceof Response) return auth;
+        if (!auth.tenantId) {
+            return NextResponse.json({ error: 'Tenant required' }, { status: 403 });
+        }
 
         const body = await request.json();
         const {
@@ -27,9 +30,13 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing quoteId or quoteNumber' }, { status: 400 });
         }
 
-        // Get tenant ID
-        const tenantsSnap = await adminDb.collection('tenants').limit(1).get();
-        const tenantId = tenantsSnap.empty ? 'default' : tenantsSnap.docs[0].id;
+        const tenantId = auth.tenantId;
+
+        // Ensure quote belongs to caller tenant.
+        const quoteDoc = await adminDb.collection('tenants').doc(tenantId).collection('quotes').doc(quoteId).get();
+        if (!quoteDoc.exists) {
+            return NextResponse.json({ error: 'Quote not found in tenant scope' }, { status: 404 });
+        }
 
         // Generate a unique share ID
         const shareId = crypto.randomBytes(16).toString('hex');

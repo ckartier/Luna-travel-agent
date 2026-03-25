@@ -25,9 +25,18 @@ interface HubConfig {
 export default function HubSitePage() {
     const [config, setConfig] = useState<HubConfig | null>(null);
     const [loading, setLoading] = useState(true);
+    const [tenantId, setTenantId] = useState<string>('');
 
     useEffect(() => {
-        fetch('/api/hub/config')
+        const params = new URLSearchParams(window.location.search);
+        const tid = params.get('tenantId') || '';
+        setTenantId(tid);
+
+        const configUrl = tid
+            ? `/api/hub/config?tenantId=${encodeURIComponent(tid)}`
+            : '/api/hub/config';
+
+        fetch(configUrl)
             .then(r => r.json())
             .then(data => { setConfig(data); setLoading(false); })
             .catch(() => setLoading(false));
@@ -73,7 +82,7 @@ export default function HubSitePage() {
 
             {/* ═══ BLOCKS ═══ */}
             {blocks.map((block, idx) => (
-                <BlockRenderer key={block.id} block={block} idx={idx} pri={pri} sec={sec} acc={acc} bg={bg} txt={txt} />
+                <BlockRenderer key={block.id} block={block} idx={idx} pri={pri} sec={sec} acc={acc} bg={bg} txt={txt} tenantId={tenantId} />
             ))}
 
             {/* ═══ FOOTER ═══ */}
@@ -96,7 +105,7 @@ export default function HubSitePage() {
 /* ═══════════════════════════════════════════════════
    Block Renderer — Renders each block type with animations
    ═══════════════════════════════════════════════════ */
-function BlockRenderer({ block, idx, pri, sec, acc, bg, txt }: { block: HubBlock; idx: number; pri: string; sec: string; acc: string; bg: string; txt: string }) {
+function BlockRenderer({ block, idx, pri, sec, acc, bg, txt, tenantId }: { block: HubBlock; idx: number; pri: string; sec: string; acc: string; bg: string; txt: string; tenantId?: string }) {
     const ref = useRef<HTMLDivElement>(null);
     const inView = useInView(ref, { once: true, margin: '-80px' });
     const variants = {
@@ -113,7 +122,7 @@ function BlockRenderer({ block, idx, pri, sec, acc, bg, txt }: { block: HubBlock
             {block.type === 'media' && <MediaBlock block={block} />}
             {block.type === 'cta' && <CtaBlock block={block} pri={pri} acc={acc} />}
             {block.type === 'cards' && <CardsBlock block={block} pri={pri} sec={sec} />}
-            {block.type === 'form' && <FormBlock block={block} pri={pri} />}
+            {block.type === 'form' && <FormBlock block={block} pri={pri} tenantId={tenantId} />}
         </motion.section>
     );
 }
@@ -304,7 +313,7 @@ function CardsBlock({ block, pri, sec }: { block: HubBlock; pri: string; sec: st
 }
 
 /* ── FORM ── */
-function FormBlock({ block, pri }: { block: HubBlock; pri: string }) {
+function FormBlock({ block, pri, tenantId }: { block: HubBlock; pri: string; tenantId?: string }) {
     const [form, setForm] = useState({ name: '', email: '', message: '' });
     const [sending, setSending] = useState(false);
     const [sent, setSent] = useState(false);
@@ -314,10 +323,14 @@ function FormBlock({ block, pri }: { block: HubBlock; pri: string }) {
         if (!form.name || !form.email || !form.message) return;
         setSending(true);
         try {
-            const res = await fetch('/api/hub/contact', {
+            const contactUrl = tenantId
+                ? `/api/hub/contact?tenantId=${encodeURIComponent(tenantId)}`
+                : '/api/hub/contact';
+
+            const res = await fetch(contactUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form),
+                body: JSON.stringify(tenantId ? { ...form, tenantId } : form),
             });
             if (res.ok) { setSent(true); setForm({ name: '', email: '', message: '' }); }
         } catch (e) { console.error('Form error:', e); }

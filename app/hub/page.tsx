@@ -386,7 +386,13 @@ export default function HubPage() {
   const heroSubtitle = isIframePreview ? heroBlock?.subtitle || t.subtitle : t.subtitle;
 
   useEffect(() => {
-    fetch('/api/hub/config')
+    const params = new URLSearchParams(window.location.search);
+    const tid = params.get('tenantId');
+    const configUrl = tid
+      ? `/api/hub/config?tenantId=${encodeURIComponent(tid)}`
+      : '/api/hub/config';
+
+    fetch(configUrl)
       .then((r) => r.json())
       .then((cfg) => setSavedConfig(cfg))
       .catch(() => setSavedConfig(null));

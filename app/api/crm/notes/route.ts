@@ -9,6 +9,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 /**
  * GET /api/crm/notes?entityType=contact&entityId=xxx  → list notes
  * POST /api/crm/notes                                  → add a note
+ * PUT /api/crm/notes?id=xxx                            → update a note
  * DELETE /api/crm/notes?id=xxx                          → delete a note
  */
 export async function GET(req: NextRequest) {
@@ -107,6 +108,47 @@ export async function DELETE(req: NextRequest) {
 
     try {
         await adminDb.collection('tenants').doc(tenantId).collection('notes').doc(id).delete();
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
+export async function PUT(req: NextRequest) {
+    const rl = rateLimitResponse(getRateLimitKey(req), 'default');
+    if (rl) return rl;
+
+    const auth = await verifyAuth(req);
+    if (auth instanceof Response) return auth;
+
+    const paywall = await requireSubscription(auth, 'crm');
+    if (paywall) return paywall;
+
+    const tenantId = auth.tenantId;
+    if (!tenantId) return NextResponse.json({ error: 'Tenant required' }, { status: 403 });
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+
+    const body = await req.json();
+    const updates: Record<string, any> = {};
+
+    if (typeof body.content === 'string') {
+        updates.content = body.content.trim();
+    }
+    if (typeof body.isPinned === 'boolean') {
+        updates.isPinned = body.isPinned;
+    }
+
+    if (Object.keys(updates).length === 0) {
+        return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
+    }
+
+    updates.updatedAt = FieldValue.serverTimestamp();
+
+    try {
+        await adminDb.collection('tenants').doc(tenantId).collection('notes').doc(id).update(updates);
         return NextResponse.json({ success: true });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,27 +1,74 @@
 export const dynamic = "force-dynamic";
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/src/lib/firebase/admin';
+import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 
 /**
  * GET /api/hub/health
  * Returns health status for both CRM verticals (Travel + Legal)
  */
-export async function GET() {
-    try {
-        const now = new Date();
-        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+async function resolveTenantIdFromRequest(request: NextRequest): Promise<string | Response | null> {
+    const authHeader = request.headers.get('Authorization');
 
-        // Fetch data from Firebase in parallel for both verticals
+    // Authenticated calls: use caller tenant.
+    if (authHeader?.startsWith('Bearer ')) {
+        const auth = await verifyAuth(request);
+        if (auth instanceof Response) return auth;
+        if (!auth.tenantId) {
+            return NextResponse.json({ error: 'Tenant required' }, { status: 403 });
+        }
+        return auth.tenantId;
+    }
+
+    // Optional explicit tenant for non-auth calls.
+    const tenantIdFromQuery = request.nextUrl.searchParams.get('tenantId');
+    if (tenantIdFromQuery) return tenantIdFromQuery;
+
+    // Backward-compatible fallback for single-tenant setups.
+    const tenantsSnap = await adminDb.collection('tenants').limit(1).get();
+    if (tenantsSnap.empty) return null;
+    return tenantsSnap.docs[0].id;
+}
+
+async function fetchBugReportsForTenant(tenantId: string) {
+    const tenantBugRef = adminDb.collection('tenants').doc(tenantId).collection('bug_reports');
+    try {
+        const tenantSnap = await tenantBugRef.orderBy('createdAt', 'desc').limit(50).get();
+        return tenantSnap;
+    } catch {
+        return tenantBugRef.limit(50).get();
+    }
+}
+
+export async function GET(request: NextRequest) {
+    try {
+        const resolvedTenant = await resolveTenantIdFromRequest(request);
+        if (resolvedTenant instanceof Response) return resolvedTenant;
+        if (!resolvedTenant) {
+            return NextResponse.json({
+                overall: { status: 'error', score: 0, totalBugs: 0, openBugs: 0, criticalBugs: 0 },
+                travel: { status: 'error', leads: 0, contacts: 0, activeTrips: 0, totalTrips: 0, revenue: 0 },
+                legal: { status: 'error', leads: 0, contacts: 0, activeDossiers: 0, totalDossiers: 0, revenue: 0 },
+                bugReports: [],
+                error: 'No tenant found',
+            }, { status: 404 });
+        }
+        const tenantId = resolvedTenant;
+        const tenantRef = adminDb.collection('tenants').doc(tenantId);
+
+        const now = new Date();
+
+        // Fetch tenant-scoped CRM data in parallel.
         const [
             leadsSnap,
             contactsSnap,
             tripsSnap,
             bugReportsSnap,
         ] = await Promise.all([
-            adminDb.collection('leads').limit(500).get(),
-            adminDb.collection('contacts').limit(500).get(),
-            adminDb.collection('trips').limit(500).get(),
-            adminDb.collection('bug_reports').orderBy('createdAt', 'desc').limit(50).get(),
+            tenantRef.collection('leads').limit(500).get(),
+            tenantRef.collection('contacts').limit(500).get(),
+            tenantRef.collection('trips').limit(500).get(),
+            fetchBugReportsForTenant(tenantId),
         ]);
 
         // Count by vertical

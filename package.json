@@ -7,6 +7,8 @@
     "build": "NODE_OPTIONS='--max-old-space-size=4096' next build",
     "start": "next start",
     "lint": "next lint",
+    "migrate:legacy-hub:dry": "node scripts/migrate-legacy-hub-data.cjs",
+    "migrate:legacy-hub:apply": "node scripts/migrate-legacy-hub-data.cjs --apply",
     "test": "vitest run",
     "test:watch": "vitest"
   },
