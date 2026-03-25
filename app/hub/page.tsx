@@ -420,6 +420,10 @@ export default function HubPage() {
 
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
+      // Preview updates are accepted only from the parent frame on same origin.
+      if (window.parent === window) return;
+      if (e.origin !== window.location.origin) return;
+      if (e.source !== window.parent) return;
       if (e.data?.type === 'hub-editor-update' && e.data.config) {
         setEditorConfig(e.data.config as HubConfig);
       }
@@ -439,7 +443,7 @@ export default function HubPage() {
           type: 'hub-editor-focus',
           section: section.dataset.sectionId,
         },
-        '*'
+        window.location.origin
       );
     };
     document.addEventListener('click', onClick);

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import {
-    Save, Check, Loader2, RefreshCw, LayoutGrid, Type, Palette, Settings, Upload, Monitor, Tablet, Smartphone, Search, FileText, Image as ImageIcon, Video, Trash2, Plus, ChevronDown, ChevronRight, GripVertical
+    Save, Check, Loader2, RefreshCw, LayoutGrid, Type, Palette, Settings, Upload, Monitor, Tablet, Smartphone, Video, Trash2, Plus
 } from 'lucide-react';
 import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 
@@ -40,20 +40,21 @@ export default function BuilderView({ config, setConfig, saveConfig, saving, sav
     const [device, setDevice] = useState<Device>('desktop');
     const [previewKey, setPreviewKey] = useState(0);
     const [uploading, setUploading] = useState(false);
-    const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
-    const [draggedId, setDraggedId] = useState<string | null>(null);
-    const [dragOverId, setDragOverId] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const iframeRef = useRef<HTMLIFrameElement>(null);
     const uploadCallbackRef = useRef<((url: string) => void) | null>(null);
 
+    const syncPreview = () => {
+        if (!config) return;
+        const iframe = iframeRef.current;
+        if (!iframe?.contentWindow) return;
+        iframe.contentWindow.postMessage({ type: 'hub-editor-update', config }, window.location.origin);
+    };
+
     useEffect(() => {
-        const iframe = document.querySelector('#hub-preview-iframe') as HTMLIFrameElement;
-        if (iframe?.contentWindow && config) {
-            iframe.contentWindow.postMessage({ type: 'hub-editor-update', config }, '*');
-        }
+        syncPreview();
     }, [config]);
 
-    const toggleSection = (id: string) => setOpenSections(p => ({ ...p, [id]: !p[id] }));
     const updateGlobal = (key: string, val: string) => config && setConfig({ ...config, global: { ...config.global, [key]: val } });
     const updateBlock = (blockId: string, updates: Partial<HubBlock>) => config && setConfig({ ...config, blocks: config.blocks.map(b => b.id === blockId ? { ...b, ...updates } : b) });
     const updateBusiness = (key: string, val: string) => config && setConfig({ ...config, business: { ...config.business, [key]: val } });
@@ -65,22 +66,13 @@ export default function BuilderView({ config, setConfig, saveConfig, saving, sav
     };
     const addBlock = (type: string) => {
         if (!config) return;
-        const id = `${type.toLowerCase()}_${Date.now()}`;
-        setConfig({ ...config, blocks: [...config.blocks, { id, type: type.toLowerCase(), order: config.blocks.length, visible: true, title: type }] });
+        const normalizedType = type.toLowerCase();
+        // Core block types are singleton in the renderer.
+        if (config.blocks.some(b => b.type === normalizedType)) return;
+        const id = `${normalizedType}_${Date.now()}`;
+        setConfig({ ...config, blocks: [...config.blocks, { id, type: normalizedType, order: config.blocks.length, visible: true, title: type }] });
     };
     const deleteBlock = (blockId: string) => config && setConfig({ ...config, blocks: config.blocks.filter(b => b.id !== blockId).map((b, i) => ({ ...b, order: i })) });
-
-    const handleDrop = (dropId: string) => {
-        if (!draggedId || draggedId === dropId || !config) return;
-        const arr = [...config.blocks];
-        const dragIdx = arr.findIndex(b => b.id === draggedId);
-        const dropIdx = arr.findIndex(b => b.id === dropId);
-        if (dragIdx === -1 || dropIdx === -1) return;
-        const [moved] = arr.splice(dragIdx, 1);
-        arr.splice(dropIdx, 0, moved);
-        setConfig({ ...config, blocks: arr.map((b, i) => ({ ...b, order: i })) });
-        setDraggedId(null); setDragOverId(null);
-    };
 
     const triggerUpload = (accept: string, callback: (url: string) => void) => {
         uploadCallbackRef.current = callback;
@@ -96,8 +88,10 @@ export default function BuilderView({ config, setConfig, saveConfig, saving, sav
             const res = await fetchWithAuth('/api/crm/upload', { method: 'POST', body: form });
             if (res.ok) { const { url } = await res.json(); uploadCallbackRef.current?.(url); }
         } catch (e) { console.error('Upload error:', e); }
-        setUploading(false);
-        e.target.value = '';
+        finally {
+            setUploading(false);
+            e.target.value = '';
+        }
     };
 
     if (!config) return null;
@@ -142,7 +136,7 @@ export default function BuilderView({ config, setConfig, saveConfig, saving, sav
 
                 <div className="flex-1 rounded-[20px] overflow-hidden border border-white bg-zinc-100 flex items-start justify-center p-2 shadow-inner">
                     <div className="transition-all duration-500 h-full rounded-[14px] overflow-hidden shadow-lg bg-white" style={{ width: DEVICE_WIDTHS[device] }}>
-                        <iframe id="hub-preview-iframe" key={previewKey} src="/hub" className="w-full h-full border-0" />
+                        <iframe ref={iframeRef} id="hub-preview-iframe" key={previewKey} src="/hub" className="w-full h-full border-0" onLoad={syncPreview} />
                     </div>
                 </div>
             </div>
@@ -162,7 +156,7 @@ export default function BuilderView({ config, setConfig, saveConfig, saving, sav
                                             style={{ backgroundColor: block.visible ? GREEN : '#d1d5db' }}>
                                             <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full shadow transition-all ${block.visible ? 'left-[16px]' : 'left-0.5'}`} />
                                         </button>
-                                        {!['hero', 'form'].includes(block.id) && (
+                                        {!['hero', 'form'].includes(block.type) && (
                                             <button onClick={() => deleteBlock(block.id)} className="text-zinc-300 hover:text-red-500 transition">
                                                 <Trash2 size={13} />
                                             </button>
