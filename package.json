@@ -24,6 +24,7 @@
     "firebase-admin": "^13.7.0",
     "framer-motion": "^12.35.2",
     "googleapis": "^171.4.0",
+    "groq-sdk": "^1.1.1",
     "jspdf": "^4.2.0",
     "kokoro-js": "^1.2.1",
     "leaflet": "^1.9.4",
