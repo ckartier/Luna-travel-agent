@@ -56,13 +56,12 @@ function LoadingScreen({ onComplete }: { onComplete: () => void }) {
                             transition={{ duration: 2.4, ease: [0.16, 1, 0.3, 1] }}
                             className="w-full h-full"
                         >
-                            <Image
+                            <img
                                 src="/Logo ours agence.png"
                                 alt="Datarnivore"
                                 width={120}
                                 height={170}
                                 className="object-contain"
-                                priority
                             />
                         </motion.div>
 
@@ -469,11 +468,11 @@ export default function HubPage() {
                         transition={{ duration: 15, ease: 'easeOut' }}
                     >
                         <video
+                            key={videoSrc} // Force re-render on random selection
                             ref={videoRef}
                             muted
                             playsInline
                             loop
-                            onEnded={() => setIsVideoEnded(true)}
                             className="absolute inset-0 w-full h-full object-cover brightness-[1.15]"
                         >
                             <source src={videoSrc} type="video/mp4" />
@@ -497,7 +496,7 @@ export default function HubPage() {
                     >
                         <div className="max-w-[1000px] mx-auto flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <Image src="/Logo ours agence blanc.png" alt="Datarnivore" width={46} height={46} className="object-contain drop-shadow-md" />
+                                <img src="/Logo ours agence blanc.png" alt="Datarnivore" width={46} height={46} className="object-contain drop-shadow-md" />
                                 <span className="text-[20px] text-white font-light tracking-wide">
                                     Datar<span className="font-semibold">Nivore</span>
                                 </span>
