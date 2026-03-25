@@ -33,7 +33,12 @@ export default function TransitionPage() {
         const timer = setTimeout(() => {
             setPhase('exit');
             setTimeout(() => {
-                const target = vertical.id === 'legal' ? '/crm/avocat' : '/crm';
+                const target =
+                    vertical.id === 'legal'
+                        ? '/crm/avocat?vertical=legal'
+                        : vertical.id === 'monum'
+                            ? '/crm/monum?vertical=monum'
+                            : '/crm/luna?vertical=travel';
                 router.push(target);
             }, 800);
         }, 2500);

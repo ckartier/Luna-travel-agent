@@ -4,7 +4,7 @@ import { ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-    LayoutDashboard, Menu, X, ExternalLink, Plane, Scale, Globe, LogOut,
+    LayoutDashboard, Menu, X, ExternalLink, Plane, Scale, Globe, LogOut, Building2,
 } from 'lucide-react';
 import { HubGuard } from '@/src/components/hub/HubGuard';
 import { useAuth } from '@/src/contexts/AuthContext';
@@ -22,8 +22,9 @@ export default function HubDashboardLayout({ children }: { children: ReactNode }
 
     const externalLinks = [
         { name: 'Hub Site', href: '/hub/site', icon: Globe, color: '#19c37d' },
-        { name: 'CRM Travel', href: '/crm', icon: Plane, color: '#5a8fa3' },
+        { name: 'CRM Travel', href: '/crm/luna', icon: Plane, color: '#5a8fa3' },
         { name: 'CRM Legal', href: '/crm/avocat?vertical=legal', icon: Scale, color: '#A07850' },
+        { name: 'CRM Monum', href: '/crm/monum?vertical=monum', icon: Building2, color: '#334155' },
         { name: 'Site Admin', href: '/site-admin', icon: Globe, color: '#6B7280' },
     ];
 

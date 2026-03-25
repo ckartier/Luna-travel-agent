@@ -24,7 +24,8 @@ export default function SignupPage() {
     const [step, setStep] = useState<'form' | 'creating'>('form');
     const router = useRouter();
     const searchParams = useSearchParams();
-    const isLegal = searchParams?.get('vertical') === 'legal';
+    const vertical = searchParams?.get('vertical') || 'travel';
+    const isLegal = vertical === 'legal';
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -83,8 +84,14 @@ export default function SignupPage() {
                 // Non-blocking — demo data is nice-to-have
             }
 
-            // 6. Redirect to CRM
-            router.push(isLegal ? '/crm?vertical=legal' : '/crm');
+            // 6. Redirect to the right CRM vertical
+            const destination =
+                vertical === 'legal'
+                    ? '/crm/avocat?vertical=legal'
+                    : vertical === 'monum'
+                        ? '/crm/monum?vertical=monum'
+                        : '/crm/luna?vertical=travel';
+            router.push(destination);
         } catch (err: any) {
             setError(err.message || 'Erreur lors de la création du compte');
             setStep('form');

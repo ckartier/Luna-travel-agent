@@ -304,13 +304,12 @@ const PRODUCTS = [
         features: ['[OK] Analyse_Dossiers', '[OK] Jurisprudence_RT', '[OK] Auth_Secret_Pro'],
     },
     {
-        id: 'renovtracker', name: 'Paris RenovTracker', tagline: 'sys.renov_tracker',
-        desc: '>> Suivi permis de construire, analyse DVF et cartographie des rénovations à Paris.',
-        loginHref: 'https://datarnivore-renovtracker.web.app', crmHref: 'https://datarnivore-renovtracker.web.app',
+        id: 'monum', name: 'Monum', tagline: 'sys.renov_tracker',
+        desc: '>> CRM chantiers : suivi opérationnel, planning, budget et coordination équipe.',
+        loginHref: '/crm/monum?vertical=monum', crmHref: '/crm/monum?vertical=monum',
         accentColor: 'text-fuchsia-400', hoverBorder: 'hover:border-fuchsia-400/50',
         glowColor: 'rgba(232,121,249,0.15)', borderGlow: 'rgba(232,121,249,0.4)',
-        features: ['[OK] DVF_Open_Data', '[OK] Permis_Tracker', '[OK] Analyse_Marché'],
-        isExternal: true,
+        features: ['[OK] Planning_Chantier', '[OK] Budget_Tracker', '[OK] Coordination_Equipe'],
     },
 ];
 

@@ -45,7 +45,7 @@ const DEFAULT_HUB_CONFIG = {
             order: 2,
             visible: true,
             title: 'Nos Produits',
-            text: 'Luna Conciergerie — CRM de voyage haut de gamme.\nLe Droit Agent — CRM pour cabinets d\'avocats.',
+            text: 'Luna Travel — CRM de voyage haut de gamme.\nLawyer Suite — CRM pour cabinets d\'avocats.\nMonum — CRM de suivi chantiers et budgets.',
         },
         {
             id: 'feature',
@@ -99,8 +99,9 @@ const DEFAULT_HUB_CONFIG = {
     nav: {
         menuItems: [
             { label: 'Dashboard', href: '/hub/dashboard' },
-            { label: 'CRM Travel', href: '/crm' },
+            { label: 'CRM Travel', href: '/crm/luna' },
             { label: 'CRM Legal', href: '/crm/avocat?vertical=legal' },
+            { label: 'CRM Monum', href: '/crm/monum?vertical=monum' },
         ],
     },
     business: {
