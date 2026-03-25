@@ -1,10 +1,12 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { generateMultimodalEmbedding } from "@/src/lib/ai/gemini-embeddings";
 import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 import { rateLimitResponse, getRateLimitKey } from '@/src/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
+    await headers(); // Force dynamic rendering
     try {
         // Auth check
         const auth = await verifyAuth(req);

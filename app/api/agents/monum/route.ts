@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 import {
     analyzeProjectFeasibility,
@@ -7,6 +8,7 @@ import {
 } from '@/src/lib/ai/monum-agents';
 
 export async function POST(request: Request) {
+    await headers(); // Force dynamic rendering
     const auth = await verifyAuth(request);
     if (auth instanceof Response) return auth;
 

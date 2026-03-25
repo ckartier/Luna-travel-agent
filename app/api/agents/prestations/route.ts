@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 import { adminDb } from '@/src/lib/firebase/admin';
 import { generateMultimodalEmbedding } from '@/src/lib/ai/gemini-embeddings';
@@ -70,6 +71,7 @@ function smartMatch(catalog: any[], message: string, context?: { budget?: string
 }
 
 export async function POST(req: NextRequest) {
+    await headers(); // Force dynamic rendering
     const auth = await verifyAuth(req);
     if (auth instanceof Response) return auth;
 
