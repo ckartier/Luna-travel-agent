@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/src/lib/firebase/admin';
 import { sendEmail } from '@/src/lib/gmail/api';

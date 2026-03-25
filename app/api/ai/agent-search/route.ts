@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { generateMultimodalEmbedding } from "@/src/lib/ai/gemini-embeddings";
 import { searchCatalogSimilar } from "@/src/lib/ai/vector-store";

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import { sendEmail } from '@/src/lib/gmail/api';
 import { generateAcknowledgmentEmail } from '@/src/lib/email/templates';

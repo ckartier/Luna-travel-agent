@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/src/lib/firebase/admin';
 import { rateLimitResponse, getRateLimitKey } from '@/src/lib/rateLimit';

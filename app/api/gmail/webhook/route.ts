@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import { getEmailContent } from '@/src/lib/gmail/api';
 import { extractTravelLeadFromEmail } from '@/src/lib/gemini/extraction';

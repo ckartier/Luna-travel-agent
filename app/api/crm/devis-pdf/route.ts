@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import jsPDF from 'jspdf';
 import { trackAPIUsage } from '@/src/lib/apiUsageTracker';

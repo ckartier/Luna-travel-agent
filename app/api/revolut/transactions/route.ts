@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthWithTenant } from '@/src/lib/firebase/apiAuth';
 import { revolutFetch } from '@/src/lib/revolut';

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest } from 'next/server';
 import { adminDb } from '@/src/lib/firebase/admin';
 import { verifyAPIKey, apiSuccess, apiError, apiHeaders, parsePagination } from '@/src/lib/apiKeyAuth';

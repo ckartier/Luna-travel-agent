@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 'use strict';
 
 import { NextRequest, NextResponse } from 'next/server';
