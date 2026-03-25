@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
+import { NextResponse } from 'next/server';
 import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 import {
     searchTransport,
