@@ -13,12 +13,7 @@
             "**/.*",
             "**/node_modules/**"
         ],
-        "rewrites": [
-            {
-                "source": "**",
-                "destination": "/index.html"
-            }
-        ],
+        "rewrites": [],
         "headers": [
             {
                 "source": "**/*.@(js|css|jpg|jpeg|gif|png|svg|webp|woff2)",
