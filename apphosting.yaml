@@ -10,15 +10,15 @@ env:
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     value: AIzaSyARB65V4oNxYIBnhwiruhB4fCiDXE58yls
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    value: datarnivore.firebaseapp.com
+    value: luna-travel-agent.firebaseapp.com
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    value: datarnivore
+    value: luna-travel-agent
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: datarnivore.firebasestorage.app
+    value: luna-travel-agent.firebasestorage.app
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    value: "693191594260"
+    value: "455885111230"
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    value: 1:693191594260:web:cad44faa69b2452b8ff201
+    value: 1:455885111230:web:49c935d8d2a009d3fe83ef
 
   # Mapbox (must be value, not secret — NEXT_PUBLIC_ vars are inlined at build time)
   - variable: NEXT_PUBLIC_MAPBOX_TOKEN
