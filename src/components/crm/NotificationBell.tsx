@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, BellRing, X, Check, AlertTriangle, RefreshCw, Zap } from 'lucide-react';
-import { getAllSupplierBookings, CRMSupplierBooking, getSuppliers, CRMSupplier } from '@/src/lib/firebase/crm';
+import { getAllSupplierBookings, getSuppliers, CRMSupplier, getOpenReminders, CRMReminder } from '@/src/lib/firebase/crm';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { useAutoTranslate } from '@/src/components/T';
 
 interface SupplierAlert {
     id: string;
@@ -17,9 +18,20 @@ interface SupplierAlert {
     seen: boolean;
 }
 
+interface WorkflowAlert {
+    id: string;
+    title: string;
+    dueDate: string;
+    priority: string;
+    tripId?: string;
+    seen: boolean;
+}
+
 export function NotificationBell() {
     const { tenantId } = useAuth();
+    const tx = useAutoTranslate();
     const [alerts, setAlerts] = useState<SupplierAlert[]>([]);
+    const [workflowAlerts, setWorkflowAlerts] = useState<WorkflowAlert[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [toastAlert, setToastAlert] = useState<SupplierAlert | null>(null);
     const [pollMap, setPollMap] = useState<Map<string, string>>(new Map());
@@ -48,6 +60,27 @@ export function NotificationBell() {
         if (!tenantId) return;
         getSuppliers(tenantId).then(s => setSuppliers(s)).catch(() => { });
     }, [tenantId]);
+
+    const refreshWorkflowAlerts = useCallback(async () => {
+        if (!tenantId) return;
+        try {
+            const reminders = await getOpenReminders(tenantId);
+            const scoped = reminders.filter((r: CRMReminder) => (r.source || '') === 'pro-workflow');
+            setWorkflowAlerts((prev) => {
+                const seenById = new Map(prev.map((a) => [a.id, a.seen]));
+                return scoped.slice(0, 20).map((r) => ({
+                    id: String(r.id || ''),
+                    title: String(r.title || tx('Rappel')),
+                    dueDate: String(r.dueDate || ''),
+                    priority: String(r.priority || 'medium'),
+                    tripId: typeof r.tripId === 'string' ? r.tripId : undefined,
+                    seen: seenById.get(String(r.id || '')) || false,
+                }));
+            });
+        } catch (e) {
+            console.error('[NotificationBell] Workflow alerts error:', e);
+        }
+    }, [tenantId, tx]);
 
     // Initialize poll map
     const initPollMap = useCallback(async () => {
@@ -93,11 +126,12 @@ export function NotificationBell() {
             if (existingAlerts.length > 0) {
                 setAlerts(existingAlerts);
             }
+            await refreshWorkflowAlerts();
             setInitialized(true);
         } catch (e) {
             console.error('[NotificationBell] Init error:', e);
         }
-    }, [tenantId, suppliers]);
+    }, [tenantId, suppliers, refreshWorkflowAlerts]);
 
     useEffect(() => {
         if (tenantId && suppliers.length > 0 && !initialized) {
@@ -122,11 +156,6 @@ export function NotificationBell() {
 
                 fresh.forEach(b => {
                     if (!b.id) return;
-                    const prev = pollMap.get(b.id);
-
-                    const statusChanged = prev && prev !== b.status &&
-                        (b.status === 'CONFIRMED' || b.status === 'CANCELLED' || b.status === 'CANCELLED_LATE');
-
                     // Detect actual new WhatsApp response
                     const hasNewResponse = (b as any).supplierResponse?.respondedAt &&
                         !pollMap.has(`resp_${b.id}`);
@@ -177,13 +206,14 @@ export function NotificationBell() {
                     setTimeout(() => setToastAlert(null), 10000);
                     try { new Audio('/notification.wav').play().catch(() => { }); } catch { }
                 }
-            } catch (e) { /* silent */ }
+                await refreshWorkflowAlerts();
+            } catch { /* silent */ }
         }, 15000);
 
         return () => clearInterval(interval);
-    }, [tenantId, initialized, pollMap, suppliers]);
+    }, [tenantId, initialized, pollMap, suppliers, refreshWorkflowAlerts]);
 
-    const unseenCount = alerts.filter(a => !a.seen).length;
+    const unseenCount = alerts.filter(a => !a.seen).length + workflowAlerts.filter(a => !a.seen).length;
 
     return (
         <>
@@ -209,9 +239,9 @@ export function NotificationBell() {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="font-semibold text-sm text-luna-charcoal">
-                                    {toastAlert.type === 'CONFIRMED' ? '📱 Prestataire a confirmé via WhatsApp !' :
-                                        toastAlert.type === 'CANCELLED_LATE' ? '⚠️ ANNULATION TARDIVE !' :
-                                            '📱 Prestataire a refusé'}
+                                    {toastAlert.type === 'CONFIRMED' ? `📱 ${tx('Prestataire a confirmé via WhatsApp !')}` :
+                                        toastAlert.type === 'CANCELLED_LATE' ? `⚠️ ${tx('ANNULATION TARDIVE !')}` :
+                                            `📱 ${tx('Prestataire a refusé')}`}
                                 </p>
                                 <p className="text-sm text-luna-text-muted mt-1">
                                     <strong>{toastAlert.supplierName}</strong> — {toastAlert.prestationName}
@@ -263,69 +293,103 @@ export function NotificationBell() {
                                         <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-sm">
                                             <Zap size={14} className="text-white" />
                                         </div>
-                                        <span className="text-sm font-semibold text-luna-charcoal">Alertes Prestataires</span>
+                                        <span className="text-sm font-semibold text-luna-charcoal">{tx('Alertes CRM')}</span>
                                         {unseenCount > 0 && (
                                             <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-600 text-[10px] font-bold">{unseenCount} nouveau{unseenCount > 1 ? 'x' : ''}</span>
                                         )}
                                     </div>
-                                    {alerts.length > 0 && (
+                                    {(alerts.length > 0 || workflowAlerts.length > 0) && (
                                         <button
-                                            onClick={() => setAlerts(prev => prev.map(a => ({ ...a, seen: true })))}
+                                            onClick={() => {
+                                                setAlerts(prev => prev.map(a => ({ ...a, seen: true })));
+                                                setWorkflowAlerts(prev => prev.map(a => ({ ...a, seen: true })));
+                                            }}
                                             className="text-xs text-orange-500 hover:text-orange-600 font-medium hover:underline"
                                         >
-                                            Tout marquer lu
+                                            {tx('Tout marquer lu')}
                                         </button>
                                     )}
                                 </div>
                                 <div className="max-h-80 overflow-y-auto">
-                                    {alerts.length === 0 ? (
+                                    {alerts.length === 0 && workflowAlerts.length === 0 ? (
                                         <div className="p-8 text-center">
                                             <Bell size={24} className="text-gray-200 mx-auto mb-2" />
-                                            <p className="text-sm text-luna-text-muted">Aucune alerte pour le moment</p>
-                                            <p className="text-xs text-luna-text-muted/60 mt-1">Les réponses WhatsApp des prestataires apparaîtront ici</p>
+                                            <p className="text-sm text-luna-text-muted">{tx('Aucune alerte pour le moment')}</p>
+                                            <p className="text-xs text-luna-text-muted/60 mt-1">{tx('Les réponses WhatsApp et les rappels pro apparaîtront ici')}</p>
                                         </div>
                                     ) : (
-                                        alerts.map(alert => (
-                                            <div
-                                                key={alert.id}
-                                                className={`p-4 border-b border-gray-50 cursor-pointer hover:bg-gray-50/50 transition-all
-                                                    ${!alert.seen ? 'bg-amber-50/30' : ''}`}
-                                                onClick={() => {
-                                                    setAlerts(prev => prev.map(a => a.id === alert.id ? { ...a, seen: true } : a));
-                                                    setShowDropdown(false);
-                                                    // Navigate to the planning page
-                                                    window.location.href = '/crm/planning/suppliers';
-                                                }}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm shrink-0
-                                                        ${alert.type === 'CONFIRMED' ? 'bg-emerald-500' :
-                                                            alert.type === 'CANCELLED_LATE' ? 'bg-red-600' : 'bg-rose-500'}`}>
-                                                        {alert.type === 'CONFIRMED' ? <Check size={16} /> :
-                                                            alert.type === 'CANCELLED_LATE' ? <AlertTriangle size={16} /> : <X size={16} />}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-sm font-medium text-luna-charcoal">{alert.supplierName}</span>
-                                                            {!alert.seen && <span className="w-2.5 h-2.5 bg-amber-400 rounded-full animate-pulse" />}
+                                        <>
+                                            {workflowAlerts.map((alert) => (
+                                                <div
+                                                    key={`workflow-${alert.id}`}
+                                                    className={`p-4 border-b border-gray-50 cursor-pointer hover:bg-gray-50/50 transition-all ${!alert.seen ? 'bg-sky-50/35' : ''}`}
+                                                    onClick={() => {
+                                                        setWorkflowAlerts((prev) => prev.map((a) => a.id === alert.id ? { ...a, seen: true } : a));
+                                                        setShowDropdown(false);
+                                                        window.location.href = alert.tripId
+                                                            ? `/crm/pro-requests/${encodeURIComponent(alert.tripId)}`
+                                                            : '/crm/planning';
+                                                    }}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm shrink-0 bg-gradient-to-br from-sky-500 to-cyan-600">
+                                                            <AlertTriangle size={16} />
                                                         </div>
-                                                        <p className="text-xs text-luna-text-muted mt-0.5 truncate">
-                                                            {alert.type === 'CONFIRMED' ? '✅ A confirmé' :
-                                                                alert.type === 'CANCELLED_LATE' ? '⚠️ Annul. tardive' : '❌ A refusé'} — {alert.prestationName}
-                                                        </p>
-                                                        <p className="text-[10px] text-luna-text-muted/60 mt-0.5">
-                                                            {alert.timestamp.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · {alert.date}
-                                                        </p>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-sm font-medium text-luna-charcoal">{tx('Alerte Workflow Pro')}</span>
+                                                                {!alert.seen && <span className="w-2.5 h-2.5 bg-sky-400 rounded-full animate-pulse" />}
+                                                            </div>
+                                                            <p className="text-xs text-luna-text-muted mt-0.5 truncate">{alert.title}</p>
+                                                            <p className="text-[10px] text-luna-text-muted/60 mt-0.5">
+                                                                {tx('Échéance')}: {alert.dueDate || 'N/A'} · {tx('Priorité')}: {alert.priority}
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))
+                                            ))}
+                                            {alerts.map(alert => (
+                                                <div
+                                                    key={alert.id}
+                                                    className={`p-4 border-b border-gray-50 cursor-pointer hover:bg-gray-50/50 transition-all
+                                                        ${!alert.seen ? 'bg-amber-50/30' : ''}`}
+                                                    onClick={() => {
+                                                        setAlerts(prev => prev.map(a => a.id === alert.id ? { ...a, seen: true } : a));
+                                                        setShowDropdown(false);
+                                                        // Navigate to the planning page
+                                                        window.location.href = '/crm/planning/suppliers';
+                                                    }}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm shrink-0
+                                                            ${alert.type === 'CONFIRMED' ? 'bg-emerald-500' :
+                                                                alert.type === 'CANCELLED_LATE' ? 'bg-red-600' : 'bg-rose-500'}`}>
+                                                            {alert.type === 'CONFIRMED' ? <Check size={16} /> :
+                                                                alert.type === 'CANCELLED_LATE' ? <AlertTriangle size={16} /> : <X size={16} />}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-sm font-medium text-luna-charcoal">{alert.supplierName}</span>
+                                                                {!alert.seen && <span className="w-2.5 h-2.5 bg-amber-400 rounded-full animate-pulse" />}
+                                                            </div>
+                                                            <p className="text-xs text-luna-text-muted mt-0.5 truncate">
+                                                                {alert.type === 'CONFIRMED' ? `✅ ${tx('A confirmé')}` :
+                                                                    alert.type === 'CANCELLED_LATE' ? `⚠️ ${tx('Annul. tardive')}` : `❌ ${tx('A refusé')}`} — {alert.prestationName}
+                                                            </p>
+                                                            <p className="text-[10px] text-luna-text-muted/60 mt-0.5">
+                                                                {alert.timestamp.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · {alert.date}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
                                     )}
                                 </div>
                                 <div className="p-3 border-t border-gray-100 bg-gray-50/30">
                                     <p className="text-[10px] text-center text-luna-text-muted flex items-center justify-center gap-1">
                                         <RefreshCw size={10} className="animate-spin" style={{ animationDuration: '3s' }} />
-                                        Actualisation auto toutes les 15 secondes
+                                        {tx('Actualisation auto toutes les 15 secondes')}
                                     </p>
                                 </div>
                             </motion.div>

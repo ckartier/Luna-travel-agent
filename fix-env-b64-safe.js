@@ -1,5 +1,5 @@
 const fs = require('fs');
-const jsonFile = 'luna-travel-agent-firebase-adminsdk-fbsvc-c61c11c1d1.json';
+const jsonFile = process.argv[2] || process.env.FIREBASE_SA_JSON || 'firebase-service-account.json';
 const envFile = '.env.local';
 
 try {
@@ -28,7 +28,7 @@ try {
         // Remove the block
         lines.splice(startLine, endLine - startLine + 1, `FIREBASE_PRIVATE_KEY=${b64Key}`);
         fs.writeFileSync(envFile, lines.join('\n'));
-        console.log("Successfully base64 encoded FIREBASE_PRIVATE_KEY in .env.local!");
+        console.log(`Successfully base64 encoded FIREBASE_PRIVATE_KEY in .env.local from ${jsonFile}!`);
     } else {
         console.log("Could not find the exact bounds of the key block in .env.local.");
         // Fallback: Just append to the bottom if it was already somehow deleted or unrecognizable

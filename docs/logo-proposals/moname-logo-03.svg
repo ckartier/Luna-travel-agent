@@ -1,0 +1,22 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800' viewBox='0 0 1200 800'>
+  <defs>
+    <linearGradient id='g3' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='#0F172A'/>
+      <stop offset='100%' stop-color='#334155'/>
+    </linearGradient>
+  </defs>
+  <rect width='1200' height='800' fill='#F8FAFC'/>
+  <rect x='130' y='140' width='940' height='520' rx='38' fill='white' stroke='#E2E8F0'/>
+  <g transform='translate(232 212)'>
+    <rect x='0' y='0' width='126' height='126' rx='30' fill='url(#g3)'/>
+    <circle cx='63' cy='48' r='15' fill='#FCD34D'/>
+    <rect x='40' y='64' width='46' height='32' rx='10' fill='#FCD34D'/>
+    <rect x='28' y='74' width='12' height='26' rx='6' fill='#FCD34D'/>
+    <rect x='86' y='74' width='12' height='26' rx='6' fill='#FCD34D'/>
+    <rect x='52' y='98' width='8' height='16' rx='4' fill='#FCD34D'/>
+    <rect x='66' y='98' width='8' height='16' rx='4' fill='#FCD34D'/>
+  </g>
+  <text x='390' y='280' font-family='Outfit, Inter, sans-serif' font-size='92' font-weight='800' fill='#0F172A'>Monâme</text>
+  <text x='390' y='340' font-family='Inter, sans-serif' font-size='28' font-weight='600' fill='#64748B' letter-spacing='2'>MASCOTTE OURS · VERSION MINIMALE APP ICON</text>
+  <text x='230' y='450' font-family='Inter, sans-serif' font-size='30' fill='#334155'>Piste 03 · Icône mascotte simplifiée (reconnaissable mobile)</text>
+</svg>

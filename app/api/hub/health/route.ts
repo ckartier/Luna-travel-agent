@@ -24,10 +24,10 @@ async function resolveTenantIdFromRequest(request: NextRequest): Promise<string 
     const tenantIdFromQuery = request.nextUrl.searchParams.get('tenantId');
     if (tenantIdFromQuery) return tenantIdFromQuery;
 
-    // Backward-compatible fallback for single-tenant setups.
-    const tenantsSnap = await adminDb.collection('tenants').limit(1).get();
-    if (tenantsSnap.empty) return null;
-    return tenantsSnap.docs[0].id;
+    // Backward-compatible fallback only when exactly one tenant exists.
+    const tenantsSnap = await adminDb.collection('tenants').limit(2).get();
+    if (tenantsSnap.size === 1) return tenantsSnap.docs[0].id;
+    return null;
 }
 
 async function fetchBugReportsForTenant(tenantId: string) {

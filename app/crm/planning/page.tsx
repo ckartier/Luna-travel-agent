@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { T, useAutoTranslate } from '@/src/components/T';
+import { T } from '@/src/components/T';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, ChevronDown, Plus, X, Calendar,
   Clock, CheckCircle2, Plane, MapPin, Trash2,
-  ExternalLink, Users, Briefcase,
+  ExternalLink, Users, Briefcase, FileText,
   RefreshCw, Hotel, Car, UtensilsCrossed, Download, CreditCard, Palmtree, ShoppingCart, ZoomIn, ZoomOut
 } from 'lucide-react';
 import {
@@ -47,6 +47,7 @@ const STATUS_CONFIG: Record<CRMTrip['status'], { label: string; color: string; b
 };
 
 const BOOKING_STATUS_CONFIG: Record<string, { label: string; bg: string; dot: string }> = {
+  PENDING: { label: 'En attente', bg: 'bg-[#E2C8A9]/30', dot: 'bg-gradient-to-br from-[#F5DFBF] to-[#C8AE8E] border border-white/60 shadow-[0px_1px_2px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(0,0,0,0.1),inset_1px_1px_2px_rgba(255,255,255,0.8)]' },
   PROPOSED: { label: 'En attente', bg: 'bg-[#E2C8A9]/30', dot: 'bg-gradient-to-br from-[#F5DFBF] to-[#C8AE8E] border border-white/60 shadow-[0px_1px_2px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(0,0,0,0.1),inset_1px_1px_2px_rgba(255,255,255,0.8)]' },
   CONFIRMED: { label: 'Validé', bg: 'bg-[#A8C6BF]/30', dot: 'bg-gradient-to-br from-[#C4E0D9] to-[#8CAAA3] border border-white/60 shadow-[0px_1px_2px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(0,0,0,0.1),inset_1px_1px_2px_rgba(255,255,255,0.8)]' },
   TERMINATED: { label: 'Terminé', bg: 'bg-[#F3F4F6]', dot: 'bg-gradient-to-br from-[#E5E7EB] to-[#9CA3AF] border border-white/60 shadow-[0px_1px_2px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(0,0,0,0.1),inset_1px_1px_2px_rgba(255,255,255,0.8)]' },
@@ -109,7 +110,7 @@ const emptyTrip = (): Omit<CRMTrip, 'id' | 'createdAt' | 'updatedAt'> => ({
 
 // ═══ MAIN COMPONENT ═══
 export default function PlanningPage() {
-  const { tenantId } = useAuth();
+  const { tenantId, user } = useAuth();
   const { vertical, vEntity, vt } = useVertical();
   const isLegal = vertical.id === 'legal';
   const today = new Date();
@@ -239,10 +240,82 @@ export default function PlanningPage() {
   const monthBookings = bookings.filter(b => isSameMonth(new Date(b.date), currentDate));
   const totalRevenue = monthTrips.reduce((sum, t) => sum + t.amount, 0);
 
-  const openNewTrip = (dateStr?: string) => { const f = emptyTrip(); if (dateStr) { f.startDate = dateStr; f.endDate = dateStr; } setForm(f); setEditingTrip(null); setModalOpen(true); };
-  const openEditTrip = (trip: CRMTrip) => { setForm({ title: trip.title, destination: trip.destination, clientName: trip.clientName, clientId: trip.clientId || '', startDate: trip.startDate, endDate: trip.endDate, status: trip.status, paymentStatus: trip.paymentStatus, amount: trip.amount, notes: trip.notes, color: trip.color }); setEditingTrip(trip); setModalOpen(true); };
-  const handleSave = async (e: React.FormEvent) => { e.preventDefault(); if (!form.title || !form.destination || !form.clientName) return; try { const dataWithVertical = { ...form, vertical: isLegal ? 'legal' : 'travel' }; if (editingTrip?.id) { await updateTrip(tenantId!, editingTrip.id, dataWithVertical); } else { await createTrip(tenantId!, dataWithVertical); } setModalOpen(false); loadData(); } catch (err) { console.error(err); } };
-  const handleDelete = async () => { if (!editingTrip?.id || !confirm(isLegal ? 'Supprimer ce dossier ?' : 'Supprimer ce voyage ?')) return; await deleteTrip(tenantId!, editingTrip.id); setModalOpen(false); loadData(); };
+  const openNewTrip = (dateStr?: string) => {
+    const f = emptyTrip();
+    if (dateStr) {
+      f.startDate = dateStr;
+      f.endDate = dateStr;
+    }
+    setForm(f);
+    setEditingTrip(null);
+    setModalOpen(true);
+  };
+
+  const openEditTrip = (trip: CRMTrip) => {
+    setForm({
+      title: trip.title,
+      destination: trip.destination,
+      clientName: trip.clientName,
+      clientId: trip.clientId || '',
+      startDate: trip.startDate,
+      endDate: trip.endDate,
+      status: trip.status,
+      paymentStatus: trip.paymentStatus,
+      amount: trip.amount,
+      notes: trip.notes,
+      color: trip.color,
+    });
+    setEditingTrip(trip);
+    setModalOpen(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.title || !form.destination || !form.clientName) return;
+
+    try {
+      const shouldSyncProValidation =
+        !isLegal &&
+        editingTrip?.source === 'pro-workflow' &&
+        form.status === 'CONFIRMED' &&
+        editingTrip.proWorkflowState !== 'LUNA_VALIDATED';
+
+      const nowIso = new Date().toISOString();
+      const dataWithVertical = {
+        ...form,
+        vertical: isLegal ? 'legal' : 'travel',
+        ...(shouldSyncProValidation
+          ? {
+              proWorkflowState: 'LUNA_VALIDATED',
+              proWorkflowUpdatedAt: nowIso,
+              proWorkflowUpdatedBy: user?.uid || '',
+              proWorkflowValidatedAt: nowIso,
+              proLunaAlertSeen: false,
+              proLunaAlertAt: nowIso,
+              lunaTripValidated: true,
+              lunaReservationValidated: true,
+            }
+          : {}),
+      };
+
+      if (editingTrip?.id) {
+        await updateTrip(tenantId!, editingTrip.id, dataWithVertical);
+      } else {
+        await createTrip(tenantId!, dataWithVertical);
+      }
+      setModalOpen(false);
+      loadData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!editingTrip?.id || !confirm(isLegal ? 'Supprimer ce dossier ?' : 'Supprimer ce voyage ?')) return;
+    await deleteTrip(tenantId!, editingTrip.id);
+    setModalOpen(false);
+    loadData();
+  };
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
@@ -275,7 +348,7 @@ export default function PlanningPage() {
             { label: vt('Revenus'), value: `${totalRevenue.toLocaleString('fr-FR')}€`, icon: CreditCard },
             { label: vEntity('bookingPlural').toUpperCase(), value: monthBookings.length, icon: Briefcase },
             { label: 'Validées', value: monthBookings.filter(b => b.status === 'CONFIRMED').length, icon: CheckCircle2 },
-            { label: 'En attente', value: monthBookings.filter(b => b.status === 'PROPOSED').length, icon: Clock },
+            { label: 'En attente', value: monthBookings.filter(b => b.status === 'PROPOSED' || b.status === 'PENDING').length, icon: Clock },
           ].map((s, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
               className="bg-white rounded-[24px] border border-[#E5E7EB] p-5 flex items-center gap-4">
@@ -515,12 +588,12 @@ export default function PlanningPage() {
                             const bsConfig = BOOKING_STATUS_CONFIG[b.status] || BOOKING_STATUS_CONFIG.PROPOSED;
                             const isCancelled = b.status === 'CANCELLED' || b.status === 'CANCELLED_LATE';
                             const isConfirmed = b.status === 'CONFIRMED';
-                            const isProposed = b.status === 'PROPOSED';
+                            const isWaiting = b.status === 'PROPOSED' || b.status === 'PENDING';
                             
                             // Status-based colors
-                            const statusBg = isCancelled ? '#F2D9D3' : isConfirmed ? '#D3E8E3' : isProposed ? '#FFF3E0' : '#F3F4F6';
-                            const statusBorder = isCancelled ? '#da3832' : isConfirmed ? '#6BAF8D' : isProposed ? '#E2A84B' : '#9CA3AF';
-                            const statusText = isCancelled ? 'text-[#da3832]' : isConfirmed ? 'text-[#3d7a5c]' : isProposed ? 'text-[#b07d2e]' : 'text-[#6B7280]';
+                            const statusBg = isCancelled ? '#F2D9D3' : isConfirmed ? '#D3E8E3' : isWaiting ? '#FFF3E0' : '#F3F4F6';
+                            const statusBorder = isCancelled ? '#da3832' : isConfirmed ? '#6BAF8D' : isWaiting ? '#E2A84B' : '#9CA3AF';
+                            const statusText = isCancelled ? 'text-[#da3832]' : isConfirmed ? 'text-[#3d7a5c]' : isWaiting ? 'text-[#b07d2e]' : 'text-[#6B7280]';
                             
                             let bH = 9, bM = 0;
                             if (b.startTime) {
@@ -620,7 +693,7 @@ export default function PlanningPage() {
                       {dayBookings.slice(0, 2).map(b => {
                         const bsConfig = BOOKING_STATUS_CONFIG[b.status] || BOOKING_STATUS_CONFIG.PROPOSED;
                         const isCancelled = b.status === 'CANCELLED' || b.status === 'CANCELLED_LATE';
-                        const monthStatusBg = isCancelled ? 'bg-[#F2D9D3]/50' : b.status === 'CONFIRMED' ? 'bg-[#D3E8E3]/50' : b.status === 'PROPOSED' ? 'bg-[#FFF3E0]/50' : 'bg-gray-100';
+                        const monthStatusBg = isCancelled ? 'bg-[#F2D9D3]/50' : b.status === 'CONFIRMED' ? 'bg-[#D3E8E3]/50' : (b.status === 'PROPOSED' || b.status === 'PENDING') ? 'bg-[#FFF3E0]/50' : 'bg-gray-100';
                         return (
                           <button key={b.id} onClick={() => setSelectedBooking(b)} className={`w-full text-[7px] p-1 rounded-lg truncate cursor-pointer font-bold text-left flex items-center gap-1.5 ${monthStatusBg}`}>
                             <div className={`w-2 h-2 flex-shrink-0 rounded-full ${bsConfig.dot}`} />
@@ -644,7 +717,7 @@ export default function PlanningPage() {
           const bStatus = BOOKING_STATUS_CONFIG[selectedBooking.status] || BOOKING_STATUS_CONFIG.PROPOSED;
           const isCancelled = selectedBooking.status === 'CANCELLED' || selectedBooking.status === 'CANCELLED_LATE';
           const isConfirmed = selectedBooking.status === 'CONFIRMED';
-          const isProposed = selectedBooking.status === 'PROPOSED';
+          const isWaiting = selectedBooking.status === 'PROPOSED' || selectedBooking.status === 'PENDING';
           const supplierName = getSupplierName(selectedBooking.supplierId);
           return (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#2E2E2E]/70 backdrop-blur-2xl flex items-center justify-center p-4" onClick={() => { setSelectedBooking(null); setEditingTrip(null); }}>
@@ -706,7 +779,7 @@ export default function PlanningPage() {
               </div>
 
               <div className="p-8 pt-6 space-y-4">
-                {isProposed && (
+                {isWaiting && (
                   <motion.button whileHover={{ scale: 1.01, y: -1 }} whileTap={{ scale: 0.98 }}
                     onClick={async () => {
                       if (!tenantId || !selectedBooking.id) return;
@@ -829,6 +902,11 @@ export default function PlanningPage() {
                   <div>
                     <h3 className="text-2xl font-light tracking-tight">{editingTrip ? <T>{isLegal ? 'Modifier le dossier' : 'Modifier le voyage'}</T> : <T>{isLegal ? 'Nouveau dossier' : 'Nouveau voyage'}</T>}</h3>
                     <p className="text-[#b9dae9] text-xs mt-1 font-medium">Planning synchronisé en temps réel</p>
+                    {editingTrip?.source === 'pro-workflow' && (
+                      <p className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-400/20 text-cyan-200">
+                        <T>Demande Pro Workflow</T>
+                      </p>
+                    )}
                   </div>
                   <button onClick={() => setModalOpen(false)} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-all"><X size={18} /></button>
                 </div>
@@ -874,6 +952,14 @@ export default function PlanningPage() {
                       <button type="button" onClick={handleDelete} className="flex items-center gap-1.5 px-3 py-2 text-[#da3832] hover:bg-red-50 rounded-[12px] text-xs font-bold transition-colors"><Trash2 size={14} /></button>
                       <button type="button" onClick={() => exportToGoogleCalendar(editingTrip)} className="flex items-center gap-1.5 px-3 py-2 text-[#6B7280] hover:bg-gray-50 rounded-[12px] text-xs font-bold transition-colors"><ExternalLink size={14} /> Google</button>
                       <button type="button" onClick={() => exportToICS(editingTrip)} className="flex items-center gap-1.5 px-3 py-2 text-[#6B7280] hover:bg-gray-50 rounded-[12px] text-xs font-bold transition-colors"><Download size={14} /> .ics</button>
+                      {editingTrip.source === 'pro-workflow' && editingTrip.id && (
+                        <a
+                          href={`/crm/pro-requests/${editingTrip.id}`}
+                          className="flex items-center gap-1.5 px-3 py-2 text-cyan-700 bg-cyan-50 hover:bg-cyan-100 rounded-[12px] text-xs font-bold transition-colors"
+                        >
+                          <FileText size={14} /> <T>Ouvrir Demande Pro</T>
+                        </a>
+                      )}
                       {leads.find(l => l.tripId === editingTrip.id) && (
                         <a href={`/crm/leads/${leads.find(l => l.tripId === editingTrip.id)?.id}/proposal`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-2 text-[#bcdeea] bg-[#bcdeea]/10 hover:bg-[#bcdeea]/20 rounded-[12px] text-xs font-bold transition-colors">
                           <ExternalLink size={14} /> Devis

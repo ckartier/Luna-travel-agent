@@ -18,6 +18,16 @@ import { sanitizePromptInputs } from '@/src/lib/ai/promptGuard';
 import { validateAgentResponse } from '@/src/lib/ai/schemas';
 import { consumeAiUsage } from '@/src/lib/firebase/tenantLimits';
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+    let timer: NodeJS.Timeout | null = null;
+    const timeoutPromise = new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timeout after ${timeoutMs}ms`)), timeoutMs);
+    });
+    return Promise.race([promise, timeoutPromise]).finally(() => {
+        if (timer) clearTimeout(timer);
+    }) as Promise<T>;
+}
+
 export async function POST(request: Request) {
     await headers(); // Force dynamic rendering
     const auth = await verifyAuth(request);
@@ -217,11 +227,28 @@ export async function POST(request: Request) {
 
         // ── 2. Run Agents with REAL context & Vector Search Context ──
         console.log('[Agents] Starting 4 parallel Gemini agent calls with GEMINI_API_KEY:', process.env.GEMINI_API_KEY?.substring(0, 8) + '...');
+        const agentTimeoutMs = Number(process.env.AGENT_TIMEOUT_MS || 32000);
         const [transport, accommodation, client, itinerary] = await Promise.allSettled([
-            searchTransport({ destinations, departureCity, departureDate, returnDate, pax, budget, realData: realFlights }),
-            searchAccommodation({ destinations, vibe, budget, pax, realData: realHotels, internalCatalog }),
-            analyzeClientProfile({ pax, vibe, budget, mustHaves }),
-            planItinerary({ destinations, departureDate, returnDate, vibe, mustHaves, budget, internalCatalog }),
+            withTimeout(
+                searchTransport({ destinations, departureCity, departureDate, returnDate, pax, budget, realData: realFlights }),
+                agentTimeoutMs,
+                'transport'
+            ),
+            withTimeout(
+                searchAccommodation({ destinations, vibe, budget, pax, realData: realHotels, internalCatalog }),
+                agentTimeoutMs,
+                'accommodation'
+            ),
+            withTimeout(
+                analyzeClientProfile({ pax, vibe, budget, mustHaves }),
+                agentTimeoutMs,
+                'client'
+            ),
+            withTimeout(
+                planItinerary({ destinations, departureDate, returnDate, vibe, mustHaves, budget, internalCatalog }),
+                agentTimeoutMs,
+                'itinerary'
+            ),
         ]);
 
         // Log each agent result

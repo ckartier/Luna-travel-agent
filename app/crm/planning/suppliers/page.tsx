@@ -32,6 +32,7 @@ interface SupplierAlert {
 }
 
 const BOOKING_STATUS_CONFIG: Record<CRMSupplierBooking['status'], { label: string; color: string; bg: string; dot: string }> = {
+    PENDING: { label: 'En attente', color: 'text-[#2E2E2E]', bg: 'bg-[#E6D2BD]/20', dot: 'bg-gradient-to-br from-[#E2C8A9] to-[#d2b899] border border-white/40 shadow-[0px_1px_2px_rgba(0,0,0,0.1),inset_0px_1px_1px_rgba(255,255,255,0.8)]' },
     PROPOSED: { label: 'En attente', color: 'text-[#2E2E2E]', bg: 'bg-[#E6D2BD]/20', dot: 'bg-gradient-to-br from-[#E2C8A9] to-[#d2b899] border border-white/40 shadow-[0px_1px_2px_rgba(0,0,0,0.1),inset_0px_1px_1px_rgba(255,255,255,0.8)]' },
     CONFIRMED: { label: 'Validé', color: 'text-[#2E2E2E]', bg: 'bg-[#A8C6BF]/20', dot: 'bg-gradient-to-br from-[#A8C6BF] to-[#98b6af] border border-white/40 shadow-[0px_1px_2px_rgba(0,0,0,0.1),inset_0px_1px_1px_rgba(255,255,255,0.8)]' },
     TERMINATED: { label: 'Terminé', color: 'text-[#6B7280]', bg: 'bg-[#F3F4F6]', dot: 'bg-gradient-to-br from-[#F3F4F6] to-[#e3e4e6] border border-white/40 shadow-[0px_1px_2px_rgba(0,0,0,0.1),inset_0px_1px_1px_rgba(255,255,255,0.8)]' },
@@ -427,7 +428,7 @@ export default function SupplierPlanningPage() {
                                                     <motion.button key={b.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setSelectedBooking(b)}
                                                         className={`w-full text-left p-3 rounded-[20px] border border-transparent shadow-sm hover:shadow-lg transition-all cursor-pointer relative overflow-hidden ${bsConfig.bg}`}>
                                                         <div className={`absolute top-0 right-0 px-2 h-6 flex items-center justify-center text-[7px] font-black uppercase tracking-wide rounded-bl-[12px] opacity-90
-                                                          ${b.status === 'CONFIRMED' ? 'bg-[#A8C6BF] text-[#1e3a45]' : b.status === 'PROPOSED' ? 'bg-[#E2C8A9] text-[#8B6E4E]' : b.status === 'CANCELLED' || b.status === 'CANCELLED_LATE' ? 'bg-[#F2D9D3] text-[#da3832]' : 'bg-gray-200 text-gray-500'}`}>
+                                                          ${b.status === 'CONFIRMED' ? 'bg-[#A8C6BF] text-[#1e3a45]' : b.status === 'PROPOSED' || b.status === 'PENDING' ? 'bg-[#E2C8A9] text-[#8B6E4E]' : b.status === 'CANCELLED' || b.status === 'CANCELLED_LATE' ? 'bg-[#F2D9D3] text-[#da3832]' : 'bg-gray-200 text-gray-500'}`}>
                                                             {bsConfig.label}
                                                         </div>
                                                         <div className="flex items-center gap-1.5 mb-1 pl-1">
@@ -513,7 +514,7 @@ export default function SupplierPlanningPage() {
                                     <div className="p-6 bg-[#FAFAF8] rounded-[28px] border border-gray-100"><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tarif Net</p><p className="text-2xl font-bold text-[#2E2E2E]">{selectedBooking.rate}€</p></div>
                                 </div>
                                 <div className="space-y-3">
-                                    {selectedBooking.status === 'PROPOSED' && (
+                                    {(selectedBooking.status === 'PROPOSED' || selectedBooking.status === 'PENDING') && (
                                         <button onClick={() => handleValidateBooking(selectedBooking)} disabled={!!validatingId} className="w-full py-5 bg-[#D3E8E3] text-[#2E2E2E] rounded-[24px] font-bold text-xs uppercase tracking-widest shadow-xl shadow-emerald-100 hover:scale-[1.02] transition-all disabled:opacity-50 flex items-center justify-center gap-3">
                                             {validatingId ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} Valider Prestation
                                         </button>

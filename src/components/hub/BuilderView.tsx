@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useRef } from 'react';
 import {
-    Save, Check, Loader2, RefreshCw, LayoutGrid, Type, Palette, Settings, Upload, Monitor, Tablet, Smartphone, Video, Trash2, Plus
+    Save, Check, Loader2, RefreshCw, LayoutGrid, Type, Palette, Settings, Upload, Monitor, Tablet, Smartphone, Video, Trash2, Plus, AlertCircle
 } from 'lucide-react';
 import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 
 // Hub Design Tokens
 const GREEN = '#19c37d';
 const CYAN = '#16b8c8';
+const HUB_PREVIEW_STORAGE_KEY = 'hub-preview-config';
 
 export interface HubBlock {
     id: string; type: string; order: number; visible: boolean;
@@ -29,23 +30,28 @@ type Device = 'desktop' | 'tablet' | 'mobile';
 
 const DEVICE_WIDTHS: Record<Device, string> = { desktop: '100%', tablet: '768px', mobile: '375px' };
 
-export default function BuilderView({ config, setConfig, saveConfig, saving, saved }: {
+export default function BuilderView({ config, setConfig, saveConfig, saving, saved, saveError }: {
     config: HubConfig | null;
     setConfig: (c: HubConfig) => void;
     saveConfig: () => void;
     saving: boolean;
     saved: boolean;
+    saveError?: string | null;
 }) {
     const [tab, setTab] = useState<Tab>('contenu');
     const [device, setDevice] = useState<Device>('desktop');
     const [previewKey, setPreviewKey] = useState(0);
     const [uploading, setUploading] = useState(false);
+    const [builderNotice, setBuilderNotice] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const uploadCallbackRef = useRef<((url: string) => void) | null>(null);
 
     const syncPreview = () => {
         if (!config) return;
+        try {
+            window.localStorage.setItem(HUB_PREVIEW_STORAGE_KEY, JSON.stringify(config));
+        } catch {}
         const iframe = iframeRef.current;
         if (!iframe?.contentWindow) return;
         iframe.contentWindow.postMessage({ type: 'hub-editor-update', config }, window.location.origin);
@@ -55,22 +61,114 @@ export default function BuilderView({ config, setConfig, saveConfig, saving, sav
         syncPreview();
     }, [config]);
 
+    useEffect(() => {
+        const onMessage = (e: MessageEvent) => {
+            const iframeWindow = iframeRef.current?.contentWindow;
+            if (!iframeWindow) return;
+            if (e.origin !== window.location.origin) return;
+            if (e.source !== iframeWindow) return;
+            if (e.data?.type !== 'hub-editor-focus') return;
+            setTab('contenu');
+            const sectionId = String(e.data.section || '');
+            if (!sectionId) return;
+            const target = config?.blocks.find((b) => b.type === sectionId);
+            if (target) {
+                setBuilderNotice(`Section ${target.title || target.type} ciblée.`);
+            } else if (sectionId === 'nav') {
+                setBuilderNotice('Section navigation ciblée.');
+            }
+        };
+        window.addEventListener('message', onMessage);
+        return () => window.removeEventListener('message', onMessage);
+    }, [config]);
+
+    useEffect(() => {
+        if (!builderNotice) return;
+        const timer = setTimeout(() => setBuilderNotice(null), 2200);
+        return () => clearTimeout(timer);
+    }, [builderNotice]);
+
     const updateGlobal = (key: string, val: string) => config && setConfig({ ...config, global: { ...config.global, [key]: val } });
     const updateBlock = (blockId: string, updates: Partial<HubBlock>) => config && setConfig({ ...config, blocks: config.blocks.map(b => b.id === blockId ? { ...b, ...updates } : b) });
     const updateBusiness = (key: string, val: string) => config && setConfig({ ...config, business: { ...config.business, [key]: val } });
     const updateNavItem = (idx: number, key: string, val: string) => {
         if (!config) return;
         const items = [...(config.nav?.menuItems || [])];
-        items[idx] = { ...items[idx], [key]: val };
+        items[idx] = { ...(items[idx] || { label: '', href: '' }), [key]: val };
         setConfig({ ...config, nav: { ...config.nav, menuItems: items } });
+    };
+    const addNavItem = () => {
+        if (!config) return;
+        const items = [...(config.nav?.menuItems || []), { label: 'Nouveau lien', href: '#' }];
+        setConfig({ ...config, nav: { ...config.nav, menuItems: items } });
+    };
+    const removeNavItem = (idx: number) => {
+        if (!config) return;
+        const items = [...(config.nav?.menuItems || [])].filter((_, i) => i !== idx);
+        setConfig({ ...config, nav: { ...config.nav, menuItems: items } });
+    };
+    const updateBlockImages = (blockId: string, images: string[]) => {
+        updateBlock(blockId, { images });
+    };
+    const addBlockImage = (blockId: string) => {
+        const block = config?.blocks.find(b => b.id === blockId);
+        if (!block) return;
+        updateBlockImages(blockId, [...(block.images || []), '']);
+    };
+    const updateBlockImageAt = (blockId: string, idx: number, val: string) => {
+        const block = config?.blocks.find(b => b.id === blockId);
+        if (!block) return;
+        const images = [...(block.images || [])];
+        images[idx] = val;
+        updateBlockImages(blockId, images);
+    };
+    const removeBlockImageAt = (blockId: string, idx: number) => {
+        const block = config?.blocks.find(b => b.id === blockId);
+        if (!block) return;
+        const images = [...(block.images || [])].filter((_, i) => i !== idx);
+        updateBlockImages(blockId, images);
+    };
+    const updateBlockItems = (blockId: string, items: any[]) => {
+        updateBlock(blockId, { items });
+    };
+    const addBlockItem = (blockId: string) => {
+        const block = config?.blocks.find(b => b.id === blockId);
+        if (!block) return;
+        const next = [...(block.items || []), { title: '', description: '', imageUrl: '' }];
+        updateBlockItems(blockId, next);
+    };
+    const updateBlockItemAt = (blockId: string, idx: number, key: 'title' | 'description' | 'imageUrl', val: string) => {
+        const block = config?.blocks.find(b => b.id === blockId);
+        if (!block) return;
+        const items = [...(block.items || [])];
+        items[idx] = { ...(items[idx] || {}), [key]: val };
+        updateBlockItems(blockId, items);
+    };
+    const removeBlockItemAt = (blockId: string, idx: number) => {
+        const block = config?.blocks.find(b => b.id === blockId);
+        if (!block) return;
+        const items = [...(block.items || [])].filter((_, i) => i !== idx);
+        updateBlockItems(blockId, items);
+    };
+    const toggleFormField = (blockId: string, field: string) => {
+        const block = config?.blocks.find(b => b.id === blockId);
+        if (!block) return;
+        const fields = new Set(block.fields || ['name', 'email', 'message']);
+        if (fields.has(field)) fields.delete(field);
+        else fields.add(field);
+        updateBlock(blockId, { fields: Array.from(fields) });
     };
     const addBlock = (type: string) => {
         if (!config) return;
         const normalizedType = type.toLowerCase();
         // Core block types are singleton in the renderer.
-        if (config.blocks.some(b => b.type === normalizedType)) return;
+        if (config.blocks.some(b => b.type === normalizedType)) {
+            setBuilderNotice(`Le bloc ${type} existe déjà.`);
+            return;
+        }
         const id = `${normalizedType}_${Date.now()}`;
         setConfig({ ...config, blocks: [...config.blocks, { id, type: normalizedType, order: config.blocks.length, visible: true, title: type }] });
+        setBuilderNotice(`Bloc ${type} ajouté.`);
     };
     const deleteBlock = (blockId: string) => config && setConfig({ ...config, blocks: config.blocks.filter(b => b.id !== blockId).map((b, i) => ({ ...b, order: i })) });
 
@@ -129,9 +227,19 @@ export default function BuilderView({ config, setConfig, saveConfig, saving, sav
                             className="h-10 px-5 rounded-full text-[12px] font-mono font-bold text-white shadow-md flex items-center gap-2 transition-all hover:opacity-90 active:scale-95"
                             style={{ backgroundColor: saved ? GREEN : saving ? '#cbd5e1' : '#f59e0b' }}>
                             {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : <Save size={14} />}
-                            {saved ? 'Saved' : 'Publish'}
+                            {saved ? 'Enregistre' : 'Enregistrer'}
                          </button>
                     </div>
+                </div>
+                <div className="min-h-[20px] px-2 pb-2 text-[10px] font-mono">
+                    {saveError ? (
+                        <div className="flex items-center gap-1.5 text-red-500">
+                            <AlertCircle size={12} />
+                            <span>{saveError}</span>
+                        </div>
+                    ) : builderNotice ? (
+                        <span className="text-zinc-500">{builderNotice}</span>
+                    ) : null}
                 </div>
 
                 <div className="flex-1 rounded-[20px] overflow-hidden border border-white bg-zinc-100 flex items-start justify-center p-2 shadow-inner">
@@ -184,11 +292,25 @@ export default function BuilderView({ config, setConfig, saveConfig, saving, sav
                     <>
                         <PanelCard title="Navigation">
                             {(config.nav?.menuItems || []).map((item: any, i: number) => (
-                                <div key={i} className="flex gap-2 mb-2">
-                                    <Field label={`Menu ${i+1}`} value={item.label} onChange={v => updateNavItem(i, 'label', v)} />
-                                    <Field label="Lien" value={item.href} onChange={v => updateNavItem(i, 'href', v)} />
+                                <div key={i} className="flex items-end gap-2 mb-2">
+                                    <div className="flex-1">
+                                        <Field label={`Menu ${i+1}`} value={item.label} onChange={v => updateNavItem(i, 'label', v)} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <Field label="Lien" value={item.href} onChange={v => updateNavItem(i, 'href', v)} />
+                                    </div>
+                                    <button onClick={() => removeNavItem(i)} className="mb-1 h-8 w-8 shrink-0 rounded-xl border border-zinc-200 bg-white/80 text-zinc-400 transition hover:text-red-500">
+                                        <Trash2 size={13} className="mx-auto" />
+                                    </button>
                                 </div>
                             ))}
+                            <button
+                                onClick={addNavItem}
+                                className="mt-1 inline-flex items-center gap-1.5 rounded-xl border border-white bg-white/50 px-3 py-2 text-[10px] font-mono text-zinc-600 transition hover:bg-white"
+                            >
+                                <Plus size={12} />
+                                Ajouter un lien
+                            </button>
                         </PanelCard>
                         {blocks.filter(b => b.visible).map(block => (
                             <PanelCard key={block.id} title={`${block.title || block.type}`}>
@@ -205,14 +327,106 @@ export default function BuilderView({ config, setConfig, saveConfig, saving, sav
                                         <Field label="Bouton lien" value={block.buttonUrl || ''} onChange={v => updateBlock(block.id, { buttonUrl: v })} />
                                     </>
                                 )}
-                                <ImageField label="Image" value={block.imageUrl || ''} onChange={v => updateBlock(block.id, { imageUrl: v })}
-                                    onUpload={() => triggerUpload('image/*', url => updateBlock(block.id, { imageUrl: url }))} uploading={uploading} />
-                                {block.type === 'hero' ? (
-                                    <VideoFieldWithPresets label="Vidéo" value={block.videoUrl || ''} onChange={v => updateBlock(block.id, { videoUrl: v })}
-                                        onUpload={() => triggerUpload('video/*', url => updateBlock(block.id, { videoUrl: url }))} uploading={uploading} />
-                                ) : (
-                                    <VideoField label="Vidéo" value={block.videoUrl || ''} onChange={v => updateBlock(block.id, { videoUrl: v })}
-                                        onUpload={() => triggerUpload('video/*', url => updateBlock(block.id, { videoUrl: url }))} uploading={uploading} />
+                                {block.type === 'gallery' && (
+                                    <div className="space-y-2">
+                                        <div className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-400 pl-1">Images gallery</div>
+                                        {(block.images || []).map((img, i) => (
+                                            <div key={i} className="flex items-center gap-2">
+                                                <input
+                                                    value={img}
+                                                    onChange={e => updateBlockImageAt(block.id, i, e.target.value)}
+                                                    placeholder={`Image ${i + 1}`}
+                                                    className="flex-1 rounded-xl border border-white bg-white/50 px-3 py-2 text-[11px] font-mono outline-none shadow-inner"
+                                                />
+                                                <button
+                                                    onClick={() => triggerUpload('image/*', url => updateBlockImageAt(block.id, i, url))}
+                                                    disabled={uploading}
+                                                    className="h-8 w-8 rounded-xl border border-zinc-200 bg-white text-zinc-400 transition hover:text-zinc-600 disabled:opacity-50"
+                                                >
+                                                    {uploading ? <Loader2 size={13} className="mx-auto animate-spin" /> : <Upload size={13} className="mx-auto" />}
+                                                </button>
+                                                <button
+                                                    onClick={() => removeBlockImageAt(block.id, i)}
+                                                    className="h-8 w-8 rounded-xl border border-zinc-200 bg-white text-zinc-400 transition hover:text-red-500"
+                                                >
+                                                    <Trash2 size={13} className="mx-auto" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        <button onClick={() => addBlockImage(block.id)} className="inline-flex items-center gap-1.5 rounded-xl border border-white bg-white/50 px-3 py-2 text-[10px] font-mono text-zinc-600 transition hover:bg-white">
+                                            <Plus size={12} />
+                                            Ajouter une image
+                                        </button>
+                                    </div>
+                                )}
+                                {(block.type === 'feature' || block.type === 'cards') && (
+                                    <div className="space-y-2">
+                                        {block.type === 'feature' && (
+                                            <div className="rounded-xl border border-amber-100 bg-amber-50/80 px-3 py-2 text-[10px] font-mono text-amber-800">
+                                                Le titre et le texte du bloc pilotent aussi l'en-tete de section dans la preview.
+                                            </div>
+                                        )}
+                                        <div className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-400 pl-1">
+                                            {block.type === 'cards' ? 'Cards' : 'Items'}
+                                        </div>
+                                        {(block.items || []).map((item, i) => (
+                                            <div key={i} className="rounded-xl border border-white bg-white/40 p-2.5 space-y-2">
+                                                <Field label={`Titre ${i + 1}`} value={item?.title || ''} onChange={v => updateBlockItemAt(block.id, i, 'title', v)} />
+                                                <FieldArea label="Description" value={item?.description || ''} onChange={v => updateBlockItemAt(block.id, i, 'description', v)} />
+                                                {block.type === 'cards' && (
+                                                    <ImageField
+                                                        label="Image"
+                                                        value={item?.imageUrl || ''}
+                                                        onChange={v => updateBlockItemAt(block.id, i, 'imageUrl', v)}
+                                                        onUpload={() => triggerUpload('image/*', url => updateBlockItemAt(block.id, i, 'imageUrl', url))}
+                                                        uploading={uploading}
+                                                    />
+                                                )}
+                                                <button onClick={() => removeBlockItemAt(block.id, i)} className="h-7 rounded-lg border border-zinc-200 bg-white px-2.5 text-[10px] font-mono text-zinc-500 transition hover:text-red-500">
+                                                    Supprimer item
+                                                </button>
+                                            </div>
+                                        ))}
+                                        <button onClick={() => addBlockItem(block.id)} className="inline-flex items-center gap-1.5 rounded-xl border border-white bg-white/50 px-3 py-2 text-[10px] font-mono text-zinc-600 transition hover:bg-white">
+                                            <Plus size={12} />
+                                            Ajouter un item
+                                        </button>
+                                    </div>
+                                )}
+                                {block.type === 'form' && (
+                                    <div className="space-y-2">
+                                        <div className="rounded-xl border border-emerald-100 bg-emerald-50/80 px-3 py-2 text-[10px] font-mono text-emerald-800">
+                                            Le texte du bloc s'affiche dans l'introduction du formulaire.
+                                        </div>
+                                        <div className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-400 pl-1">Champs form</div>
+                                        {(['name', 'email', 'message'] as const).map((field) => {
+                                            const checked = (block.fields || ['name', 'email', 'message']).includes(field);
+                                            return (
+                                                <label key={field} className="flex items-center gap-2 text-[11px] font-mono text-zinc-600">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={checked}
+                                                        onChange={() => toggleFormField(block.id, field)}
+                                                        className="h-3.5 w-3.5 rounded border-zinc-300 text-[#19c37d] focus:ring-[#19c37d]"
+                                                    />
+                                                    {field}
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                                {!['gallery', 'feature', 'cards', 'form'].includes(block.type) && (
+                                    <ImageField label="Image" value={block.imageUrl || ''} onChange={v => updateBlock(block.id, { imageUrl: v })}
+                                        onUpload={() => triggerUpload('image/*', url => updateBlock(block.id, { imageUrl: url }))} uploading={uploading} />
+                                )}
+                                {(block.type === 'hero' || block.type === 'media') && (
+                                    block.type === 'hero' ? (
+                                        <VideoFieldWithPresets label="Vidéo" value={block.videoUrl || ''} onChange={v => updateBlock(block.id, { videoUrl: v })}
+                                            onUpload={() => triggerUpload('video/*', url => updateBlock(block.id, { videoUrl: url }))} uploading={uploading} />
+                                    ) : (
+                                        <VideoField label="Vidéo" value={block.videoUrl || ''} onChange={v => updateBlock(block.id, { videoUrl: v })}
+                                            onUpload={() => triggerUpload('video/*', url => updateBlock(block.id, { videoUrl: url }))} uploading={uploading} />
+                                    )
                                 )}
                             </PanelCard>
                         ))}
@@ -262,10 +476,10 @@ export default function BuilderView({ config, setConfig, saveConfig, saving, sav
                             )}
                         </PanelCard>
                         <PanelCard title="Entreprise">
+                            <div className="mb-3 rounded-xl border border-emerald-100 bg-emerald-50/80 px-3 py-2 text-[10px] font-mono text-emerald-800">
+                                Le nom est affiche dans le header de la page Hub. Les autres champs ont ete retires tant qu&apos;ils ne sont pas rendus dans la preview.
+                            </div>
                             <Field label="Nom" value={config.business?.name || ''} onChange={v => updateBusiness('name', v)} />
-                            <Field label="Email" value={config.business?.email || ''} onChange={v => updateBusiness('email', v)} />
-                            <Field label="Téléphone" value={config.business?.phone || ''} onChange={v => updateBusiness('phone', v)} />
-                            <Field label="Description" value={config.business?.description || ''} onChange={v => updateBusiness('description', v)} />
                         </PanelCard>
                     </>
                 )}

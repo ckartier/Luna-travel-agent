@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const jsonFile = 'luna-travel-agent-firebase-adminsdk-fbsvc-c61c11c1d1.json';
+const jsonFile = process.argv[2] || process.env.FIREBASE_SA_JSON || 'firebase-service-account.json';
 const envFile = '.env.local';
 
 try {
@@ -17,8 +17,8 @@ try {
     if (startIdx !== -1 && endIdx !== -1) {
         envStr = envStr.substring(0, startIdx) + `FIREBASE_PRIVATE_KEY=${b64Key}\n\n` + envStr.substring(endIdx);
         fs.writeFileSync(envFile, envStr);
-        console.log("Successfully base64 encoded FIREBASE_PRIVATE_KEY in .env.local");
-    }
+        console.log(`Successfully base64 encoded FIREBASE_PRIVATE_KEY in .env.local from ${jsonFile}`);
+}
 } catch (e) {
     console.error("Error:", e.message);
 }

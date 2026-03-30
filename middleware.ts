@@ -8,6 +8,20 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const host = (request.headers.get('host') || '').split(':')[0].toLowerCase();
+
+  // Canonical host: keep production traffic on www until apex ownership is stable in Firebase.
+  const shouldCanonicalRedirect =
+    (host === 'datarnivore.com' || host === 'datarnivore.web.app' || host === 'datarnivore.firebaseapp.com') &&
+    !pathname.startsWith('/api/') &&
+    !pathname.startsWith('/_next/') &&
+    !pathname.startsWith('/.well-known/');
+  if (shouldCanonicalRedirect) {
+    const target = request.nextUrl.clone();
+    target.host = 'www.datarnivore.com';
+    target.protocol = 'https';
+    return NextResponse.redirect(target, 301);
+  }
 
   // ─── CRON routes: require CRON_SECRET header ───
   if (pathname.startsWith('/api/cron/')) {
@@ -27,6 +41,7 @@ export function middleware(request: NextRequest) {
     '/api/stripe/webhook',
     '/api/gmail/webhook',
     '/api/gmail/callback',
+    '/api/gmail/auth',
     '/api/whatsapp/webhook',
     '/api/daily-quote',
     '/api/weather',
@@ -77,9 +92,9 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // Apply to app routes (exclude static assets/files) so host canonicalization works.
+    '/((?!_next|.*\\..*).*)',
     // Exclude /api/crm/upload from middleware to avoid 10MB body truncation
     '/api/((?!crm/upload).*)',
-    '/crm/:path*',
-    '/site-admin/:path*',
   ],
 };

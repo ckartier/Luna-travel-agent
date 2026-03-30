@@ -42,6 +42,9 @@ const ENV_VERTICAL = typeof window !== 'undefined'
 // When both CRMs coexist in the same app, specific path prefixes
 // force the vertical regardless of the ENV lock.
 const PATH_VERTICAL_MAP: { prefix: string; vertical: string }[] = [
+    { prefix: '/crm/travel', vertical: 'travel' },
+    { prefix: '/crm/legal', vertical: 'legal' },
+    { prefix: '/crm/monum', vertical: 'monum' },
     { prefix: '/crm/avocat', vertical: 'legal' },
     { prefix: '/crm/dossiers', vertical: 'legal' },
     { prefix: '/crm/jurisprudence', vertical: 'legal' },
@@ -176,4 +179,3 @@ export function useVertical(): VerticalContextValue {
     }
     return ctx;
 }
-

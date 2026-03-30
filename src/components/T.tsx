@@ -287,6 +287,22 @@ const AUTO_DICT: Record<string, Record<LunaLocale, string>> = {
     'Nouvelle tâche': { fr: 'Nouvelle tâche', en: 'New task', da: 'Ny opgave', nl: 'Nieuwe taak', es: 'Nueva tarea' },
     'Assigné à': { fr: 'Assigné à', en: 'Assigned to', da: 'Tildelt til', nl: 'Toegewezen aan', es: 'Asignado a' },
     'Priorité': { fr: 'Priorité', en: 'Priority', da: 'Prioritet', nl: 'Prioriteit', es: 'Prioridad' },
+    'Échéance': { fr: 'Échéance', en: 'Due date', da: 'Frist', nl: 'Vervaldatum', es: 'Vencimiento' },
+    'Alertes CRM': { fr: 'Alertes CRM', en: 'CRM Alerts', da: 'CRM-advarsler', nl: 'CRM-waarschuwingen', es: 'Alertas CRM' },
+    'Aucune alerte pour le moment': { fr: 'Aucune alerte pour le moment', en: 'No alerts for now', da: 'Ingen advarsler i øjeblikket', nl: 'Geen meldingen op dit moment', es: 'No hay alertas por ahora' },
+    'Les réponses WhatsApp et les rappels pro apparaîtront ici': { fr: 'Les réponses WhatsApp et les rappels pro apparaîtront ici', en: 'WhatsApp replies and pro reminders will appear here', da: 'WhatsApp-svar og pro-påmindelser vises her', nl: 'WhatsApp-antwoorden en pro-herinneringen verschijnen hier', es: 'Las respuestas de WhatsApp y recordatorios pro aparecerán aquí' },
+    'Alerte Workflow Pro': { fr: 'Alerte Workflow Pro', en: 'Pro Workflow Alert', da: 'Pro-workflow-advarsel', nl: 'Pro-workflowmelding', es: 'Alerta de flujo Pro' },
+    'Demande Pro Workflow': { fr: 'Demande Pro Workflow', en: 'Pro Workflow Request', da: 'Pro-workflow-forespørgsel', nl: 'Pro-workflowaanvraag', es: 'Solicitud de flujo Pro' },
+    'Ouvrir Demande Pro': { fr: 'Ouvrir Demande Pro', en: 'Open Pro Request', da: 'Åbn pro-forespørgsel', nl: 'Open pro-aanvraag', es: 'Abrir solicitud Pro' },
+    'Rappel': { fr: 'Rappel', en: 'Reminder', da: 'Påmindelse', nl: 'Herinnering', es: 'Recordatorio' },
+    'Tout marquer lu': { fr: 'Tout marquer lu', en: 'Mark all as read', da: 'Markér alle som læst', nl: 'Alles als gelezen markeren', es: 'Marcar todo como leído' },
+    'Prestataire a confirmé via WhatsApp !': { fr: 'Prestataire a confirmé via WhatsApp !', en: 'Supplier confirmed via WhatsApp!', da: 'Leverandøren bekræftede via WhatsApp!', nl: 'Leverancier heeft via WhatsApp bevestigd!', es: '¡El proveedor confirmó por WhatsApp!' },
+    'ANNULATION TARDIVE !': { fr: 'ANNULATION TARDIVE !', en: 'LATE CANCELLATION!', da: 'SEN AFLYSNING!', nl: 'LATE ANNULERING!', es: '¡CANCELACIÓN TARDÍA!' },
+    'Prestataire a refusé': { fr: 'Prestataire a refusé', en: 'Supplier refused', da: 'Leverandøren afviste', nl: 'Leverancier heeft geweigerd', es: 'El proveedor rechazó' },
+    'A confirmé': { fr: 'A confirmé', en: 'Confirmed', da: 'Bekræftet', nl: 'Bevestigd', es: 'Confirmó' },
+    'Annul. tardive': { fr: 'Annul. tardive', en: 'Late cancel', da: 'Sen aflysning', nl: 'Late annulering', es: 'Cancelación tardía' },
+    'A refusé': { fr: 'A refusé', en: 'Refused', da: 'Afviste', nl: 'Geweigerd', es: 'Rechazó' },
+    'Actualisation auto toutes les 15 secondes': { fr: 'Actualisation auto toutes les 15 secondes', en: 'Auto refresh every 15 seconds', da: 'Automatisk opdatering hvert 15. sekund', nl: 'Automatisch verversen elke 15 seconden', es: 'Actualización automática cada 15 segundos' },
     'Haute': { fr: 'Haute', en: 'High', da: 'Høj', nl: 'Hoog', es: 'Alta' },
     'Moyenne': { fr: 'Moyenne', en: 'Medium', da: 'Middel', nl: 'Gemiddeld', es: 'Media' },
     'Basse': { fr: 'Basse', en: 'Low', da: 'Lav', nl: 'Laag', es: 'Baja' },
@@ -581,4 +597,3 @@ export function useAutoTranslate() {
         return AUTO_DICT[text]?.[locale] || text;
     };
 }
-

@@ -4,8 +4,8 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { LunaLogo } from '@/app/components/LunaLogo';
 import {
-    Sparkles, Globe, BarChart3, Users, Zap, Shield, Plane, Mail, Calendar,
-    ArrowRight, Check, Star, Bot, Code, Package
+    Globe, BarChart3, Zap, Shield, Plane, Mail, Calendar,
+    ArrowRight, Star, Bot
 } from 'lucide-react';
 
 const FEATURES = [
@@ -45,8 +45,8 @@ export default function LandingPage() {
                         <a href="#testimonials" className="hover:text-luna-charcoal transition-colors cursor-pointer">Témoignages</a>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Link href="/login?vertical=travel" className="text-[13px] text-luna-text-muted hover:text-luna-charcoal px-4 py-2 transition-colors cursor-pointer">Connexion</Link>
-                        <Link href="/signup?vertical=travel" className="btn-primary text-[13px] cursor-pointer">Essai gratuit →</Link>
+                        <Link href="/login/travel" className="text-[13px] text-luna-text-muted hover:text-luna-charcoal px-4 py-2 transition-colors cursor-pointer">Connexion</Link>
+                        <Link href="/signup/travel" className="btn-primary text-[13px] cursor-pointer">Essai gratuit →</Link>
                     </div>
                 </div>
             </nav>
@@ -68,7 +68,7 @@ export default function LandingPage() {
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                            <Link href="/signup"
+                            <Link href="/signup/travel"
                                 className="btn-primary px-7 py-3.5 rounded-[12px] flex items-center gap-2 text-[13px] cursor-pointer">
                                 Essai gratuit 14 jours <ArrowRight size={14} />
                             </Link>
@@ -254,7 +254,7 @@ export default function LandingPage() {
                         <p className="text-white/40 text-[13px] mb-8 max-w-[400px] mx-auto leading-relaxed">
                             Rejoignez les 500+ agences qui utilisent Luna pour automatiser leur prospection et créer des voyages sur mesure.
                         </p>
-                        <Link href="/signup"
+                        <Link href="/signup/travel"
                             className="inline-flex items-center gap-2 bg-white text-luna-charcoal px-7 py-3.5 rounded-[12px] text-[13px] hover:bg-gray-50 transition-colors cursor-pointer">
                             Essai gratuit 14 jours <ArrowRight size={14} />
                         </Link>
@@ -289,8 +289,8 @@ export default function LandingPage() {
                         <div>
                             <h4 className="text-label-sharp mb-3">Compte</h4>
                             <div className="space-y-2">
-                                <Link href="/login?vertical=travel" className="block text-[12px] text-luna-text-muted hover:text-luna-charcoal transition-colors cursor-pointer">Connexion</Link>
-                                <Link href="/signup?vertical=travel" className="block text-[12px] text-luna-text-muted hover:text-luna-charcoal transition-colors cursor-pointer">Essai gratuit</Link>
+                                <Link href="/login/travel" className="block text-[12px] text-luna-text-muted hover:text-luna-charcoal transition-colors cursor-pointer">Connexion</Link>
+                                <Link href="/signup/travel" className="block text-[12px] text-luna-text-muted hover:text-luna-charcoal transition-colors cursor-pointer">Essai gratuit</Link>
                             </div>
                         </div>
                     </div>

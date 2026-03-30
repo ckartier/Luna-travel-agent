@@ -1,18 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { LunaLogo } from '../components/LunaLogo';
-import { ArrowRight, AlertCircle, Loader2, CheckCircle2, Sparkles, Shield, Zap, Scale, FileSearch, Briefcase } from 'lucide-react';
+import { ArrowRight, AlertCircle, Loader2, CheckCircle2, Sparkles, Shield, Zap, Scale, FileSearch, Briefcase, Languages } from 'lucide-react';
 import Image from 'next/image';
 import { signUpWithEmail, loginWithGoogle as firebaseLoginWithGoogle } from '@/src/lib/firebase/auth';
 import { createTenant } from '@/src/lib/firebase/tenant';
 import { getOrCreateUser } from '@/src/lib/firebase/crm';
 import { WorldMapSVG } from '@/src/components/WorldMapSVG';
-import { doc, setDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { db } from '@/src/lib/firebase/client';
+import { LOCALE_LABELS, type LunaLocale } from '@/src/lib/i18n/translations';
+import { detectProAuthLocale, PRO_AUTH_COPY, PRO_AUTH_LOCALE_STORAGE_KEY } from '@/src/lib/i18n/proAuth';
 
 export default function SignupPage() {
     const [name, setName] = useState('');
@@ -22,10 +24,67 @@ export default function SignupPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [step, setStep] = useState<'form' | 'creating'>('form');
+    const [proLocale, setProLocale] = useState<LunaLocale>('fr');
     const router = useRouter();
     const searchParams = useSearchParams();
     const vertical = searchParams?.get('vertical') || 'travel';
+    const mode = searchParams?.get('mode') || '';
     const isLegal = vertical === 'legal';
+    const isProMode = mode === 'pro';
+    const proCopy = PRO_AUTH_COPY[proLocale];
+
+    useEffect(() => {
+        if (!isProMode) return;
+        const resolved = detectProAuthLocale(searchParams?.get('lang'));
+        setProLocale(resolved);
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(PRO_AUTH_LOCALE_STORAGE_KEY, resolved);
+        }
+    }, [isProMode, searchParams]);
+
+    const handleProLocaleChange = (locale: LunaLocale) => {
+        setProLocale(locale);
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(PRO_AUTH_LOCALE_STORAGE_KEY, locale);
+        }
+    };
+
+    const provisionProAccount = async (uid: string, tenantId: string, displayName: string, userEmail: string) => {
+        await setDoc(doc(db, 'users', uid), {
+            accessScope: 'pro_travel',
+            role: 'Agent',
+            updatedAt: new Date(),
+        }, { merge: true });
+
+        if (!userEmail) return;
+
+        const suppliersRef = collection(db, 'tenants', tenantId, 'suppliers');
+        const existingSnap = await getDocs(query(suppliersRef, where('email', '==', userEmail)));
+        const alreadyExistsInTravel = existingSnap.docs.some((snap) => {
+            const data = snap.data() as { vertical?: string };
+            return !data.vertical || data.vertical === 'travel';
+        });
+
+        if (alreadyExistsInTravel) return;
+
+        await addDoc(suppliersRef, {
+            name: displayName || userEmail.split('@')[0] || 'Prestataire',
+            contactName: displayName || '',
+            category: 'AUTRE',
+            country: 'France',
+            city: 'Paris',
+            email: userEmail,
+            phone: '',
+            notes: 'Compte pro créé via inscription.',
+            commission: 0,
+            tags: ['pro-account'],
+            isFavorite: false,
+            isLunaFriend: false,
+            vertical: 'travel',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+    };
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -46,15 +105,25 @@ export default function SignupPage() {
             const user = result.user;
 
             // 2. Create user profile in Firestore
-            await getOrCreateUser({
+            const userProfile = await getOrCreateUser({
                 uid: user.uid,
                 displayName: name,
                 email: user.email,
                 photoURL: user.photoURL,
             });
+            const tenantId = userProfile.tenantId || user.uid;
 
             // 3. Create tenant
             await createTenant(user.uid, email, name, agencyName || undefined);
+
+            if (isProMode) {
+                await provisionProAccount(
+                    user.uid,
+                    tenantId,
+                    name || user.displayName || userProfile.displayName || 'Prestataire',
+                    email || user.email || userProfile.email || '',
+                );
+            }
 
             // 4. Create free trial subscription (14 days)
             const trialEnd = new Date();
@@ -86,11 +155,13 @@ export default function SignupPage() {
 
             // 6. Redirect to the right CRM vertical
             const destination =
-                vertical === 'legal'
-                    ? '/crm/avocat?vertical=legal'
+                isProMode
+                    ? '/pro/travel'
+                    : vertical === 'legal'
+                    ? '/crm/legal'
                     : vertical === 'monum'
-                        ? '/crm/monum?vertical=monum'
-                        : '/crm/luna?vertical=travel';
+                        ? '/crm/monum'
+                        : '/crm/travel';
             router.push(destination);
         } catch (err: any) {
             setError(err.message || 'Erreur lors de la création du compte');
@@ -102,18 +173,58 @@ export default function SignupPage() {
     const handleGoogleSignup = async () => {
         setError(null);
         setIsLoading(true);
-        const result = await firebaseLoginWithGoogle();
-        if (result.error) {
-            setError(result.error);
+        try {
+            const result = await firebaseLoginWithGoogle();
+            if (result.error) {
+                setError(result.error);
+                setIsLoading(false);
+                return;
+            }
+
+            if (result.user && isProMode) {
+                const googleName = result.user.displayName || 'Prestataire';
+                const googleEmail = result.user.email || '';
+                const userProfile = await getOrCreateUser({
+                    uid: result.user.uid,
+                    displayName: googleName,
+                    email: googleEmail,
+                    photoURL: result.user.photoURL,
+                });
+                const tenantId = userProfile.tenantId || result.user.uid;
+                await createTenant(result.user.uid, googleEmail, googleName);
+                await provisionProAccount(result.user.uid, tenantId, googleName, googleEmail);
+                router.push('/pro/travel');
+                return;
+            }
+
+            if (result.user) {
+                const destination =
+                    vertical === 'legal'
+                        ? '/crm/legal'
+                        : vertical === 'monum'
+                            ? '/crm/monum'
+                            : '/crm/travel';
+                router.push(destination);
+                return;
+            }
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Erreur pendant l’inscription Google';
+            setError(message);
+        } finally {
             setIsLoading(false);
         }
-        // AuthContext will handle the rest (getOrCreateUser + redirect)
     };
 
     return (
-        <div className="min-h-screen flex bg-white">
+        <div className={isProMode ? 'relative min-h-screen overflow-hidden bg-[#f3f6f8]' : 'min-h-screen flex bg-white'}>
+            {isProMode && (
+                <div className="absolute inset-0 z-0">
+                    <WorldMapSVG className="h-full w-full" />
+                </div>
+            )}
 
             {/* ═══ Left: Branding ═══ */}
+            {!isProMode && (
             <div className="hidden lg:flex w-1/2 relative overflow-hidden items-center justify-center">
                 {isLegal ? (
                     <>
@@ -192,16 +303,42 @@ export default function SignupPage() {
                     </>
                 )}
             </div>
+            )}
 
             {/* ═══ Right: Signup form ═══ */}
-            <div className="flex-1 flex items-center justify-center p-8 relative z-10">
+            <div className={isProMode ? 'relative z-10 flex min-h-screen w-full items-center justify-center p-6 md:p-8' : 'flex-1 flex items-center justify-center p-8 relative z-10'}>
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2, duration: 0.5 }}
-                    className="w-full max-w-[360px]"
+                    className={isProMode ? 'w-full max-w-[430px] rounded-3xl border border-gray-200 bg-white p-7 shadow-[0_24px_80px_rgba(15,23,42,0.18)] md:p-8' : 'w-full max-w-[360px]'}
                 >
-                    <div className="flex items-center gap-2 mb-10">
+                    {isProMode && (
+                        <div className="mb-5 rounded-2xl border border-[#5a8fa3]/25 bg-[#f4f9fb] p-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#2c667b] inline-flex items-center gap-1.5">
+                                <Languages size={12} /> {proCopy.languageSelectorLabel}
+                            </p>
+                            <div className="mt-2 grid grid-cols-5 gap-1.5">
+                                {Object.entries(LOCALE_LABELS).map(([code, meta]) => {
+                                    const locale = code as LunaLocale;
+                                    const active = locale === proLocale;
+                                    return (
+                                        <button
+                                            key={locale}
+                                            type="button"
+                                            onClick={() => handleProLocaleChange(locale)}
+                                            className={`rounded-lg border px-1.5 py-2 text-center transition-colors ${active ? 'border-[#5a8fa3] bg-white text-[#2c667b]' : 'border-transparent bg-white/70 text-gray-500 hover:border-[#5a8fa3]/35'}`}
+                                        >
+                                            <p className="text-[11px]">{meta.flag}</p>
+                                            <p className="text-[9px] font-semibold uppercase tracking-wider">{locale}</p>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className={`flex items-center gap-2 ${isProMode ? 'mb-8 justify-center' : 'mb-10'}`}>
                         {isLegal ? (
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-[#2E2E2E] flex items-center justify-center">
@@ -224,9 +361,13 @@ export default function SignupPage() {
                             <div className="w-16 h-16 rounded-2xl bg-[#5a8fa3]/10 flex items-center justify-center mb-6">
                                 <Loader2 size={28} className="text-[#5a8fa3] animate-spin" />
                             </div>
-                            <h2 className="text-[20px] text-[#2E2E2E] tracking-tight mb-2">Création de votre espace…</h2>
+                            <h2 className="text-[20px] text-[#2E2E2E] tracking-tight mb-2">{isProMode ? proCopy.creatingSpace : 'Création de votre espace…'}</h2>
                             <div className="flex flex-col gap-2 mt-4">
-                                {['Compte créé ✓', 'Espace concierge…', 'Données de démo…'].map((s, i) => (
+                                {[
+                                    isProMode ? proCopy.creatingStep1 : 'Compte créé ✓',
+                                    isProMode ? proCopy.creatingStep2 : 'Espace concierge…',
+                                    isProMode ? proCopy.creatingStep3 : 'Données de démo…',
+                                ].map((s, i) => (
                                     <motion.p key={i}
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
@@ -241,8 +382,14 @@ export default function SignupPage() {
                         </div>
                     ) : (
                         <>
-                            <h2 className="text-[24px] text-[#2E2E2E] tracking-tight mb-1">Créer un compte</h2>
-                            <p className="text-[#2E2E2E]/40 text-[13px] mb-7">{isLegal ? 'Essai gratuit 14 jours — CRM Juridique complet' : 'Essai gratuit 14 jours — Tout inclus'}</p>
+                            <h2 className="text-[24px] text-[#2E2E2E] tracking-tight mb-1">{isProMode ? proCopy.signupTitle : 'Créer un compte'}</h2>
+                            <p className="text-[#2E2E2E]/40 text-[13px] mb-7">
+                                {isProMode
+                                    ? proCopy.signupSubtitle
+                                    : isLegal
+                                        ? 'Essai gratuit 14 jours — CRM Juridique complet'
+                                        : 'Essai gratuit 14 jours — Tout inclus'}
+                            </p>
 
                             {error && (
                                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
@@ -254,29 +401,29 @@ export default function SignupPage() {
 
                             <form onSubmit={handleSignup} className="flex flex-col gap-4">
                                 <div>
-                                    <label className="text-label-sharp block mb-2">Votre nom</label>
+                                    <label className="text-label-sharp block mb-2">{isProMode ? proCopy.nameLabel : 'Votre nom'}</label>
                                     <input type="text" placeholder="Jean Dupont"
                                         className="input-underline w-full"
                                         value={name} onChange={e => setName(e.target.value)} required />
                                 </div>
                                 <div>
-                                    <label className="text-label-sharp block mb-2">{isLegal ? 'Nom du cabinet' : 'Nom de l\'agence'} <span className="text-[#2E2E2E]/25">(optionnel)</span></label>
-                                    <input type="text" placeholder={isLegal ? 'Cabinet Dupont & Associés' : 'Luna Conciergerie'}
+                                    <label className="text-label-sharp block mb-2">{isProMode ? proCopy.agencyLabel : isLegal ? 'Nom du cabinet' : 'Nom de l\'agence'} <span className="text-[#2E2E2E]/25">{isProMode ? proCopy.optional : '(optionnel)'}</span></label>
+                                    <input type="text" placeholder={isProMode ? proCopy.agencyPlaceholder : isLegal ? 'Cabinet Dupont & Associés' : 'Luna Conciergerie'}
                                         className="input-underline w-full"
                                         value={agencyName} onChange={e => setAgencyName(e.target.value)} />
                                 </div>
                                 <div>
-                                    <label className="text-label-sharp block mb-2">Email</label>
-                                    <input type="email" placeholder={isLegal ? 'avocat@cabinet.fr' : 'votre@email.com'}
+                                    <label className="text-label-sharp block mb-2">{isProMode ? proCopy.emailLabel : 'Email'}</label>
+                                    <input type="email" placeholder={isProMode ? proCopy.emailPlaceholder : isLegal ? 'avocat@cabinet.fr' : 'votre@email.com'}
                                         className="input-underline w-full"
                                         value={email} onChange={e => setEmail(e.target.value)} required />
                                 </div>
                                 <div>
-                                    <label className="text-label-sharp block mb-2">Mot de passe</label>
+                                    <label className="text-label-sharp block mb-2">{isProMode ? proCopy.passwordLabel : 'Mot de passe'}</label>
                                     <input type="password" placeholder="••••••••"
                                         className="input-underline w-full font-mono"
                                         value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
-                                    <p className="text-[10px] text-[#2E2E2E]/25 mt-1">Minimum 6 caractères</p>
+                                    <p className="text-[10px] text-[#2E2E2E]/25 mt-1">{isProMode ? proCopy.minPassword : 'Minimum 6 caractères'}</p>
                                 </div>
 
                                 <button type="submit" disabled={isLoading}
@@ -284,10 +431,10 @@ export default function SignupPage() {
                                     {isLoading ? (
                                         <span className="flex items-center gap-2">
                                             <Loader2 size={14} className="animate-spin" />
-                                            Création…
+                                            {isProMode ? proCopy.creatingButton : 'Création…'}
                                         </span>
                                     ) : (
-                                        <>Commencer l&apos;essai gratuit <ArrowRight size={14} /></>
+                                        <>{isProMode ? proCopy.createProAccess : 'Commencer l&apos;essai gratuit'} <ArrowRight size={14} /></>
                                     )}
                                 </button>
                             </form>
@@ -295,7 +442,7 @@ export default function SignupPage() {
                             {/* Separator */}
                             <div className="flex items-center gap-3 my-5">
                                 <div className="flex-1 h-px bg-gray-100" />
-                                <span className="text-label-sharp">ou continuer avec</span>
+                                <span className="text-label-sharp">{isProMode ? proCopy.orContinueWith : 'ou continuer avec'}</span>
                                 <div className="flex-1 h-px bg-gray-100" />
                             </div>
 
@@ -312,11 +459,15 @@ export default function SignupPage() {
                             </button>
 
                             <p className="text-center text-[13px] text-[#2E2E2E]/40 mt-6">
-                                Déjà un compte ? <Link href={isLegal ? '/login?vertical=legal' : '/login'} className="text-[#5a8fa3] hover:text-[#2E2E2E] transition-colors font-medium">Se connecter</Link>
+                                {isProMode ? `${proCopy.alreadyMember} ` : 'Déjà un compte ? '}
+                                <Link href={isProMode ? `/login/pro?lang=${proLocale}` : isLegal ? '/login/legal' : '/login/travel'} className="text-[#5a8fa3] hover:text-[#2E2E2E] transition-colors font-medium">{isProMode ? proCopy.loginCta : 'Se connecter'}</Link>
                             </p>
 
                             <p className="text-center text-[11px] text-[#2E2E2E]/25 mt-4">
-                                En créant un compte, vous acceptez nos <Link href="/cgv" className="text-[#5a8fa3]/60 hover:underline">CGV</Link>
+                                {isProMode
+                                    ? <>{proCopy.signupTermsPrefix} <Link href="/cgv" className="text-[#5a8fa3]/60 hover:underline">{proCopy.signupTermsLink}</Link></>
+                                    : <>En créant un compte, vous acceptez nos <Link href="/cgv" className="text-[#5a8fa3]/60 hover:underline">CGV</Link></>
+                                }
                             </p>
                         </>
                     )}

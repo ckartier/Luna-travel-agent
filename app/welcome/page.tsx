@@ -35,10 +35,10 @@ export default function TransitionPage() {
             setTimeout(() => {
                 const target =
                     vertical.id === 'legal'
-                        ? '/crm/avocat?vertical=legal'
+                        ? '/crm/legal'
                         : vertical.id === 'monum'
-                            ? '/crm/monum?vertical=monum'
-                            : '/crm/luna?vertical=travel';
+                            ? '/crm/monum'
+                            : '/crm/travel';
                 router.push(target);
             }, 800);
         }, 2500);

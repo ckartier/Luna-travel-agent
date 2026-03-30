@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { LunaLogo } from './LunaLogo';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { useVertical } from '@/src/contexts/VerticalContext';
 import { LogOut, User, Settings, Shield } from 'lucide-react';
 
 /** Routes where the header/nav should be hidden */
-const HEADERLESS_ROUTES = ['/login', '/landing', '/pricing', '/cgv', '/admin', '/conciergerie', '/client', '/trip', '/demos', '/hub', '/welcome'];
+const HEADERLESS_ROUTES = ['/login', '/landing', '/pricing', '/cgv', '/admin', '/conciergerie', '/client', '/trip', '/demos', '/hub', '/welcome', '/pro', '/pdfcreator'];
 
 function getInitials(name: string | null | undefined): string {
     if (!name) return 'U';
@@ -18,9 +19,16 @@ function getInitials(name: string | null | undefined): string {
 export function LayoutContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname() || '/';
     const { user, userProfile, logout } = useAuth();
+    const { vertical } = useVertical();
     const showHeader = !HEADERLESS_ROUTES.some(r => pathname.startsWith(r)) && !pathname.startsWith('/crm') && !pathname.startsWith('/site-admin') && !!user;
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const crmHomeHref =
+        vertical.id === 'legal'
+            ? '/crm/legal'
+            : vertical.id === 'monum'
+                ? '/crm/monum'
+                : '/crm/travel';
 
     // Close dropdown on outside click
     useEffect(() => {
@@ -46,9 +54,9 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
                             <LunaLogo size={32} />
                         </Link>
                         <nav className="flex items-center gap-1.5">
-                            <Link href="/" className={`${pathname === '/' ? 'bg-luna-charcoal/5 text-luna-charcoal' : 'text-luna-text-muted hover:text-luna-charcoal'} px-3 py-1 text-[11px] font-bold rounded-full transition-all uppercase tracking-widest`}>L'Agence</Link>
+                            <Link href="/" className={`${pathname === '/' ? 'bg-luna-charcoal/5 text-luna-charcoal' : 'text-luna-text-muted hover:text-luna-charcoal'} px-3 py-1 text-[11px] font-bold rounded-full transition-all uppercase tracking-widest`}>L&apos;Agence</Link>
                             <Link href="/voyage-agent" className={`${pathname === '/voyage-agent' ? 'bg-blue-500/10 text-blue-600' : 'text-luna-text-muted hover:text-luna-charcoal'} px-3 py-1 text-[11px] font-bold rounded-full transition-all uppercase tracking-widest`}>Voyages</Link>
-                            <Link href="/crm" className={`${pathname.startsWith('/crm') ? 'bg-luna-charcoal text-white shadow-sm' : 'text-luna-text-muted hover:text-luna-charcoal'} px-3 py-1 text-[11px] font-bold rounded-full transition-all uppercase tracking-widest`}>CRM</Link>
+                            <Link href={crmHomeHref} className={`${pathname.startsWith('/crm') ? 'bg-luna-charcoal text-white shadow-sm' : 'text-luna-text-muted hover:text-luna-charcoal'} px-3 py-1 text-[11px] font-bold rounded-full transition-all uppercase tracking-widest`}>CRM</Link>
                         </nav>
 
                         {/* Avatar inside the pill */}

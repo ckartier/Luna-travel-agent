@@ -7,7 +7,7 @@ import { useAuth } from '@/src/contexts/AuthContext';
 import { useSubscription } from '@/src/hooks/useSubscription';
 import { CreditCard, X } from 'lucide-react';
 
-const PUBLIC_PATHS = ['/login', '/pricing', '/cgv', '/landing', '/admin', '/site-admin', '/trip', '/conciergerie'];
+const PUBLIC_PATHS = ['/login', '/pricing', '/cgv', '/landing', '/admin', '/site-admin', '/trip', '/conciergerie', '/pro'];
 
 export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
     const { user, userProfile, loading: authLoading } = useAuth();

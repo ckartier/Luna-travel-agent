@@ -6,6 +6,7 @@ export interface AuthResult {
     email: string;
     tenantId?: string;
     role?: string;
+    accessScope?: 'full' | 'pro_travel';
 }
 
 /**
@@ -25,17 +26,24 @@ export async function verifyAuth(request: Request): Promise<AuthResult | Respons
 
         let tenantId: string | undefined;
         let role: string | undefined;
+        let accessScope: 'full' | 'pro_travel' | undefined;
         try {
             const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
             if (userDoc.exists) {
                 tenantId = userDoc.data()?.tenantId;
                 role = userDoc.data()?.role;
+                accessScope = userDoc.data()?.accessScope;
             }
         } catch {
             // Non-blocking: tenantId/role will be undefined if lookup fails
         }
 
-        return { uid: decoded.uid, email: decoded.email || '', tenantId, role };
+        const pathname = new URL(request.url).pathname;
+        if (accessScope === 'pro_travel' && pathname.startsWith('/api/crm/')) {
+            return NextResponse.json({ error: 'Pro account cannot access CRM APIs' }, { status: 403 });
+        }
+
+        return { uid: decoded.uid, email: decoded.email || '', tenantId, role, accessScope };
     } catch {
         return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
     }
@@ -76,4 +84,3 @@ export async function verifyAdmin(request: Request): Promise<AuthResult | Respon
         return NextResponse.json({ error: 'Authorization check failed' }, { status: 500 });
     }
 }
-

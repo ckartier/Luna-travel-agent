@@ -1,8 +1,7 @@
 const fs = require('fs');
-const path = require('path');
 const dotenv = require('dotenv');
 
-const jsonFile = 'luna-travel-agent-firebase-adminsdk-fbsvc-c61c11c1d1.json';
+const jsonFile = process.argv[2] || process.env.FIREBASE_SA_JSON || 'firebase-service-account.json';
 const envFile = '.env.local';
 
 try {
@@ -43,7 +42,7 @@ try {
             // Reconstruct the file
             envStr = envStr.substring(0, startIdx) + `FIREBASE_PRIVATE_KEY=${safeKey}\n\n` + envStr.substring(endIdx);
             fs.writeFileSync(envFile, envStr);
-            console.log("Successfully rebuilt .env.local gracefully");
+            console.log(`Successfully rebuilt .env.local from ${jsonFile}`);
         } else {
             console.error("Could not find GEMINI_API_KEY in .env.local to anchor the replacement");
         }

@@ -21,10 +21,10 @@ export default function HubDashboardLayout({ children }: { children: ReactNode }
     ];
 
     const externalLinks = [
-        { name: 'Hub Site', href: '/hub/site', icon: Globe, color: '#19c37d' },
-        { name: 'CRM Travel', href: '/crm/luna', icon: Plane, color: '#5a8fa3' },
-        { name: 'CRM Legal', href: '/crm/avocat?vertical=legal', icon: Scale, color: '#A07850' },
-        { name: 'CRM Monum', href: '/crm/monum?vertical=monum', icon: Building2, color: '#334155' },
+        { name: 'Hub', href: '/hub', icon: Globe, color: '#19c37d' },
+        { name: 'CRM Travel', href: '/crm/travel', icon: Plane, color: '#5a8fa3' },
+        { name: 'CRM Legal', href: '/crm/legal', icon: Scale, color: '#A07850' },
+        { name: 'CRM Monum', href: '/landing-monum', icon: Building2, color: '#334155' },
         { name: 'Site Admin', href: '/site-admin', icon: Globe, color: '#6B7280' },
     ];
 

@@ -84,6 +84,7 @@ export default function PrestationDetailPage({ params }: { params: Promise<{ id:
     const [showBookingModal, setShowBookingModal] = useState(false);
     const [bookingLoading, setBookingLoading] = useState(false);
     const [bookingSuccess, setBookingSuccess] = useState<string | null>(null);
+    const [validatingBookingId, setValidatingBookingId] = useState<string | null>(null);
     const [showSupplierModal, setShowSupplierModal] = useState(false);
 
     const [searchContact, setSearchContact] = useState('');
@@ -533,6 +534,39 @@ export default function PrestationDetailPage({ params }: { params: Promise<{ id:
         } catch (e) { console.error(e); }
     };
 
+    const refreshSupplierBookings = async () => {
+        if (!tenantId || !item?.supplierId) return;
+        const booked = await getSupplierBookings(tenantId, item.supplierId).catch(() => []);
+        setBookings(booked.filter(b => b.prestationId === id));
+    };
+
+    const isBookingAwaitingValidation = (booking: CRMSupplierBooking) => {
+        const status = String(booking.status);
+        return status === 'PROPOSED' || status === 'PENDING';
+    };
+
+    const handleValidateBooking = async (booking: CRMSupplierBooking) => {
+        if (!booking.id) return;
+        setValidatingBookingId(booking.id);
+        try {
+            const res = await fetchWithAuth('/api/bookings/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookingId: booking.id }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success) {
+                throw new Error(data.error || 'Validation impossible');
+            }
+            await refreshSupplierBookings();
+        } catch (e) {
+            console.error('[Booking Validate] Error:', e);
+            alert('Impossible de valider la réservation pour le moment.');
+        } finally {
+            setValidatingBookingId(null);
+        }
+    };
+
     const fieldClass = "w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-200 font-normal";
     const labelClass = "text-[10px] font-semibold tracking-widest text-gray-400 uppercase mb-1 block";
 
@@ -712,12 +746,12 @@ export default function PrestationDetailPage({ params }: { params: Promise<{ id:
                                     <div className="space-y-3">
                                         {bookings.map(booking => (
                                             <div key={booking.id} className={`p-4 rounded-2xl border flex items-center justify-between transition-all bg-white group shadow-sm hover:shadow-md ${booking.status === 'CONFIRMED' ? 'border-emerald-200 bg-emerald-50/30' :
-                                                booking.status === 'CANCELLED' ? 'border-rose-200 bg-rose-50/30 opacity-60' :
+                                                booking.status === 'CANCELLED' || booking.status === 'CANCELLED_LATE' ? 'border-rose-200 bg-rose-50/30 opacity-60' :
                                                     'border-gray-100 hover:border-emerald-200'
                                                 }`}>
                                                 <div className="flex items-center gap-4">
                                                     <div className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center font-bold ${booking.status === 'CONFIRMED' ? 'bg-emerald-100 text-emerald-700' :
-                                                        booking.status === 'CANCELLED' ? 'bg-rose-100 text-rose-500' :
+                                                        booking.status === 'CANCELLED' || booking.status === 'CANCELLED_LATE' ? 'bg-rose-100 text-rose-500' :
                                                             'bg-amber-50 text-amber-600'
                                                         }`}>
                                                         <span className="text-[10px] leading-none uppercase">{format(new Date(booking.date), 'MMM', { locale: fr })}</span>
@@ -734,38 +768,40 @@ export default function PrestationDetailPage({ params }: { params: Promise<{ id:
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-tighter ${booking.status === 'CONFIRMED' ? 'bg-emerald-100 text-emerald-700' :
-                                                        booking.status === 'PROPOSED' ? 'bg-amber-100 text-amber-700' :
-                                                            booking.status === 'CANCELLED' ? 'bg-rose-100 text-rose-600' : 'bg-gray-100 text-gray-500'
+                                                        isBookingAwaitingValidation(booking) ? 'bg-amber-100 text-amber-700' :
+                                                            booking.status === 'CANCELLED' || booking.status === 'CANCELLED_LATE' ? 'bg-rose-100 text-rose-600' : 'bg-gray-100 text-gray-500'
                                                         }`}>
-                                                        {booking.status === 'CONFIRMED' ? 'Confirmé' : booking.status === 'PROPOSED' ? 'En attente' : 'Annulé'}
+                                                        {booking.status === 'CONFIRMED'
+                                                            ? 'Confirmé'
+                                                            : isBookingAwaitingValidation(booking)
+                                                                ? 'En attente'
+                                                                : booking.status === 'CANCELLED' || booking.status === 'CANCELLED_LATE'
+                                                                    ? 'Annulé'
+                                                                    : booking.status}
                                                     </span>
 
-                                                    {/* Accept / Reject buttons for PROPOSED bookings */}
-                                                    {booking.status === 'PROPOSED' && (
+                                                    {/* Validate / Reject buttons for waiting bookings */}
+                                                    {isBookingAwaitingValidation(booking) && (
                                                         <div className="flex items-center gap-1 ml-1">
                                                             <button
-                                                                onClick={async () => {
-                                                                    if (!tenantId || !booking.id) return;
-                                                                    await updateSupplierBooking(tenantId, booking.id, { status: 'CONFIRMED' });
-                                                                    const booked = await getSupplierBookings(tenantId, item!.supplierId!).catch(() => []);
-                                                                    setBookings(booked.filter(b => b.prestationId === id));
-                                                                }}
-                                                                className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all"
-                                                                title="Accepter"
+                                                                onClick={() => handleValidateBooking(booking)}
+                                                                disabled={validatingBookingId === booking.id}
+                                                                className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all text-[10px] font-bold uppercase tracking-tight disabled:opacity-60 flex items-center gap-1.5"
+                                                                title="Valider la réservation"
                                                             >
-                                                                <Check size={14} />
+                                                                {validatingBookingId === booking.id ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                                                                Valider résa
                                                             </button>
                                                             <button
                                                                 onClick={async () => {
                                                                     if (!tenantId || !booking.id) return;
                                                                     await updateSupplierBooking(tenantId, booking.id, { status: 'CANCELLED' });
-                                                                    const booked = await getSupplierBookings(tenantId, item!.supplierId!).catch(() => []);
-                                                                    setBookings(booked.filter(b => b.prestationId === id));
+                                                                    await refreshSupplierBookings();
                                                                 }}
-                                                                className="p-1.5 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-100 transition-all"
+                                                                className="px-2.5 py-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-all text-[10px] font-bold uppercase tracking-tight"
                                                                 title="Refuser"
                                                             >
-                                                                <X size={14} />
+                                                                Refuser
                                                             </button>
                                                         </div>
                                                     )}

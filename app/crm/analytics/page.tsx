@@ -2,24 +2,25 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import {
-  BarChart3, TrendingUp, MapPin, Plane, Hotel, Users, Calendar, Sparkles,
+  TrendingUp, Users, Calendar, Sparkles,
   DollarSign, Loader2, ArrowUpRight, ArrowDownRight, Briefcase, Activity,
-  PieChart as PieIcon, CreditCard, ShoppingBag, Truck
+  PieChart as PieIcon, CreditCard, ShoppingBag, Truck, type LucideIcon
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, AreaChart, Area, CartesianGrid
+  PieChart, Pie, Cell, CartesianGrid
 } from 'recharts';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   getLeads, getTrips, getContacts, getActivities,
-  getInvoices, getQuotes, getSuppliers,
-  CRMLead, CRMTrip, CRMInvoice, CRMQuote, CRMSupplier
+  getInvoices, getSuppliers,
+  CRMLead, CRMTrip, CRMInvoice, CRMSupplier
 } from '@/src/lib/firebase/crm';
 import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { useVertical } from '@/src/contexts/VerticalContext';
 import { T } from '@/src/components/T';
+import { computePrestationScoresFromTrips } from '@/src/lib/analytics/prestationScores';
 
 const CHART_COLORS = ['#10b981', '#1f2937', '#6366f1', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6', '#f97316'];
 
@@ -29,8 +30,24 @@ interface AIInsight {
   detail: string;
 }
 
-function StatCard({ icon: Icon, label, value, sub, color, delay, up = true, trend = '' }: {
-  icon: any; label: string; value: string | number; sub?: string; color: string; delay: number;
+function toSafeNumber(value: unknown): number {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  if (typeof value === 'string') {
+    const parsed = Number(value.replace(/[^\d.-]/g, ''));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function toMonthIndex(value: unknown): number | null {
+  const date = value instanceof Date ? value : new Date(String(value || ''));
+  if (Number.isNaN(date.getTime())) return null;
+  const month = date.getMonth();
+  return month >= 0 && month <= 11 ? month : null;
+}
+
+function StatCard({ icon: Icon, label, value, sub, delay, up = true, trend = '' }: {
+  icon: LucideIcon; label: string; value: string | number; sub?: string; delay: number;
   up?: boolean; trend?: string;
 }) {
   return (
@@ -70,7 +87,6 @@ export default function AnalyticsPage() {
   const [leads, setLeads] = useState<CRMLead[]>([]);
   const [trips, setTrips] = useState<CRMTrip[]>([]);
   const [invoices, setInvoices] = useState<CRMInvoice[]>([]);
-  const [quotes, setQuotes] = useState<CRMQuote[]>([]);
   const [suppliers, setSuppliers] = useState<CRMSupplier[]>([]);
   const [contactCount, setContactCount] = useState(0);
   const [activityCount, setActivityCount] = useState(0);
@@ -84,11 +100,10 @@ export default function AnalyticsPage() {
       setLoading(true);
       const currentVertical = isLegal ? 'legal' : 'travel';
       try {
-        const [allL, allT, allInvs, allQts, c, a, sups] = await Promise.all([
+        const [allL, allT, allInvs, c, a, sups] = await Promise.all([
           getLeads(tenantId),
           getTrips(tenantId),
           getInvoices(tenantId),
-          getQuotes(tenantId),
           getContacts(tenantId),
           getActivities(tenantId),
           getSuppliers(tenantId)
@@ -96,7 +111,6 @@ export default function AnalyticsPage() {
         setLeads(allL.filter(l => (l.vertical || 'travel') === currentVertical));
         setTrips(allT.filter(t => (t.vertical || 'travel') === currentVertical));
         setInvoices(allInvs.filter(i => (i.vertical || 'travel') === currentVertical));
-        setQuotes(allQts.filter(q => (q.vertical || 'travel') === currentVertical));
         setContactCount(c.length);
         setActivityCount(a.length);
         setSuppliers(sups);
@@ -117,15 +131,17 @@ export default function AnalyticsPage() {
 
     invoices.forEach(inv => {
       if (inv.status !== 'CANCELLED') {
-        grossRevenue += inv.totalAmount;
-        totalUnpaid += (inv.totalAmount - inv.amountPaid);
+        const totalAmount = toSafeNumber(inv.totalAmount);
+        const amountPaid = toSafeNumber(inv.amountPaid);
+        grossRevenue += totalAmount;
+        totalUnpaid += Math.max(0, totalAmount - amountPaid);
       }
     });
 
     // Calculate Cost from Trips/Quotes linkage
     trips.forEach(trip => {
       if (trip.status !== 'CANCELLED') {
-        totalCost += (trip.cost || 0);
+        totalCost += toSafeNumber(trip.cost);
       }
     });
 
@@ -138,17 +154,16 @@ export default function AnalyticsPage() {
 
     invoices.forEach(inv => {
       if (inv.status === 'PAID' || inv.status === 'SENT') {
-        const monthIdx = new Date(inv.issueDate).getMonth();
-        monthlyData[monthIdx].revenue += inv.totalAmount;
+        const monthIdx = toMonthIndex(inv.issueDate);
+        if (monthIdx === null) return;
+        monthlyData[monthIdx].revenue += toSafeNumber(inv.totalAmount);
       }
     });
 
     trips.forEach(trip => {
-      const date = new Date(trip.startDate);
-      if (!isNaN(date.getTime())) {
-        const monthIdx = date.getMonth();
-        monthlyData[monthIdx].cost += (trip.cost || 0);
-      }
+      const monthIdx = toMonthIndex(trip.startDate);
+      if (monthIdx === null) return;
+      monthlyData[monthIdx].cost += toSafeNumber(trip.cost);
     });
 
     monthlyData.forEach(d => { d.profit = d.revenue - d.cost; });
@@ -156,7 +171,8 @@ export default function AnalyticsPage() {
     // 3. Category Distribution (Suppliers / Inventory)
     const catMap: Record<string, number> = {};
     suppliers.forEach(s => {
-      catMap[s.category] = (catMap[s.category] || 0) + 1;
+      const category = String(s.category || 'OTHER');
+      catMap[category] = (catMap[category] || 0) + 1;
     });
 
     // 4. Performance Conversion
@@ -176,6 +192,18 @@ export default function AnalyticsPage() {
       { name: 'Dépenses', value: totalCost > 0 ? totalCost : (grossRevenue > 0 ? grossRevenue : 0), fill: '#8b5cf6' }
     ].filter(d => d.value > 0);
 
+    const prestationScores = computePrestationScoresFromTrips(
+      trips.map((trip) => {
+        const raw = trip as unknown as Record<string, unknown>;
+        return {
+          amount: trip.amount,
+          totalClientPrice: trip.totalClientPrice,
+          commissionAmount: trip.commissionAmount,
+          selectedItems: raw.selectedItems,
+        };
+      })
+    );
+
     return {
       grossRevenue,
       totalCost,
@@ -188,9 +216,12 @@ export default function AnalyticsPage() {
       wonLeads,
       totalLeads: leads.length,
       leadsPie,
-      financePie
+      financePie,
+      prestationScores,
+      topPrestationScore: prestationScores[0]?.score || 0,
+      totalPrestationSales: prestationScores.reduce((sum, item) => sum + item.salesCount, 0),
     };
-  }, [leads, trips, invoices, quotes, suppliers]);
+  }, [leads, trips, invoices, suppliers]);
 
   const fetchAiInsights = async () => {
     setAiLoading(true);
@@ -220,8 +251,6 @@ export default function AnalyticsPage() {
     setAiLoading(false);
   };
 
-  const isEmpty = leads.length === 0 && trips.length === 0;
-
   if (loading && leads.length === 0) {
     return (
       <div className="fixed top-0 left-0 right-0 h-[2px] z-[9999] overflow-hidden">
@@ -248,7 +277,7 @@ export default function AnalyticsPage() {
             <div className="px-5 py-2.5 bg-white/70 backdrop-blur-xl rounded-2xl border border-gray-100 flex items-center gap-4 text-[10px] font-bold tracking-widest uppercase text-gray-400">
               <div className="flex items-center gap-2"><DollarSign size={14} className="text-emerald-500" /> SYNC FIREBASE</div>
               <div className="w-[1px] h-4 bg-gray-100" />
-              <div className="text-emerald-600">Actualisé à l'instant</div>
+              <div className="text-emerald-600">Actualisé à l&apos;instant</div>
             </div>
           </div>
         </div>
@@ -257,10 +286,9 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             icon={DollarSign}
-            label="Volume d'Affaires"
+            label="Volume d&apos;Affaires"
             value={`${dashboardData.grossRevenue.toLocaleString('fr-FR')} €`}
             sub="Chiffre d'affaires brut émis"
-            color="#10b981"
             delay={0}
             trend="12.5%"
           />
@@ -269,7 +297,6 @@ export default function AnalyticsPage() {
             label="Marge Nette (ROI)"
             value={`${dashboardData.netProfit.toLocaleString('fr-FR')} €`}
             sub={`Soit ${dashboardData.avgMargin}% de marge moyenne`}
-            color="#10b981"
             delay={0.1}
             trend={`${dashboardData.avgMargin}%`}
           />
@@ -278,7 +305,6 @@ export default function AnalyticsPage() {
             label="Encours à Recevoir"
             value={`${dashboardData.totalUnpaid.toLocaleString('fr-FR')} €`}
             sub="Factures envoyées non payées"
-            color="#f59e0b"
             delay={0.2}
             up={false}
             trend="Relances à prévoir"
@@ -288,10 +314,22 @@ export default function AnalyticsPage() {
             label="Taux de Conversion"
             value={`${dashboardData.conversionRate}%`}
             sub={`${dashboardData.wonLeads} success sur ${dashboardData.totalLeads} leads`}
-            color="#6366f1"
             delay={0.3}
             trend="Sain"
           />
+        </div>
+
+        <div className="rounded-3xl border border-[#bcdeea]/30 bg-[#f4fafc] px-5 py-4 flex flex-wrap items-center gap-5">
+          <p className="text-xs font-semibold text-[#2c667b] uppercase tracking-[0.12em]">Score prestations</p>
+          <p className="text-sm text-gray-600">
+            Top score: <strong className="text-[#2c667b]">{dashboardData.topPrestationScore}</strong>
+          </p>
+          <p className="text-sm text-gray-600">
+            Ventes prestations: <strong className="text-[#2c667b]">{dashboardData.totalPrestationSales}</strong>
+          </p>
+          <p className="text-sm text-gray-600">
+            Prestations scorées: <strong className="text-[#2c667b]">{dashboardData.prestationScores.length}</strong>
+          </p>
         </div>
 
         {/* ── MAIN CHARTS ── */}
@@ -349,9 +387,11 @@ export default function AnalyticsPage() {
                   <Tooltip
                     contentStyle={{ borderRadius: '16px', border: 'none', background: '#ffffff', color: '#1f2937', fontSize: '12px', fontWeight: 'bold', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)' }}
                     itemStyle={{ color: '#1f2937' }}
-                    formatter={(value: any, name: any) => {
-                      if (name === 'Marge' || name === 'Dépenses') return [`${(value || 0).toLocaleString('fr-FR')} €`, name];
-                      return [value, name];
+                    formatter={(value: unknown, name: unknown) => {
+                      const safeName = String(name || '');
+                      const safeValue = toSafeNumber(value);
+                      if (safeName === 'Marge' || safeName === 'Dépenses') return [`${safeValue.toLocaleString('fr-FR')} €`, safeName];
+                      return [safeValue, safeName];
                     }}
                   />
 
@@ -427,7 +467,7 @@ export default function AnalyticsPage() {
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.fill }} />
                       <span className="text-[10px] font-bold text-gray-500 group-hover:text-luna-charcoal transition-colors">{d.name}</span>
                     </div>
-                    <span className="text-[11px] font-bold text-[#10b981]">{d.value.toLocaleString('fr-FR')}</span>
+                    <span className="text-[11px] font-bold text-[#10b981]">{toSafeNumber(d.value).toLocaleString('fr-FR')}</span>
                   </div>
                 ))}
               </div>
@@ -533,7 +573,7 @@ export default function AnalyticsPage() {
         {/* ── TOP SUPPLIERS & FORECAST ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-          {/* Top Suppliers Ranking */}
+          {/* Top Prestations Ranking */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -542,47 +582,41 @@ export default function AnalyticsPage() {
           >
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-sm font-bold uppercase tracking-widest text-luna-charcoal/40 flex items-center gap-2">
-                <Briefcase size={16} className="text-indigo-400" /> Top Prestataires
+                <Briefcase size={16} className="text-indigo-400" /> Top Prestations (Gain + Ventes)
               </h3>
-              <span className="text-[9px] font-bold text-gray-300 px-2 py-1 bg-gray-50 rounded-full">Par volume</span>
+              <span className="text-[9px] font-bold text-gray-300 px-2 py-1 bg-gray-50 rounded-full">Score /100</span>
             </div>
 
             <div className="space-y-3">
               {(() => {
-                // Compute top suppliers from invoices
-                const supplierRevenue: Record<string, number> = {};
-                invoices.forEach(inv => {
-                  if (inv.clientName && inv.status !== 'CANCELLED') {
-                    supplierRevenue[inv.clientName] = (supplierRevenue[inv.clientName] || 0) + inv.totalAmount;
-                  }
-                });
-                const topSuppliers = Object.entries(supplierRevenue)
-                  .sort((a, b) => b[1] - a[1])
-                  .slice(0, 6);
-                const maxRevenue = topSuppliers[0]?.[1] || 1;
+                const topPrestations = dashboardData.prestationScores.slice(0, 6);
+                const maxScore = topPrestations[0]?.score || 1;
 
-                if (topSuppliers.length === 0) {
+                if (topPrestations.length === 0) {
                   return (
                     <div className="text-center py-8 text-gray-300 text-sm">
-                      Aucune donnée — ajoutez des factures pour voir le classement
+                      Aucune donnée — ajoutez des trips avec prestations sélectionnées
                     </div>
                   );
                 }
 
-                return topSuppliers.map(([name, revenue], i) => (
-                  <div key={name} className="flex items-center gap-3 group">
+                return topPrestations.map((item, i) => (
+                  <div key={item.key} className="flex items-center gap-3 group">
                     <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0 ${
                       i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-gray-100 text-gray-500' : i === 2 ? 'bg-orange-50 text-orange-600' : 'bg-gray-50 text-gray-400'
                     }`}>{i + 1}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium text-[#2E2E2E] truncate">{name}</span>
-                        <span className="text-xs font-bold text-[#2E2E2E] shrink-0 ml-2">{revenue.toLocaleString('fr-FR')} €</span>
+                        <span className="text-xs font-medium text-[#2E2E2E] truncate">{item.name}</span>
+                        <span className="text-xs font-bold text-[#2E2E2E] shrink-0 ml-2">{item.score}</span>
                       </div>
+                      <p className="text-[10px] text-gray-400 mb-1">
+                        {item.salesCount} vente(s) · gain {item.gainVente.toLocaleString('fr-FR')} €
+                      </p>
                       <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
-                          animate={{ width: `${(revenue / maxRevenue) * 100}%` }}
+                          animate={{ width: `${(item.score / maxScore) * 100}%` }}
                           transition={{ duration: 0.8, delay: 0.9 + i * 0.1 }}
                           className="h-full rounded-full"
                           style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
@@ -683,7 +717,7 @@ export default function AnalyticsPage() {
                 <ShoppingBag size={16} className="text-purple-400" /> Répartition Prestataires par Catégorie
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {dashboardData.suppliersByCategory.sort((a, b) => b.value - a.value).map((cat, i) => (
+                {dashboardData.suppliersByCategory.slice().sort((a, b) => b.value - a.value).map((cat, i) => (
                   <div key={cat.name} className="bg-gray-50/80 rounded-2xl p-4 text-center border border-gray-100 hover:border-gray-200 transition-colors">
                     <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center" style={{ backgroundColor: `${CHART_COLORS[i % CHART_COLORS.length]}15` }}>
                       <span className="text-lg">{

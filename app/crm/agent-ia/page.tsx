@@ -483,7 +483,21 @@ async function saveConversation(transcript: any[], user: any) {
 
 export default function AgentIAPage() {
     const { vertical } = useVertical();
-    const isLegal = vertical?.id === 'legal';
+    const monumAppUrl = (process.env.NEXT_PUBLIC_MONUM_APP_URL || 'http://127.0.0.1:4173').replace(/\/$/, '');
+
+    useEffect(() => {
+        if (vertical?.id !== 'monum') return;
+        window.location.replace(`${monumAppUrl}/app`);
+    }, [vertical?.id, monumAppUrl]);
+
+    if (vertical?.id === 'monum') {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-white">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-[#5a8fa3]" />
+            </div>
+        );
+    }
+
     // If industry has a specific unified agent or not travel
     if (vertical.id !== 'travel') return <IndustryAIAgent />;
     return <TravelAgentPage />;

@@ -1,0 +1,10 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800' viewBox='0 0 1200 800'>
+  <rect width='1200' height='800' fill='#FFFFFF'/>
+  <g stroke='#111111' fill='none' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' transform='translate(230 258)'>
+    <circle cx='58' cy='58' r='56'/>
+    <path d='M58 22 C42 22 30 34 30 50 C30 77 58 95 58 95 C58 95 86 77 86 50 C86 34 74 22 58 22 Z'/>
+    <circle cx='58' cy='50' r='7'/>
+  </g>
+  <text x='380' y='320' font-family='Outfit, Inter, sans-serif' font-size='98' font-weight='500' fill='#111111' letter-spacing='1'>Monum</text>
+  <text x='382' y='368' font-family='Inter, sans-serif' font-size='22' font-weight='400' fill='#111111' letter-spacing='4'>TERRITOIRE · DONNÉES · PERMIS</text>
+</svg>

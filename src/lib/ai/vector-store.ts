@@ -14,6 +14,8 @@ export interface SearchOptions {
     typeFilter?: string[]; // e.g. ['HOTEL', 'ACTIVITY']
 }
 
+let missingVectorIndexWarned = false;
+
 /**
  * Perform a KNN vector search on the Firestore catalog natively
  */
@@ -57,13 +59,16 @@ export async function searchCatalogSimilar({
         return results;
 
     } catch (error: any) {
-        console.error('[Vector Store] Search error:', error);
-        
-        // Log the index creation URL if Firestore throws a missing index error
-        if (error.message && error.message.includes('FAILED_PRECONDITION')) {
-            console.error('\n🚨 MISSING VECTOR INDEX 🚨\nFirestore requires a Vector Index for semantic search. Check the error log above for the direct link to create it in Google Cloud Console.\n');
+        // Missing vector index should not break user flows; degrade gracefully.
+        if (error?.message?.includes('FAILED_PRECONDITION')) {
+            if (!missingVectorIndexWarned) {
+                missingVectorIndexWarned = true;
+                console.warn('[Vector Store] Missing vector index: semantic search disabled until index is created.');
+            }
+            return [];
         }
-        
+
+        console.error('[Vector Store] Search error:', error);
         throw error;
     }
 }

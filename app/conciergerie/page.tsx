@@ -6,7 +6,7 @@ import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { ChevronRight, Car, UtensilsCrossed, MapPin, Hotel, CheckCircle2, X } from 'lucide-react';
 import { useLang } from './LangContext';
 import { useCart } from '@/src/contexts/CartContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Render } from '@puckeditor/core';
 import { lunaConfig } from '@/src/components/puck/puck-config';
 interface PublicCatalogItem {
@@ -21,17 +21,18 @@ interface PublicCatalogItem {
     video?: string;
 }
 
-const getTypeStyles = (type: string) => {
+const getTypeStyles = (type: string, t?: (key: string) => string) => {
+    const tr = (key: string, fallback: string) => (t ? t(key) : fallback);
     switch (type?.toUpperCase()) {
         case 'HOTEL':
-            return { label: 'HÔTEL', gradient: 'from-[#E3E2F3] to-[#d1cdec]', Icon: Hotel };
+            return { label: tr('cat.type.hotel', 'HÔTEL'), gradient: 'from-[#E3E2F3] to-[#d1cdec]', Icon: Hotel };
         case 'ACTIVITY':
-            return { label: 'ACTIVITÉ', gradient: 'from-[#D3E8E3] to-[#c1ebd9]', Icon: MapPin };
+            return { label: tr('cat.type.activity', 'ACTIVITÉ'), gradient: 'from-[#D3E8E3] to-[#c1ebd9]', Icon: MapPin };
         case 'TRANSFER':
         case 'TRANSFERT':
-            return { label: 'TRANSFERT', gradient: 'from-[#E6D2BD] to-[#e4ccb5]', Icon: Car };
+            return { label: tr('cat.type.transfer', 'TRANSFERT'), gradient: 'from-[#E6D2BD] to-[#e4ccb5]', Icon: Car };
         default:
-            return { label: 'EXPÉRIENCE', gradient: 'from-[#F2D9D3] to-[#ebd0c9]', Icon: UtensilsCrossed };
+            return { label: tr('cat.type.experience', 'EXPÉRIENCE'), gradient: 'from-[#F2D9D3] to-[#ebd0c9]', Icon: UtensilsCrossed };
     }
 };
 
@@ -87,6 +88,10 @@ const ParallaxDivider = ({ image, title, text, headingColor, textColor }: { imag
 export default function ConciergeHomePage() {
     const { t, lang } = useLang();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const tenantIdParam = searchParams?.get('tenantId') || '';
+    const [resolvedTenantId, setResolvedTenantId] = useState('');
+    const effectiveTenantId = tenantIdParam || resolvedTenantId;
     const { addToCart, removeFromCart, cart } = useCart();
     const [catalog, setCatalog] = useState<PublicCatalogItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -107,9 +112,21 @@ export default function ConciergeHomePage() {
     const [configKey, setConfigKey] = useState(0); // bumped on editor postMessage → forces Framer animation replay
     const [i18nData, setI18nData] = useState<any>(null);
     const [dynamicCollections, setDynamicCollections] = useState<any[] | null>(null);
+    const [publicDataError, setPublicDataError] = useState('');
 
     // ── Detect if loaded inside editor iframe — skip blur animations to prevent stuck filters ──
     const inIframe = typeof window !== 'undefined' && window !== window.parent;
+    const [lowPerfMode, setLowPerfMode] = useState(false);
+    const shouldStripHeavyEffects = inIframe || lowPerfMode;
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const ua = window.navigator.userAgent.toLowerCase();
+        const isSafari = ua.includes('safari') && !ua.includes('chrome') && !ua.includes('chromium') && !ua.includes('android');
+        const lowCpu = (window.navigator.hardwareConcurrency || 8) <= 4;
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        setLowPerfMode(isSafari || lowCpu || reducedMotion);
+    }, []);
 
     // ── Ambient background sound (Web Audio API — warm pad + gentle chimes) ──
     const [ambientOn, setAmbientOn] = useState(false);
@@ -186,7 +203,7 @@ export default function ConciergeHomePage() {
 
     /** Strip filter: blur(...) from animation states when in iframe (prevents stuck blur) */
     const stripBlur = (animObj: any) => {
-        if (!inIframe || !animObj) return animObj;
+        if (!shouldStripHeavyEffects || !animObj) return animObj;
         const clean = { ...animObj };
         if (clean.initial) {
             const { filter, ...rest } = clean.initial;
@@ -298,44 +315,96 @@ export default function ConciergeHomePage() {
     const configFromEditorRef = useRef(false);
 
     useEffect(() => {
+        let isMounted = true;
+        const catalogController = new AbortController();
+        const querySuffix = effectiveTenantId ? `?tenantId=${encodeURIComponent(effectiveTenantId)}` : '';
+        const catalogTimeout = setTimeout(() => {
+            catalogController.abort();
+            if (isMounted) {
+                setPublicDataError('Le chargement des prestations a pris trop de temps.');
+                setLoading(false);
+            }
+        }, 20000);
+
         // Only fetch from API if NOT in iframe (or as fallback if editor hasn't sent config)
-        fetch('/api/crm/site-config')
-            .then(res => res.json())
+        fetch(`/api/crm/site-config${querySuffix}`)
+            .then(async (res) => {
+                const data = await res.json();
+                const tenantHeader = res.headers.get('x-tenant-id') || '';
+                return { data, tenantHeader };
+            })
             .then(data => {
                 // Don't overwrite if editor already sent config via postMessage
-                if (!configFromEditorRef.current) {
-                    setSiteConfig(data);
+                if (isMounted && !configFromEditorRef.current) {
+                    setSiteConfig(data.data);
+                }
+                const nextTenantId = data.tenantHeader;
+                if (isMounted && !tenantIdParam && nextTenantId && nextTenantId !== resolvedTenantId) {
+                    setResolvedTenantId(nextTenantId);
                 }
             })
             .catch(console.error);
 
-        fetch('/api/conciergerie/catalog')
-            .then(r => r.json())
-            .then(data => {
-                if (Array.isArray(data) && data.length > 0) {
-                    setCatalog(data);
-                } else if (data.items && data.items.length > 0) {
-                    setCatalog(data.items);
+        fetch(`/api/conciergerie/catalog${querySuffix}`, { signal: catalogController.signal })
+            .then(async (r) => {
+                const tenantHeader = r.headers.get('x-tenant-id') || '';
+                const payload = await r.json().catch(() => ({}));
+                if (!r.ok) {
+                    const msg = payload?.details || payload?.error || `HTTP ${r.status}`;
+                    throw new Error(msg);
+                }
+                return { payload, tenantHeader };
+            })
+            .then(({ payload, tenantHeader }) => {
+                if (!isMounted) return;
+                setPublicDataError('');
+                if (!tenantIdParam && tenantHeader && tenantHeader !== resolvedTenantId) {
+                    setResolvedTenantId(tenantHeader);
+                }
+                if (Array.isArray(payload) && payload.length > 0) {
+                    setCatalog(payload);
+                } else if (payload.items && payload.items.length > 0) {
+                    setCatalog(payload.items);
                 } else {
                     setCatalog([]);
                 }
                 setLoading(false);
             })
-            .catch(() => {
+            .catch((error: any) => {
+                if (!isMounted) return;
+                const message = error instanceof Error ? error.message : String(error);
+                setPublicDataError(message);
                 setCatalog([]);
                 setLoading(false);
+            })
+            .finally(() => {
+                clearTimeout(catalogTimeout);
             });
 
         // Fetch dynamic collections from Firestore
-        fetch('/api/conciergerie/collections')
-            .then(r => r.json())
-            .then(data => {
+        fetch(`/api/conciergerie/collections${querySuffix}`)
+            .then(async (r) => {
+                const tenantHeader = r.headers.get('x-tenant-id') || '';
+                const data = await r.json().catch(() => []);
+                return { data, tenantHeader };
+            })
+            .then(({ data, tenantHeader }) => {
+                if (!isMounted) return;
+                if (!tenantIdParam && tenantHeader && tenantHeader !== resolvedTenantId) {
+                    setResolvedTenantId(tenantHeader);
+                }
                 if (Array.isArray(data) && data.length > 0) {
                     setDynamicCollections(data);
                 }
             })
             .catch(() => { /* Fallback to hardcoded */ });
-    }, []);
+
+        return () => {
+            isMounted = false;
+            clearTimeout(catalogTimeout);
+            catalogController.abort();
+        };
+    }, [effectiveTenantId, tenantIdParam, resolvedTenantId]);
 
     // ── Click-to-edit: when loaded in iframe, send section clicks to parent editor ──
     useEffect(() => {
@@ -464,6 +533,14 @@ export default function ConciergeHomePage() {
         historyTitle: trBlock('history', 'title', 'Notre Histoire.'),
         historyDesc: trBlock('history', 'text', "Luna, fondée par un couple multiculturel, est spécialisée dans les expériences de voyage de luxe."),
     };
+
+    const paxOptions = ['1', '2', '3', '4', '5', '6+'];
+    const vibeOptions = [
+        { value: 'Relax & Beach', label: t('form.vibe_relax_beach') },
+        { value: 'Adventure', label: t('form.vibe_adventure') },
+        { value: 'Culture & Heritage', label: t('form.vibe_culture_heritage') },
+        { value: 'Full Party VIP', label: t('form.vibe_full_party_vip') },
+    ];
 
     // ── Collections: dynamic from Firestore OR static fallback ──
     const collectionsMedia = [
@@ -736,8 +813,8 @@ export default function ConciergeHomePage() {
                     } : { opacity: 1, transition: { staggerChildren: 0.15 } }
                 };
                 const itemVariant = {
-                    initial: { opacity: 0, y: 40, ...(inIframe ? {} : { filter: 'blur(10px)' }) },
-                    whileInView: { opacity: 1, y: 0, ...(inIframe ? {} : { filter: 'blur(0px)' }) },
+                    initial: { opacity: 0, y: 40, ...(shouldStripHeavyEffects ? {} : { filter: 'blur(10px)' }) },
+                    whileInView: { opacity: 1, y: 0, ...(shouldStripHeavyEffects ? {} : { filter: 'blur(0px)' }) },
                     transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
                 };
 
@@ -1121,6 +1198,25 @@ export default function ConciergeHomePage() {
                     )}
                 </button>
             )}
+            {shouldStripHeavyEffects && (
+                <style
+                    dangerouslySetInnerHTML={{
+                        __html: sanitizeCss(`
+                            #luna-sections-container .backdrop-blur-sm,
+                            #luna-sections-container .backdrop-blur-md,
+                            #luna-sections-container .backdrop-blur-xl,
+                            #luna-sections-container .backdrop-blur-2xl,
+                            #luna-sections-container .backdrop-blur-3xl {
+                                -webkit-backdrop-filter: none !important;
+                                backdrop-filter: none !important;
+                            }
+                            #luna-sections-container [style*="filter: blur"] {
+                                filter: none !important;
+                            }
+                        `),
+                    }}
+                />
+            )}
             {/* ── Dynamic color overrides from editor Design tab ── */}
             {colorOverrides.trim() && <style dangerouslySetInnerHTML={{ __html: sanitizeCss(colorOverrides) }} />}
             {/* ═══ 1. HERO SECTION ═══ */}
@@ -1470,6 +1566,7 @@ export default function ConciergeHomePage() {
                 }
                 return (
                     <section data-editor-section="catalog" id="services" className={`${sectionPadding} w-full mx-auto z-10 relative ${ts.sectionBg} ${getBlockEffectClass('catalog')} ${template !== 'prestige' ? `border-t ${ts.borderColor}` : ''}`}>
+                        <span id="catalog" className="sr-only" />
                 <div className="max-w-[1600px] mx-auto px-6 md:px-16">
                     <motion.div
                         initial={getBlockAnimation('catalog')?.initial || tdaFor('catalog').initial}
@@ -1505,13 +1602,18 @@ export default function ConciergeHomePage() {
                     ) : catalog.length === 0 ? (
                         <div className="text-center py-20 bg-gray-50 border border-gray-100">
                             <p className="text-luna-charcoal/40 italic text-3xl" style={{ fontFamily: 'var(--font-heading)' }}>{t('cat.empty')}</p>
+                            {publicDataError && (
+                                <p className="mt-4 text-[12px] text-red-500 font-mono px-6 break-words">
+                                    {publicDataError}
+                                </p>
+                            )}
                         </div>
                     ) : (() => {
                         // Extract unique types for filter pills
                         const typeMap: Record<string, { label: string; count: number }> = {};
                         catalog.forEach((item: any) => {
                             const key = (item.type || 'EXPERIENCE').toUpperCase();
-                            const style = getTypeStyles(key);
+                            const style = getTypeStyles(key, t);
                             if (!typeMap[key]) typeMap[key] = { label: style.label, count: 0 };
                             typeMap[key].count++;
                         });
@@ -1529,7 +1631,7 @@ export default function ConciergeHomePage() {
                                         : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
                                 }`}
                             >
-                                Tout <span className="ml-1.5 opacity-60">{catalog.length}</span>
+                                {t('cat.all')} <span className="ml-1.5 opacity-60">{catalog.length}</span>
                             </button>
                             {Object.entries(typeMap).map(([key, { label, count }]) => (
                                 <button
@@ -1558,7 +1660,7 @@ export default function ConciergeHomePage() {
                         }>
                             {filteredCatalog.map((rawItem: any, i: number) => {
                                 const item = trCatalog(rawItem);
-                                const style = getTypeStyles(item.type);
+                                const style = getTypeStyles(item.type, t);
                                 const hasImage = item.images && item.images.length > 0;
                                 const itemInCart = isInCart(item.id);
 
@@ -1584,7 +1686,7 @@ export default function ConciergeHomePage() {
                                             <div className="absolute inset-x-0 bottom-0 h-[53%] bg-white p-7 flex flex-col items-center text-center transform group-hover:-translate-y-2 transition-transform duration-700 ease-out z-10 rounded-t-3xl shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
                                                 <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-[#b9dae9] mb-5 border border-[#b9dae9]/30 bg-[#b9dae9]/10 px-4 py-1.5 rounded-full">{style.label}</span>
                                                 <h3 className="text-[20px] text-luna-charcoal leading-tight mb-3 group-hover:text-[#b9dae9] transition-colors duration-500" style={{ fontFamily: 'var(--font-heading)' }}>{item.name}</h3>
-                                                <p className="text-luna-charcoal/45 text-[12px] font-light leading-relaxed line-clamp-2 mb-auto w-full xl:max-w-[85%] mx-auto">{item.description || "Une prestation sélectionnée avec un niveau d'exigence maximal, taillée pour vous."}</p>
+                                                <p className="text-luna-charcoal/45 text-[12px] font-light leading-relaxed line-clamp-2 mb-auto w-full xl:max-w-[85%] mx-auto">{item.description || t('cat.default_desc_long')}</p>
                                                 <div className="w-full pt-5 mt-4 border-t border-gray-100/80 flex items-center justify-between">
                                                     <div className="text-left">
                                                         <p className="text-[9px] font-bold tracking-[0.3em] uppercase text-gray-400 mb-1">{t('cat.from')}</p>
@@ -1622,7 +1724,7 @@ export default function ConciergeHomePage() {
                                             <div className="flex-1 flex flex-col justify-center py-6 px-7">
                                                 <span className="text-[9px] uppercase font-bold tracking-[0.25em] text-[#1e3a5f]/50 mb-2 bg-[#1e3a5f]/5 px-3 py-1 rounded-full w-max">{style.label}</span>
                                                 <h3 className="text-[20px] text-[#1e3a5f] leading-tight mb-2 group-hover:text-[#2d6a9f] transition-colors duration-300" style={{ fontFamily: 'var(--font-heading)' }}>{item.name}</h3>
-                                                <p className="text-[#1e3a5f]/40 text-[12px] font-sans font-light leading-relaxed line-clamp-2 mb-4">{item.description || "Une prestation sélectionnée avec un niveau d'exigence maximal, taillée pour vous."}</p>
+                                                <p className="text-[#1e3a5f]/40 text-[12px] font-sans font-light leading-relaxed line-clamp-2 mb-4">{item.description || t('cat.default_desc_long')}</p>
                                                 <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
                                                     <div className="flex flex-col">
                                                         <span className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.15em]">{t('cat.from')}</span>
@@ -1663,7 +1765,7 @@ export default function ConciergeHomePage() {
                                             </div>
                                             <div className="pt-4 px-1">
                                                 <h3 className="text-[18px] md:text-[20px] text-[#1C1917] leading-tight mb-1.5 group-hover:text-[#CA8A04] transition-colors duration-400" style={{ fontFamily: 'var(--font-heading)' }}>{item.name}</h3>
-                                                <p className="text-[#44403C]/50 text-[12px] font-light leading-relaxed line-clamp-2 mb-3">{item.description || "Une prestation sélectionnée avec soin."}</p>
+                                                <p className="text-[#44403C]/50 text-[12px] font-light leading-relaxed line-clamp-2 mb-3">{item.description || t('cat.default_desc_short')}</p>
                                                 <div className="flex items-center justify-between">
                                                     <div>
                                                         <p className="text-[8px] font-bold tracking-[0.3em] uppercase text-[#44403C]/30">{t('cat.from')}</p>
@@ -1700,7 +1802,7 @@ export default function ConciergeHomePage() {
                                                     <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-cyan-400">{style.label}</span>
                                                 </div>
                                                 <h3 className="text-[26px] text-white leading-tight mb-4 group-hover:text-cyan-300 transition-colors duration-500" style={{ fontFamily: 'var(--font-heading)' }}>{item.name}</h3>
-                                                <p className="text-white/50 text-[13px] font-light leading-relaxed line-clamp-3 mb-6 transition-colors duration-500 group-hover:text-white/70">{item.description || "Une prestation sélectionnée avec un niveau d'exigence maximal, taillée pour vous."}</p>
+                                                <p className="text-white/50 text-[13px] font-light leading-relaxed line-clamp-3 mb-6 transition-colors duration-500 group-hover:text-white/70">{item.description || t('cat.default_desc_long')}</p>
                                                 <div className="flex items-center justify-between border-t border-white/10 pt-5 mt-auto">
                                                     <div>
                                                         <p className="text-[9px] font-bold tracking-[0.3em] uppercase text-white/40 mb-1">{t('cat.from')}</p>
@@ -1810,7 +1912,7 @@ export default function ConciergeHomePage() {
                         className="lg:w-4/12 flex flex-col justify-center"
                     >
                         <div className="flex items-center gap-6 mb-8">
-                            <span className={`text-[12px] font-bold uppercase tracking-[0.4em] ${template === 'immersif' ? 'text-cyan-400/50' : template === 'prestige' ? 'text-[#CA8A04]/60' : template === 'moderne' ? 'text-[#1e3a5f]/40' : 'text-luna-charcoal/40'} block`}>CRÉATION SUR-MESURE</span>
+                            <span className={`text-[12px] font-bold uppercase tracking-[0.4em] ${template === 'immersif' ? 'text-cyan-400/50' : template === 'prestige' ? 'text-[#CA8A04]/60' : template === 'moderne' ? 'text-[#1e3a5f]/40' : 'text-luna-charcoal/40'} block`}>{t('form.section_label')}</span>
                             <motion.div initial={{ width: 0 }} whileInView={{ width: 128 }} viewport={{ once: true }} transition={{ duration: 1.2, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
                                 className={`h-px ${template === 'immersif' ? 'bg-cyan-400/30' : template === 'prestige' ? 'bg-[#CA8A04]/30' : template === 'moderne' ? 'bg-[#1e3a5f]/20' : 'bg-luna-charcoal/10'}`} />
                         </div>
@@ -1886,12 +1988,16 @@ export default function ConciergeHomePage() {
                                                 </select>
                                                 <select value={formData.pax} onChange={e => setFormData({ ...formData, pax: e.target.value })}
                                                     className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl text-[14px] text-[#1e3a5f] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/10 focus:bg-white transition-all outline-none appearance-none">
-                                                    <option value="1">1 Pax</option><option value="2">2 Pax</option><option value="3">3 Pax</option><option value="4">4 Pax</option><option value="5">5 Pax</option><option value="6+">6+ Pax</option>
+                                                    {paxOptions.map((pax) => (
+                                                        <option key={pax} value={pax}>{`${pax} ${t('form.pax_unit')}`}</option>
+                                                    ))}
                                                 </select>
                                                 <select value={formData.vibe} onChange={e => setFormData({ ...formData, vibe: e.target.value })}
                                                     className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl text-[14px] text-[#1e3a5f] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/10 focus:bg-white transition-all outline-none appearance-none">
                                                     <option value="" disabled hidden>{t('form.vibe')}</option>
-                                                    <option value="Relax & Beach">Relax & Beach</option><option value="Adventure">Adventure</option><option value="Culture & Heritage">Culture & Heritage</option><option value="Full Party VIP">Full Party VIP</option>
+                                                    {vibeOptions.map((vibe) => (
+                                                        <option key={vibe.value} value={vibe.value}>{vibe.label}</option>
+                                                    ))}
                                                 </select>
                                             </div>
                                             <textarea value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })}
@@ -1932,12 +2038,16 @@ export default function ConciergeHomePage() {
                                                 </select>
                                                 <select value={formData.pax} onChange={e => setFormData({ ...formData, pax: e.target.value })}
                                                     className="w-full px-5 py-4 bg-white/[0.05] border border-white/10 rounded-lg text-[14px] text-white/80 focus:border-cyan-400/60 focus:shadow-[0_0_20px_rgba(34,211,238,0.15)] transition-all outline-none appearance-none backdrop-blur-sm">
-                                                    <option value="1" className="bg-[#0a0a14]">1 Pax</option><option value="2" className="bg-[#0a0a14]">2 Pax</option><option value="3" className="bg-[#0a0a14]">3 Pax</option><option value="4" className="bg-[#0a0a14]">4 Pax</option><option value="5" className="bg-[#0a0a14]">5 Pax</option><option value="6+" className="bg-[#0a0a14]">6+ Pax</option>
+                                                    {paxOptions.map((pax) => (
+                                                        <option key={pax} value={pax} className="bg-[#0a0a14]">{`${pax} ${t('form.pax_unit')}`}</option>
+                                                    ))}
                                                 </select>
                                                 <select value={formData.vibe} onChange={e => setFormData({ ...formData, vibe: e.target.value })}
                                                     className="w-full px-5 py-4 bg-white/[0.05] border border-white/10 rounded-lg text-[14px] text-white/80 focus:border-cyan-400/60 focus:shadow-[0_0_20px_rgba(34,211,238,0.15)] transition-all outline-none appearance-none backdrop-blur-sm">
                                                     <option value="" disabled hidden className="bg-[#0a0a14]">{t('form.vibe')}</option>
-                                                    <option value="Relax & Beach" className="bg-[#0a0a14]">Relax & Beach</option><option value="Adventure" className="bg-[#0a0a14]">Adventure</option><option value="Culture & Heritage" className="bg-[#0a0a14]">Culture & Heritage</option><option value="Full Party VIP" className="bg-[#0a0a14]">Full Party VIP</option>
+                                                    {vibeOptions.map((vibe) => (
+                                                        <option key={vibe.value} value={vibe.value} className="bg-[#0a0a14]">{vibe.label}</option>
+                                                    ))}
                                                 </select>
                                             </div>
                                             <textarea value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })}
@@ -1989,23 +2099,27 @@ export default function ConciergeHomePage() {
                                                     </select>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <label className="text-[10px] uppercase tracking-[0.3em] font-bold text-[#8B7355]" style={{ fontFamily: 'var(--font-heading)' }}>Voyageurs</label>
+                                                    <label className="text-[10px] uppercase tracking-[0.3em] font-bold text-[#8B7355]" style={{ fontFamily: 'var(--font-heading)' }}>{t('form.pax')}</label>
                                                     <select value={formData.pax} onChange={e => setFormData({ ...formData, pax: e.target.value })}
                                                         className="w-full px-6 py-4 bg-[#FAF8F5] border border-[#E8DFD3] rounded-full text-[14px] text-[#3d3225] focus:border-[#CA8A04] focus:ring-2 focus:ring-[#CA8A04]/10 focus:bg-white transition-all outline-none appearance-none">
-                                                        <option value="1">1 Pax</option><option value="2">2 Pax</option><option value="3">3 Pax</option><option value="4">4 Pax</option><option value="5">5 Pax</option><option value="6+">6+ Pax</option>
+                                                        {paxOptions.map((pax) => (
+                                                            <option key={pax} value={pax}>{`${pax} ${t('form.pax_unit')}`}</option>
+                                                        ))}
                                                     </select>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <label className="text-[10px] uppercase tracking-[0.3em] font-bold text-[#8B7355]" style={{ fontFamily: 'var(--font-heading)' }}>Ambiance</label>
+                                                    <label className="text-[10px] uppercase tracking-[0.3em] font-bold text-[#8B7355]" style={{ fontFamily: 'var(--font-heading)' }}>{t('form.vibe')}</label>
                                                     <select value={formData.vibe} onChange={e => setFormData({ ...formData, vibe: e.target.value })}
                                                         className="w-full px-6 py-4 bg-[#FAF8F5] border border-[#E8DFD3] rounded-full text-[14px] text-[#3d3225] focus:border-[#CA8A04] focus:ring-2 focus:ring-[#CA8A04]/10 focus:bg-white transition-all outline-none appearance-none">
                                                         <option value="" disabled hidden>{t('form.vibe')}</option>
-                                                        <option value="Relax & Beach">Relax & Beach</option><option value="Adventure">Adventure</option><option value="Culture & Heritage">Culture & Heritage</option><option value="Full Party VIP">Full Party VIP</option>
+                                                        {vibeOptions.map((vibe) => (
+                                                            <option key={vibe.value} value={vibe.value}>{vibe.label}</option>
+                                                        ))}
                                                     </select>
                                                 </div>
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[10px] uppercase tracking-[0.3em] font-bold text-[#8B7355]" style={{ fontFamily: 'var(--font-heading)' }}>Notes</label>
+                                                <label className="text-[10px] uppercase tracking-[0.3em] font-bold text-[#8B7355]" style={{ fontFamily: 'var(--font-heading)' }}>{t('form.notes')}</label>
                                                 <textarea value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })}
                                                     className="w-full bg-[#FAF8F5] border border-[#E8DFD3] rounded-2xl p-6 h-36 text-[14px] text-[#3d3225] placeholder-[#BEB5A8] focus:border-[#CA8A04] focus:ring-2 focus:ring-[#CA8A04]/10 focus:bg-white transition-all outline-none resize-none" placeholder={t('form.notes_ph')} />
                                             </div>
@@ -2058,14 +2172,18 @@ export default function ConciergeHomePage() {
                                                 </div>
                                                 <div className="relative group w-full">
                                                     <select value={formData.pax} onChange={e => setFormData({ ...formData, pax: e.target.value })} className={`w-full bg-transparent border-b ${ts.borderColor} pb-5 focus:border-[#b9dae9] focus:outline-none transition-all text-[14px] font-light ${ts.formText} appearance-none peer relative z-10 rounded-none`}>
-                                                        <option value="1">1 Pax</option><option value="2">2 Pax</option><option value="3">3 Pax</option><option value="4">4 Pax</option><option value="5">5 Pax</option><option value="6+">6+ Pax</option>
+                                                        {paxOptions.map((pax) => (
+                                                            <option key={pax} value={pax}>{`${pax} ${t('form.pax_unit')}`}</option>
+                                                        ))}
                                                     </select>
                                                     <span className="absolute bottom-0 left-0 w-0 h-px bg-[#b9dae9] transition-all duration-500 peer-focus:w-full z-20" />
                                                 </div>
                                                 <div className="relative group w-full">
                                                     <select value={formData.vibe} onChange={e => setFormData({ ...formData, vibe: e.target.value })} className={`w-full bg-transparent border-b ${ts.borderColor} pb-5 focus:border-[#b9dae9] focus:outline-none transition-all text-[14px] font-light ${ts.formText} appearance-none peer relative z-10 rounded-none`}>
-                                                        <option value="" disabled selected hidden className="text-gray-400">{t('form.vibe')}</option>
-                                                        <option value="Relax & Beach">Relax & Beach</option><option value="Adventure">Adventure</option><option value="Culture & Heritage">Culture & Heritage</option><option value="Full Party VIP">Full Party VIP</option>
+                                                        <option value="" disabled hidden className="text-gray-400">{t('form.vibe')}</option>
+                                                        {vibeOptions.map((vibe) => (
+                                                            <option key={vibe.value} value={vibe.value}>{vibe.label}</option>
+                                                        ))}
                                                     </select>
                                                     <span className="absolute bottom-0 left-0 w-0 h-px bg-[#b9dae9] transition-all duration-500 peer-focus:w-full z-20" />
                                                 </div>
@@ -2116,7 +2234,9 @@ export default function ConciergeHomePage() {
                 }
                 return (
                     <section data-editor-section="history" className={`relative w-full ${ts.sectionBg} z-10 pb-0 border-t ${ts.borderColor} px-[20px] ${getBlockEffectClass('history')}`}>
-                <ParallaxDivider
+                    <span id="histoire" className="sr-only" />
+                    <span id="temoignages" className="sr-only" />
+                    <ParallaxDivider
                     image={historyBlock?.image || "/creators.jpg"}
                     title={trBlock('history', 'title', historyBlock?.title || localText.historyTitle)}
                     text={trBlock('history', 'text', historyBlock?.text || localText.historyDesc)}
@@ -2154,7 +2274,7 @@ export default function ConciergeHomePage() {
 
                                         if (mediaItems.length === 0) {
                                             return (
-                                                <div className={`absolute inset-0 bg-gradient-to-br ${getTypeStyles(selectedItem.type).gradient} flex items-center justify-center`}>
+                                                <div className={`absolute inset-0 bg-gradient-to-br ${getTypeStyles(selectedItem.type, t).gradient} flex items-center justify-center`}>
                                                     <UtensilsCrossed size={100} className="text-white/50" />
                                                 </div>
                                             );
@@ -2198,7 +2318,7 @@ export default function ConciergeHomePage() {
                                     })()}
                                     <div className="absolute top-12 left-12">
                                         <span className="bg-white/95 backdrop-blur-md text-luna-charcoal font-bold text-[12px] uppercase tracking-[0.3em] px-8 py-4 shadow-xl">
-                                            {getTypeStyles(selectedItem.type).label}
+                                            {getTypeStyles(selectedItem.type, t).label}
                                         </span>
                                     </div>
                                 </div>
@@ -2211,7 +2331,7 @@ export default function ConciergeHomePage() {
 
                                     <div className="flex-1 mt-10">
                                         <div className="flex items-center gap-4 text-gray-400 text-[13px] uppercase tracking-[0.3em] font-bold mb-10">
-                                            <MapPin size={18} /> {selectedItem.location || 'Destination Secrète'}
+                                            <MapPin size={18} /> {selectedItem.location || t('cat.secret_destination')}
                                         </div>
                                         <h2 className="text-5xl md:text-[70px] text-luna-charcoal mb-10 leading-[1.05]" style={{ fontFamily: 'var(--font-heading)' }}>{selectedItem.name}</h2>
                                         <p className="text-gray-500 font-light text-[20px] leading-relaxed mb-16 xl:max-w-xl">
@@ -2232,7 +2352,7 @@ export default function ConciergeHomePage() {
                                                 }}
                                                 className="w-full py-8 bg-red-500/10 border-2 border-red-400 text-red-600 font-bold text-[15px] tracking-[0.3em] uppercase hover:bg-red-500 hover:text-white transition-all duration-500 shadow-sm flex items-center justify-center gap-6 group"
                                             >
-                                                <X size={22} /> Retirer du panier
+                                                <X size={22} /> {t('cat.remove')}
                                             </button>
                                         ) : (
                                             <button
@@ -2262,7 +2382,7 @@ export default function ConciergeHomePage() {
                                                 className="w-full py-5 text-white font-bold text-[13px] tracking-[0.3em] uppercase hover:opacity-90 transition-all duration-500 flex items-center justify-center gap-4 group"
                                                 style={{ backgroundColor: g.modalColor || g.ctaColor || '#2E2E2E' }}
                                             >
-                                                Continuer ({cart.length} prestation{cart.length > 1 ? 's' : ''}) <ChevronRight size={18} className="group-hover:translate-x-3 transition-transform duration-500" />
+                                                {t('cat.continue')} ({cart.length} {cart.length > 1 ? t('cat.item_plural') : t('cat.item_singular')}) <ChevronRight size={18} className="group-hover:translate-x-3 transition-transform duration-500" />
                                             </button>
                                         )}
                                         <p className="text-center italic text-[16px] text-gray-400 mt-4" style={{ fontFamily: 'var(--font-heading)' }}>{t('cat.disclaimer')}</p>
@@ -2287,7 +2407,7 @@ export default function ConciergeHomePage() {
                     >
                         <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold uppercase tracking-widest text-[#b9dae9] mb-1">
-                                {cart.length} prestation{cart.length > 1 ? 's' : ''} sélectionnée{cart.length > 1 ? 's' : ''}
+                                {cart.length} {cart.length > 1 ? t('cat.item_plural') : t('cat.item_singular')} {cart.length > 1 ? t('cat.selected_plural') : t('cat.selected_singular')}
                             </p>
                             <p className="text-white/60 text-xs truncate">
                                 {cart.map(c => c.name).join(' • ')}
@@ -2298,7 +2418,7 @@ export default function ConciergeHomePage() {
                             className="px-6 py-3 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all shrink-0 flex items-center gap-2"
                             style={{ backgroundColor: sec }}
                         >
-                            Continuer <ChevronRight size={14} />
+                            {t('cat.continue')} <ChevronRight size={14} />
                         </button>
                     </motion.div>
                 )}

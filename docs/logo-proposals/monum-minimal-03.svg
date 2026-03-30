@@ -1,0 +1,14 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800' viewBox='0 0 1200 800'>
+  <rect width='1200' height='800' fill='#FFFFFF'/>
+  <g stroke='#111111' fill='none' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' transform='translate(220 248)'>
+    <rect x='0' y='0' width='120' height='120' rx='24'/>
+    <path d='M22 84 L22 48 L60 20 L98 48 L98 84'/>
+    <path d='M22 48 L60 84 L98 48'/>
+    <circle cx='60' cy='20' r='3' fill='#111111'/>
+    <circle cx='22' cy='48' r='3' fill='#111111'/>
+    <circle cx='98' cy='48' r='3' fill='#111111'/>
+    <circle cx='60' cy='84' r='3' fill='#111111'/>
+  </g>
+  <text x='380' y='320' font-family='Outfit, Inter, sans-serif' font-size='98' font-weight='500' fill='#111111' letter-spacing='1'>Monum</text>
+  <text x='382' y='368' font-family='Inter, sans-serif' font-size='22' font-weight='400' fill='#111111' letter-spacing='4'>ARCHI + IA PRÉDICTIVE</text>
+</svg>

@@ -24,6 +24,14 @@ const googleProvider = new GoogleAuthProvider();
 /** Translate Firebase error codes to user-friendly French messages */
 function getAuthErrorMessage(error: AuthError): string {
     switch (error.code) {
+        case 'auth/operation-not-allowed':
+            return 'Connexion email/mot de passe désactivée sur ce projet Firebase.';
+        case 'auth/configuration-not-found':
+            return 'Configuration Auth Firebase introuvable pour ce projet (providers Email/Google non activés ou projet Firebase incorrect).';
+        case 'auth/invalid-api-key':
+            return 'Clé API Firebase invalide.';
+        case 'auth/app-not-authorized':
+            return 'Application non autorisée pour Firebase Auth (domaines autorisés).';
         case 'auth/invalid-email':
             return 'Adresse email invalide.';
         case 'auth/user-disabled':
@@ -54,7 +62,10 @@ export async function loginWithEmail(email: string, password: string) {
         return { user: result.user, error: null };
     } catch (err) {
         const error = err as AuthError;
-        return { user: null, error: getAuthErrorMessage(error) };
+        console.error('[Auth] Email sign-in error:', error.code, error.message);
+        const baseMessage = getAuthErrorMessage(error);
+        const debugSuffix = process.env.NODE_ENV === 'development' ? ` (code: ${error.code})` : '';
+        return { user: null, error: `${baseMessage}${debugSuffix}` };
     }
 }
 
@@ -89,8 +100,10 @@ export async function loginWithGoogle() {
         if (error.code === 'auth/unauthorized-domain') {
             return { user: null, error: 'Domaine non autorisé. Ajoutez localhost dans Firebase Console → Authentication → Settings → Authorized Domains.' };
         }
-        
-        return { user: null, error: getAuthErrorMessage(error) };
+
+        const baseMessage = getAuthErrorMessage(error);
+        const debugSuffix = process.env.NODE_ENV === 'development' ? ` (code: ${error.code})` : '';
+        return { user: null, error: `${baseMessage}${debugSuffix}` };
     }
 }
 

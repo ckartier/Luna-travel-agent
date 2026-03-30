@@ -46,7 +46,7 @@ export default function HubDashboardPage() {
     const [configLoading, setConfigLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
-    const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const [saveError, setSaveError] = useState<string | null>(null);
     const configRef = useRef<HubConfig | null>(null);
 
     // Voice
@@ -99,26 +99,27 @@ export default function HubDashboardPage() {
     const saveConfig = useCallback(async () => {
         const cfg = configRef.current;
         if (!cfg) return;
-        setSaving(true); setSaved(false);
+        setSaving(true);
+        setSaved(false);
+        setSaveError(null);
         try {
-            await fetchWithAuth('/api/hub/config', {
+            const res = await fetchWithAuth('/api/hub/config', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(cfg),
             });
+            if (!res.ok) {
+                const payload = await res.json().catch(() => null);
+                throw new Error(payload?.error || `HTTP ${res.status}`);
+            }
             setSaved(true);
             setTimeout(() => setSaved(false), 2000);
-        } catch (e) { console.error('Save error:', e); }
+        } catch (e) {
+            console.error('Save error:', e);
+            setSaveError('Échec de sauvegarde. Vérifie la connexion/auth Firebase.');
+        }
         setSaving(false);
     }, []);
-
-    // Auto-save (debounced 3s) on config change
-    useEffect(() => {
-        if (!config || configLoading) return;
-        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-        saveTimerRef.current = setTimeout(() => { saveConfig(); }, 3000);
-        return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
-    }, [config, configLoading, saveConfig]);
 
     // Filter bugs
     const filteredBugs = health?.bugReports?.filter((b: any) => {
@@ -207,7 +208,14 @@ export default function HubDashboardPage() {
                         <Loader2 size={28} className="animate-spin text-zinc-400" />
                     </div>
                 ) : (
-                    <BuilderView config={config} setConfig={setConfig} saveConfig={saveConfig} saving={saving} saved={saved} />
+                    <BuilderView
+                        config={config}
+                        setConfig={setConfig}
+                        saveConfig={saveConfig}
+                        saving={saving}
+                        saved={saved}
+                        saveError={saveError}
+                    />
                 )
             )}
             {view === 'admin' && (

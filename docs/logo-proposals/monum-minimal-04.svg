@@ -1,0 +1,10 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800' viewBox='0 0 1200 800'>
+  <rect width='1200' height='800' fill='#FFFFFF'/>
+  <g stroke='#111111' fill='none' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' transform='translate(220 250)'>
+    <rect x='0' y='0' width='120' height='120' rx='26'/>
+    <path d='M20 82 Q40 42 60 82 Q80 42 100 82'/>
+    <path d='M20 90 H100'/>
+  </g>
+  <text x='380' y='320' font-family='Outfit, Inter, sans-serif' font-size='98' font-weight='500' fill='#111111' letter-spacing='1'>Monum</text>
+  <text x='382' y='368' font-family='Inter, sans-serif' font-size='22' font-weight='400' fill='#111111' letter-spacing='4'>SIGNATURE MONOGRAMME MINIMALE</text>
+</svg>

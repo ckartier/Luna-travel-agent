@@ -48,7 +48,7 @@ export async function GET(request: Request) {
                         <p>Google a validé l'accès. Voici le Refresh Token (très important) à copier dans votre fichier <b>.env.local</b> :</p>
                         
                         <div style="background: #1e293b; color: #38bdf8; padding: 15px; border-radius: 8px; font-family: monospace; word-break: break-all; margin: 20px 0;">
-                            GOOGLE_REFRESH_TOKEN=${tokens.refresh_token || 'Non fourni (déjà généré dans le passé ?)'}
+                            APP_GMAIL_REFRESH_TOKEN=${tokens.refresh_token || 'Non fourni (déjà généré dans le passé ?)'}
                         </div>
 
                         <p style="color: #64748b; font-size: 14px;">
@@ -61,11 +61,12 @@ export async function GET(request: Request) {
                 </body>
             </html>
         `, {
-            headers: { 'Content-Type': 'text/html' }
+            headers: { 'Content-Type': 'text/html; charset=utf-8' }
         });
 
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("OAuth Callback Exception:", err);
-        return NextResponse.json({ error: 'Internal Server Error during callback processing', details: err?.message }, { status: 500 });
+        const details = err instanceof Error ? err.message : 'Unknown error';
+        return NextResponse.json({ error: 'Internal Server Error during callback processing', details }, { status: 500 });
     }
 }

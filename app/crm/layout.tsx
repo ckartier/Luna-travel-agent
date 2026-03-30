@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { CRMSidebar } from '@/src/components/crm/Sidebar';
 import { NotificationBell } from '@/src/components/crm/NotificationBell';
 import { GlobalSearch } from '@/src/components/crm/GlobalSearch';
@@ -11,10 +12,34 @@ import { VoiceAgentPanel } from '@/src/components/crm/VoiceAgentPanel';
 import { AIHub } from '@/src/components/crm/AIHub';
 import { fetchWithAuth } from '@/src/lib/utils/fetchWithAuth';
 import { ReactNode } from 'react';
+import { useAuth } from '@/src/contexts/AuthContext';
 
 export default function CRMLayout({ children }: { children: ReactNode }) {
     const [voiceOpen, setVoiceOpen] = useState(false);
     const [chatOpen, setChatOpen] = useState(false);
+    const pathname = usePathname() || '';
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const { userProfile, loading } = useAuth();
+    const monumAppUrl = (process.env.NEXT_PUBLIC_MONUM_APP_URL || 'http://127.0.0.1:4173').replace(/\/$/, '');
+
+    // Hard stop: Monum must use the dedicated Paris Renov Tracker CRM, not the shared CRM shell.
+    useEffect(() => {
+        const queryVertical = searchParams?.get('vertical');
+        const isMonumContext =
+            pathname.startsWith('/crm/monum')
+            || (pathname === '/crm' && queryVertical === 'monum');
+
+        if (!isMonumContext) return;
+        window.location.replace(`${monumAppUrl}/app`);
+    }, [pathname, searchParams, monumAppUrl]);
+
+    useEffect(() => {
+        if (loading) return;
+        if (userProfile?.accessScope === 'pro_travel') {
+            router.replace('/pro/travel');
+        }
+    }, [loading, userProfile?.accessScope, router]);
 
     const handleOpenVoice = useCallback(() => {
         setChatOpen(false); // close chat if open
@@ -42,6 +67,14 @@ export default function CRMLayout({ children }: { children: ReactNode }) {
             }).catch(() => {});
     }, []);
 
+    if (userProfile?.accessScope === 'pro_travel') {
+        return (
+            <div className="fixed inset-0 flex items-center justify-center bg-white">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-[#5a8fa3]" />
+            </div>
+        );
+    }
+
     return (
         <div className="crm-root flex h-screen overflow-hidden font-sans font-normal text-sm transition-all duration-300"
              style={{ backgroundColor: (!bgConfig || bgConfig.type === 'color') ? (bgConfig?.color || '#ffffff') : '#ffffff' }}>
@@ -56,10 +89,12 @@ export default function CRMLayout({ children }: { children: ReactNode }) {
             <div className="relative z-10 flex w-full h-full">
                 <CRMSidebar />
                 <main className={`flex-1 overflow-y-auto relative transition-all duration-[350ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${bgConfig?.type && bgConfig.type !== 'color' ? 'bg-white/80 backdrop-blur-2xl' : 'bg-transparent'}`}>
-                    <div className="px-4 pb-4 md:px-8 md:pb-8 pt-[135px] w-full h-full relative z-10">
-                        <CRMPageGuard>
-                            {children}
-                        </CRMPageGuard>
+                    <div className="crm-shell-content px-4 pb-5 md:px-8 md:pb-8 pt-[112px] md:pt-[120px] w-full min-h-full relative z-10">
+                        <div className="crm-page-frame w-full mx-auto">
+                            <CRMPageGuard>
+                                {children}
+                            </CRMPageGuard>
+                        </div>
                     </div>
                 </main>
             </div>

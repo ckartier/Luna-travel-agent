@@ -8,6 +8,9 @@
     },
     "hosting": {
         "source": ".",
+        "frameworksBackend": {
+            "memory": "1GiB"
+        },
         "ignore": [
             "firebase.json",
             "**/.*",

@@ -13,8 +13,8 @@ const PRODUCTS = [
         tagline: 'Concierge Voyage IA',
         desc: 'CRM complet pour agences de voyage : agents IA, pipeline, emails, itinéraires, site vitrine.',
         href: '/landing',
-        loginHref: '/crm/luna?vertical=travel',
-        crmHref: '/crm/luna?vertical=travel',
+        loginHref: '/crm/travel',
+        crmHref: '/crm/travel',
         icon: Plane,
         gradient: 'from-[#b9dae9] to-[#8bb8cf]',
         bg: 'bg-[#f8fafb]',
@@ -30,8 +30,8 @@ const PRODUCTS = [
         tagline: 'IA Juridique',
         desc: 'CRM pour cabinets d\'avocats : analyse de dossiers IA, jurisprudence, timeline procédurale, honoraires.',
         href: '/legal',
-        loginHref: '/crm/avocat?vertical=legal',
-        crmHref: '/crm/avocat?vertical=legal',
+        loginHref: '/crm/legal',
+        crmHref: '/crm/legal',
         icon: Scale,
         gradient: 'from-[#C9A96E] to-[#A08050]',
         bg: 'bg-[#0d0d1a]',
@@ -46,9 +46,9 @@ const PRODUCTS = [
         name: 'Monum',
         tagline: 'Suivi Chantiers IA',
         desc: 'CRM de suivi de chantiers : planning, budget, fournisseurs et monitoring opérationnel.',
-        href: '/landing-monum?vertical=monum',
-        loginHref: '/crm/monum?vertical=monum',
-        crmHref: '/crm/monum?vertical=monum',
+        href: '/landing-monum',
+        loginHref: '/landing-monum',
+        crmHref: '/landing-monum',
         icon: ExternalLink,
         gradient: 'from-[#c084fc] to-[#9333ea]',
         bg: 'bg-[#0d0a1a]',
@@ -148,16 +148,16 @@ export default function AdminDemosPage() {
                                                 </a>
                                             ) : (
                                                 <>
-                                                    <Link href={product.loginHref}
+                                                    <a href={product.loginHref} target="_blank" rel="noopener noreferrer"
                                                         className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r ${product.gradient} text-white text-[12px] font-semibold uppercase tracking-[0.1em] hover:opacity-90 transition-opacity cursor-pointer`}>
                                                         <ExternalLink size={13} />
                                                         Login
-                                                    </Link>
-                                                    <Link href={product.crmHref}
+                                                    </a>
+                                                    <a href={product.crmHref} target="_blank" rel="noopener noreferrer"
                                                         className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-[#2E2E2E] text-white text-[12px] font-semibold uppercase tracking-[0.1em] hover:bg-[#1a1a1a] transition-colors cursor-pointer">
                                                         <ArrowRight size={13} />
                                                         CRM / Dashboard
-                                                    </Link>
+                                                    </a>
                                                 </>
                                             )}
                                         </div>

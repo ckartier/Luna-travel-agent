@@ -1,0 +1,10 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800' viewBox='0 0 1200 800'>
+  <rect width='1200' height='800' fill='#FFFFFF'/>
+  <g stroke='#111111' fill='none' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' transform='translate(220 250)'>
+    <rect x='0' y='0' width='120' height='120' rx='26'/>
+    <path d='M24 86 L60 30 L96 86'/>
+    <path d='M42 86 L60 57 L78 86'/>
+  </g>
+  <text x='380' y='320' font-family='Outfit, Inter, sans-serif' font-size='98' font-weight='500' fill='#111111' letter-spacing='1'>Monum</text>
+  <text x='382' y='368' font-family='Inter, sans-serif' font-size='22' font-weight='400' fill='#111111' letter-spacing='4'>INTELLIGENCE ARCHITECTURALE</text>
+</svg>

@@ -188,7 +188,7 @@ export default function AdminPrestationsPage() {
                         <p className="text-sm text-[#9CA3AF] font-light mt-1">Gérez les services affichés sur votre site. Synchronisé avec le CRM en temps réel.</p>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Link href="/conciergerie" target="_blank"
+                        <Link href={tenantId ? `/conciergerie?tenantId=${encodeURIComponent(tenantId)}` : '/conciergerie'} target="_blank"
                             className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-[10px] font-bold uppercase tracking-[0.15em] text-[#9CA3AF] hover:text-[#2E2E2E] hover:border-gray-300 transition-all shadow-sm">
                             <Eye size={14} /> Voir le site
                         </Link>

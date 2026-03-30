@@ -38,7 +38,7 @@ const LEGAL_TYPES = [
 
 export default function PrestationsPage() {
   const router = useRouter();
-  const { tenantId } = useAuth();
+  const { tenantId, loading: authLoading } = useAuth();
   const { vertical } = useVertical();
   const isLegal = vertical.id === 'legal';
   const TYPES = isLegal ? LEGAL_TYPES : TRAVEL_TYPES;
@@ -73,14 +73,21 @@ export default function PrestationsPage() {
     oneWayPrice: 0, roundTripPrice: 0, hourlyPrice: 0,
   });
 
-  useEffect(() => { if (tenantId) loadData(); }, [tenantId]);
+  useEffect(() => {
+    if (authLoading) return;
+    if (!tenantId) {
+      setLoading(false);
+      return;
+    }
+    void loadData(tenantId);
+  }, [tenantId, authLoading]);
 
-  const loadData = async () => {
+  const loadData = async (tid: string) => {
     setLoading(true);
     try {
       const [data, sups] = await Promise.all([
-        getCatalogItems(tenantId!),
-        getSuppliers(tenantId!)
+        getCatalogItems(tid),
+        getSuppliers(tid)
       ]);
       const favs: string[] = JSON.parse(localStorage.getItem('luna-prestations-favs') || '[]');
       setItems(data.map(d => ({ ...d, favorite: favs.includes(d.id!) })));
@@ -186,7 +193,7 @@ export default function PrestationsPage() {
       pricingMode: 'ONE_WAY' as 'ONE_WAY' | 'ROUND_TRIP' | 'HOURLY', oneWayPrice: 0, roundTripPrice: 0, hourlyPrice: 0,
     });
     setPhotoURLs([]);
-    if (tenantId) loadData();
+    if (tenantId) void loadData(tenantId);
   };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
@@ -222,6 +229,24 @@ export default function PrestationsPage() {
     const matchFav = !showFavoritesOnly || i.favorite;
     return matchType && matchLocation && matchSupplier && matchSearch && matchFav;
   });
+
+  if (!authLoading && !tenantId) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="max-w-md text-center rounded-2xl border border-gray-200 bg-white p-8">
+          <h2 className="text-xl text-[#2E2E2E]">Compte non rattaché</h2>
+          <p className="mt-2 text-sm text-[#64748b]">
+            Impossible de charger les prestations: aucun `tenantId` trouvé pour ce compte.
+          </p>
+          <div className="mt-5">
+            <Link href="/login/travel" className="inline-flex items-center rounded-xl bg-[#2E2E2E] px-4 py-2 text-sm text-white">
+              Revenir à la connexion
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading && items.length === 0) return (
     <div className="w-full h-full">

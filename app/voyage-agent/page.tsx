@@ -337,10 +337,15 @@ function DashboardPage({ initialParams }: { initialParams?: Record<string, strin
   }, [workflowState, validatedAgents]);
 
   const callAgentsAPI = async () => {
+    const allAgents: AgentKey[] = ['transport', 'accommodation', 'client', 'itinerary'];
     try {
+      const controller = new AbortController();
+      const timeoutMs = 45000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
       const res = await fetchWithAuth('/api/agents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           departureCity,
           destinations: destinations.filter(d => d.city.trim()),
@@ -358,11 +363,15 @@ function DashboardPage({ initialParams }: { initialParams?: Record<string, strin
           inspirationImages // Send base64 images down to the agent backend!
         }),
       });
-      const data = await res.json();
+      clearTimeout(timeoutId);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const errorMessage = typeof data?.error === 'string' ? data.error : `API agents error (${res.status})`;
+        throw new Error(errorMessage);
+      }
       setAgentResults(data);
 
       // Auto-validate all agents and proceed directly to results
-      const allAgents: AgentKey[] = ['transport', 'accommodation', 'client', 'itinerary'];
       setValidatedAgents(allAgents);
       setWorkflowState('GENERATING_PROPOSALS');
 
@@ -393,10 +402,21 @@ function DashboardPage({ initialParams }: { initialParams?: Record<string, strin
         });
         localStorage.setItem('luna_search_history', JSON.stringify(history.slice(-100)));
       } catch { /* silent */ }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Agent API error:', err);
-      // Even on error, auto-validate and show whatever we have
-      setValidatedAgents(['transport', 'accommodation', 'client', 'itinerary']);
+      const message = err?.name === 'AbortError'
+        ? 'Délai dépassé. Les agents ont pris trop de temps.'
+        : (err?.message || 'Erreur inconnue des agents IA');
+
+      // Build safe fallback payload so UI never crashes
+      setAgentResults({
+        transport: { summary: `Agent Transport indisponible: ${message}`, flights: [], trains: [], cars: [] },
+        accommodation: { summary: `Agent Hébergement indisponible: ${message}`, hotels: [] },
+        client: { summary: `Agent Client indisponible: ${message}`, profile: {}, recommendations: [] },
+        itinerary: { summary: `Agent Itinéraire indisponible: ${message}`, days: [], tips: [] },
+        meta: { error: true, message },
+      });
+      setValidatedAgents(allAgents);
       setWorkflowState('PROPOSALS_READY');
     }
   };

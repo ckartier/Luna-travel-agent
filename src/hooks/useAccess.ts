@@ -193,29 +193,41 @@ function resolvePlan(planId: string | null, isActive: boolean): PlanId {
 export function useAccess() {
     const { userProfile, isSuperAdmin } = useAuth();
     const { planId, isActive, subscription } = useSubscription();
+    const devFullAccess =
+        process.env.NODE_ENV === 'development'
+        && process.env.NEXT_PUBLIC_DEV_DISABLE_ACCESS_GATES !== 'true';
 
     const resolvedPlanId = useMemo(() => {
-        if (isSuperAdmin) return 'enterprise' as PlanId;
+        if (isSuperAdmin || devFullAccess) return 'enterprise' as PlanId;
         return resolvePlan(planId, isActive);
-    }, [isSuperAdmin, planId, isActive]);
+    }, [isSuperAdmin, devFullAccess, planId, isActive]);
 
     const planDef = PLAN_DEFINITIONS[resolvedPlanId];
-    const activeModules = isSuperAdmin
-        ? (['site_builder', 'crm', 'ai_agents', 'whatsapp', 'analytics_pro'] as ProductModule[])
-        : [
-            ...planDef.modules,
-            ...((subscription as any)?.addons || []),
-        ];
+    const subscriptionAddons = useMemo<ProductModule[]>(() => {
+        const addonsUnknown = (subscription as { addons?: unknown } | null)?.addons;
+        if (!Array.isArray(addonsUnknown)) return [];
+        const allowedModules: ProductModule[] = ['site_builder', 'crm', 'ai_agents', 'whatsapp', 'analytics_pro'];
+        return addonsUnknown.filter((m): m is ProductModule =>
+            typeof m === 'string' && allowedModules.includes(m as ProductModule)
+        );
+    }, [subscription]);
+
+    const activeModules = useMemo<ProductModule[]>(() => {
+        if (isSuperAdmin || devFullAccess) {
+            return ['site_builder', 'crm', 'ai_agents', 'whatsapp', 'analytics_pro'];
+        }
+        return [...planDef.modules, ...subscriptionAddons];
+    }, [isSuperAdmin, devFullAccess, planDef, subscriptionAddons]);
 
     const access = useMemo(() => {
-        if (isSuperAdmin) {
+        if (isSuperAdmin || devFullAccess) {
             return modulesToPlanAccess(
                 ['site_builder', 'crm', 'ai_agents', 'whatsapp', 'analytics_pro'],
                 PLAN_DEFINITIONS.enterprise.limits
             );
         }
         return modulesToPlanAccess(activeModules, planDef.limits);
-    }, [isSuperAdmin, resolvedPlanId, activeModules.join(',')]);
+    }, [isSuperAdmin, devFullAccess, activeModules, planDef]);
 
     const hasModule = (mod: ProductModule): boolean => {
         return activeModules.includes(mod);

@@ -26,7 +26,8 @@ export async function GET(req: Request) {
 
         const docId = catalogSnap.docs[0].id;
         // The image is saved in the artifacts directory
-        const imgUrl = 'https://firebasestorage.googleapis.com/v0/b/luna-travel-agent.appspot.com/o/placeholders%2Fguide_paris.jpg?alt=media'; // Fallback to public for now if base64 is too big for firestore
+        const bucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'datarnivore.firebasestorage.app';
+        const imgUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/placeholders%2Fguide_paris.jpg?alt=media`; // Fallback to public for now if base64 is too big for firestore
 
         // Actually I can just base64 it here since I'm running on the same server
         const fs = require('fs');

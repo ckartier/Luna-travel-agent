@@ -143,7 +143,7 @@ export default function NavAndFooter({ children }: { children: ReactNode }) {
                             <ul className="space-y-5 text-[14px] font-light text-luna-charcoal/80">
                                 {(siteConfig?.footer?.col1Links || [
                                     { label: t('footer.private_col'), href: '#destinations' },
-                                    { label: 'Offres du moment', href: '#catalog' },
+                                    { label: t('footer.current_offers'), href: '#catalog' },
                                 ]).map((link: any, idx: number) => (
                                     <li key={idx}><a href={link.href} className="hover:text-[#b9dae9] hover:translate-x-1 inline-block transition-transform duration-300">{link.label}</a></li>
                                 ))}
@@ -176,7 +176,7 @@ export default function NavAndFooter({ children }: { children: ReactNode }) {
                                 {(siteConfig?.footer?.col3Links || [
                                     { label: t('footer.our_story'), href: '#histoire' },
                                     { label: t('footer.testimonials'), href: '#temoignages' },
-                                    { label: 'Devenir Partenaire', href: 'mailto:' + (siteConfig?.business?.email || '') },
+                                    { label: t('footer.become_partner'), href: `mailto:${siteConfig?.business?.email || 'lunaconciergerie@gmail.com'}` },
                                 ]).map((link: any, idx: number) => (
                                     <li key={idx}><a href={link.href} className="hover:text-[#b9dae9] hover:translate-x-1 inline-block transition-transform duration-300">{link.label}</a></li>
                                 ))}
@@ -186,7 +186,7 @@ export default function NavAndFooter({ children }: { children: ReactNode }) {
                         {/* 5. CONTACT */}
                         <div className="lg:col-span-1">
                             <h4 className="font-bold text-[11px] uppercase tracking-[0.3em] mb-8 text-gray-400">
-                                {siteConfig?.footer?.colContactTitle || 'Contact'}
+                                {siteConfig?.footer?.colContactTitle || t('footer.col3')}
                             </h4>
                             <ul className="space-y-5 text-[14px] font-light text-luna-charcoal/80">
                                 <li>{siteConfig?.business?.address || 'Paris, France'}</li>

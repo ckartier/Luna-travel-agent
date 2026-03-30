@@ -16,6 +16,27 @@ import {
 import { createTenant } from "./tenant";
 import { fetchWithAuth } from "@/src/lib/utils/fetchWithAuth";
 
+const DEFAULT_SUPER_ADMIN_EMAILS = ["ckartier@gmail.com", "l_clement@live.fr"];
+
+function getSuperAdminEmails(): Set<string> {
+  const fromEnv = (
+    process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAILS
+    || process.env.SUPER_ADMIN_EMAILS
+    || ""
+  )
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  return new Set([...DEFAULT_SUPER_ADMIN_EMAILS, ...fromEnv]);
+}
+
+function isSuperAdminEmail(email: string | null | undefined): boolean {
+  const normalized = (email || "").trim().toLowerCase();
+  if (!normalized) return false;
+  return getSuperAdminEmails().has(normalized);
+}
+
 export interface CRMLead {
   id?: string;
   clientId?: string;
@@ -142,6 +163,7 @@ export interface CRMTrip {
   title: string;
   destination: string;
   clientName: string;
+  clientEmail?: string;
   clientId?: string;
   startDate: string;
   endDate: string;
@@ -161,6 +183,37 @@ export interface CRMTrip {
   color: string;
   vertical?: string;
   shareId?: string;
+  source?: string;
+  invoiceId?: string;
+  totalClientPrice?: number;
+  commissionRate?: number;
+  commissionAmount?: number;
+  supplierEstimatedCost?: number;
+  planningAlertDate?: string;
+  lunaTripValidated?: boolean;
+  lunaReservationValidated?: boolean;
+  proWorkflowState?: "PENDING_REVIEW" | "SENT_TO_PRO" | "PRO_CONFIRMED" | "LUNA_VALIDATED" | string;
+  proWorkflowMessage?: string;
+  proWorkflowUpdatedAt?: string;
+  proWorkflowUpdatedBy?: string;
+  proWorkflowConfirmedAt?: string;
+  proWorkflowValidatedAt?: string;
+  proLunaAlertSeen?: boolean;
+  proLunaAlertAt?: string;
+  proWorkflowValidationEmailSentAt?: string;
+  proWorkflowSlots?: Array<{
+    itemId?: string;
+    description?: string;
+    type?: string;
+    location?: string;
+    date?: string;
+    startTime?: string;
+    endTime?: string;
+    availability?: "AVAILABLE" | "ALTERNATIVE" | "UNAVAILABLE" | string;
+    note?: string;
+    updatedAt?: string;
+    updatedBy?: string;
+  }>;
   createdAt: Timestamp | Date;
   updatedAt: Timestamp | Date;
 }
@@ -289,6 +342,7 @@ export interface CRMSupplierBooking {
   startTime?: string; // HH:mm
   endTime?: string;
   status:
+  | "PENDING"
   | "PROPOSED"
   | "CONFIRMED"
   | "TERMINATED"
@@ -331,6 +385,18 @@ export interface CRMSupplierBooking {
   returnEnabled?: boolean;
   pricingMode?: "ONE_WAY" | "ROUND_TRIP" | "HOURLY";
   createdAt: Timestamp | Date;
+}
+
+export interface CRMReminder {
+  id?: string;
+  title: string;
+  dueDate?: string;
+  priority?: "low" | "medium" | "high" | "urgent" | string;
+  completed?: boolean;
+  source?: string;
+  tripId?: string;
+  invoiceId?: string;
+  [key: string]: any;
 }
 
 export interface CRMInvoiceItem {
@@ -846,9 +912,16 @@ export interface CRMUser {
   email: string;
   photoURL: string | null;
   role: "Agent" | "Admin" | "Manager" | "SuperAdmin";
+  accessScope?: "full" | "pro_travel";
   agency: string;
   phone: string;
   bio: string;
+  proPricing?: {
+    currency?: string;
+    defaultCommissionRate?: number;
+    minimumTripBudget?: number;
+    targetAverageTicket?: number;
+  };
   tenantId: string;
   language?: "fr" | "en" | "da" | "nl" | "es";
   emailTemplate?: "pro" | "minimalist" | "classic";
@@ -889,11 +962,7 @@ export const getOrCreateUser = async (firebaseUser: {
     }
 
     // SuperAdmin auto-promotion for existing users
-    const SUPER_ADMIN_EMAILS = ["ckartier@gmail.com"];
-    if (
-      SUPER_ADMIN_EMAILS.includes((firebaseUser.email || "").toLowerCase()) &&
-      data.role !== "SuperAdmin"
-    ) {
+    if (isSuperAdminEmail(firebaseUser.email) && data.role !== "SuperAdmin") {
       await updateDoc(userRef, { role: "SuperAdmin" });
       data.role = "SuperAdmin";
     }
@@ -918,10 +987,7 @@ export const getOrCreateUser = async (firebaseUser: {
   );
 
   // SuperAdmin auto-assignment
-  const SUPER_ADMIN_EMAILS = ["ckartier@gmail.com"];
-  const isSuperAdmin = SUPER_ADMIN_EMAILS.includes(
-    (firebaseUser.email || "").toLowerCase(),
-  );
+  const isSuperAdmin = isSuperAdminEmail(firebaseUser.email);
 
   const newUser: CRMUser = {
     uid: firebaseUser.uid,
@@ -929,6 +995,7 @@ export const getOrCreateUser = async (firebaseUser: {
     email: firebaseUser.email || "",
     photoURL: firebaseUser.photoURL || null,
     role: isSuperAdmin ? "SuperAdmin" : "Agent",
+    accessScope: "full",
     agency: "",
     phone: "",
     bio: "",
@@ -945,8 +1012,8 @@ export const getOrCreateUser = async (firebaseUser: {
 export const updateUserProfile = async (
   uid: string,
   data: Partial<
-    Pick<CRMUser, "phone" | "agency" | "bio" | "role" | "language" | "tenantId" | "emailTemplate" | "emailSignature">
-  >,
+    Pick<CRMUser, "displayName" | "phone" | "agency" | "bio" | "role" | "language" | "tenantId" | "emailTemplate" | "emailSignature">
+  > & { proPricing?: CRMUser["proPricing"] },
 ) => {
   await updateDoc(doc(db, "users", uid), { ...data, updatedAt: new Date() });
 };
@@ -2357,6 +2424,47 @@ export const getAllSupplierBookings = async (tid: string) => {
   return snap.docs.map(
     (d) => ({ id: d.id, ...d.data() }) as CRMSupplierBooking,
   );
+};
+
+export const getOpenReminders = async (tid: string): Promise<CRMReminder[]> => {
+  const q = query(tenantCol(tid, "reminders"), orderBy("dueDate", "asc"));
+  const snap = await getDocs(q);
+  const rows = snap.docs.map((d) => {
+    const data = d.data() as Record<string, unknown>;
+    const dueDateRaw = data?.dueDate as
+      | string
+      | { toDate?: () => Date }
+      | undefined;
+    const dueDateValue =
+      typeof dueDateRaw === "string"
+        ? dueDateRaw
+        : dueDateRaw?.toDate?.()?.toISOString?.()?.split?.("T")?.[0] || "";
+    return {
+      id: d.id,
+      ...data,
+      dueDate: dueDateValue,
+    } as CRMReminder;
+  });
+  return rows.filter((r) => !r.completed).slice(0, 50);
+};
+
+export const completeProWorkflowRemindersByTrip = async (
+  tid: string,
+  tripId: string,
+) => {
+  const q = query(tenantCol(tid, "reminders"), where("tripId", "==", tripId));
+  const snap = await getDocs(q);
+  const updates = snap.docs
+    .map((d) => ({ id: d.id, ...(d.data() as CRMReminder) }))
+    .filter((r) => !r.completed && (r.source || "") === "pro-workflow")
+    .map((r) =>
+      updateDoc(tenantDoc(tid, "reminders", String(r.id)), {
+        completed: true,
+        completedAt: new Date(),
+        updatedAt: new Date(),
+      }),
+    );
+  await Promise.all(updates);
 };
 
 export const getPrestationsForSupplier = async (

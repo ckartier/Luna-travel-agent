@@ -1,16 +1,8 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import { verifyAuth } from '@/src/lib/firebase/apiAuth';
-import * as admin from 'firebase-admin';
+import { adminDb, admin } from '@/src/lib/firebase/admin';
 import { GoogleGenAI } from '@google/genai';
-
-// Initialize Firebase Admin if not already initialized
-if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_PRIVATE_KEY || '{}')),
-    });
-}
-const db = admin.firestore();
 
 export async function POST(request: Request) {
     try {
@@ -27,7 +19,7 @@ export async function POST(request: Request) {
         }
 
         // 1. Save the raw conversation to Firestore for history
-        const sessionRef = await db.collection('voice_sessions').add({
+        const sessionRef = await adminDb.collection('voice_sessions').add({
             userId: uid,
             vertical: vertical || 'travel',
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -76,7 +68,7 @@ ${conversationText}`;
                 const analysis = JSON.parse(analysisText);
                 
                 // Update the user profile with the newly discovered tone and preferences
-                const userRef = db.collection('users').doc(uid);
+                const userRef = adminDb.collection('users').doc(uid);
                 
                 // We use set with merge:true to create it if it doesn't exist, or update if it does
                 const updates: any = {

@@ -290,7 +290,7 @@ const PRODUCTS = [
     {
         id: 'travel', name: 'Luna Travel', tagline: 'sys.concierge_voyage',
         desc: '>> CRM IA optimisé pour les agences de voyage. Intégration pipeline B2B et génération d\'itinéraires.',
-        loginHref: '/crm/luna?vertical=travel', crmHref: '/crm/luna?vertical=travel',
+        loginHref: '/crm/travel', crmHref: '/crm/travel',
         accentColor: 'text-emerald-400', hoverBorder: 'hover:border-emerald-400/50',
         glowColor: 'rgba(16,185,129,0.15)', borderGlow: 'rgba(16,185,129,0.4)',
         features: ['[OK] Agents_IA_Voyage', '[OK] Pipeline_B2B', '[OK] Routing_J/J'],
@@ -298,7 +298,7 @@ const PRODUCTS = [
     {
         id: 'legal', name: 'Le Droit Agent', tagline: 'sys.ia_juridique',
         desc: '>> CRM Avocats. Analyse NLP performante de dossiers et base de jurisprudence temps réel.',
-        loginHref: '/crm/avocat?vertical=legal', crmHref: '/crm/avocat?vertical=legal',
+        loginHref: '/crm/legal', crmHref: '/crm/legal',
         accentColor: 'text-amber-400', hoverBorder: 'hover:border-amber-400/50',
         glowColor: 'rgba(245,158,11,0.15)', borderGlow: 'rgba(245,158,11,0.4)',
         features: ['[OK] Analyse_Dossiers', '[OK] Jurisprudence_RT', '[OK] Auth_Secret_Pro'],
@@ -306,7 +306,7 @@ const PRODUCTS = [
     {
         id: 'monum', name: 'Monum', tagline: 'sys.renov_tracker',
         desc: '>> CRM chantiers : suivi opérationnel, planning, budget et coordination équipe.',
-        loginHref: '/crm/monum?vertical=monum', crmHref: '/crm/monum?vertical=monum',
+        loginHref: '/landing-monum', crmHref: '/crm/monum',
         accentColor: 'text-fuchsia-400', hoverBorder: 'hover:border-fuchsia-400/50',
         glowColor: 'rgba(232,121,249,0.15)', borderGlow: 'rgba(232,121,249,0.4)',
         features: ['[OK] Planning_Chantier', '[OK] Budget_Tracker', '[OK] Coordination_Equipe'],
@@ -706,15 +706,15 @@ export default function HubPage() {
                                                     </a>
                                                 ) : (
                                                     <>
-                                                        <Link href={p.loginHref}
+                                                        <a href={p.loginHref} target="_blank" rel="noopener noreferrer"
                                                             className={`flex items-center gap-2 ${p.accentColor} hover:text-white font-mono text-[10px] uppercase tracking-[0.1em] transition-all duration-300 cursor-pointer hover:drop-shadow-[0_0_8px_currentColor]`}>
                                                             <ExternalLink size={12} /> LOGIN
-                                                        </Link>
+                                                        </a>
                                                         <span className="text-white/20">|</span>
-                                                        <Link href={p.crmHref}
+                                                        <a href={p.crmHref} target="_blank" rel="noopener noreferrer"
                                                             className={`flex items-center gap-2 ${p.accentColor} hover:text-white font-mono text-[10px] uppercase tracking-[0.1em] transition-all duration-300 cursor-pointer hover:drop-shadow-[0_0_8px_currentColor]`}>
                                                             <ArrowRight size={12} /> ENTER_CRM
-                                                        </Link>
+                                                        </a>
                                                     </>
                                                 )}
                                             </motion.div>

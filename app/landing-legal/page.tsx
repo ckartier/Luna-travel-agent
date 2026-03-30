@@ -51,8 +51,8 @@ export default function LandingLegalPage() {
                         <a href="#testimonials" className="hover:text-[#2E2E2E] transition-colors cursor-pointer">Témoignages</a>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Link href="/login?vertical=legal" className="text-[13px] text-luna-text-muted hover:text-luna-charcoal px-4 py-2 transition-colors cursor-pointer">Connexion</Link>
-                        <Link href="/signup?vertical=legal" className="btn-primary text-[13px] cursor-pointer">Essai gratuit →</Link>
+                        <Link href="/login/legal" className="text-[13px] text-luna-text-muted hover:text-luna-charcoal px-4 py-2 transition-colors cursor-pointer">Connexion</Link>
+                        <Link href="/signup/legal" className="btn-primary text-[13px] cursor-pointer">Essai gratuit →</Link>
                     </div>
                 </div>
             </nav>
@@ -76,7 +76,7 @@ export default function LandingLegalPage() {
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                            <Link href="/signup?vertical=legal"
+                            <Link href="/signup/legal"
                                 className="px-7 py-3.5 bg-[#2E2E2E] text-white rounded-[12px] flex items-center gap-2 text-[13px] cursor-pointer hover:bg-black transition-colors shadow-lg">
                                 Essai gratuit 14 jours <ArrowRight size={14} />
                             </Link>
@@ -238,7 +238,7 @@ export default function LandingLegalPage() {
                                 <h3 className="text-[14px] text-[#2E2E2E] mb-1 font-medium">{plan.name}</h3>
                                 <p className="text-[28px] tracking-tight text-[#2E2E2E] mb-1">{plan.price}€<span className="text-[12px] text-[#6B7280] ml-1">/mois</span></p>
                                 <p className="text-[11px] text-[#6B7280] mb-4">{plan.desc}</p>
-                                <Link href="/pricing?vertical=legal"
+                                <Link href="/pricing"
                                     className={`block w-full py-2.5 rounded-[10px] text-[12px] text-center transition-colors cursor-pointer ${plan.popular ? 'bg-[#bcdeea] text-[#2E2E2E] hover:bg-[#a5cfdf]' : 'bg-[#2E2E2E] text-white hover:bg-black'}`}>
                                     Choisir
                                 </Link>
@@ -246,7 +246,7 @@ export default function LandingLegalPage() {
                         ))}
                     </div>
 
-                    <Link href="/pricing?vertical=legal" className="text-[12px] text-[#5a8fa3] hover:text-[#2E2E2E] transition-colors cursor-pointer">
+                    <Link href="/pricing" className="text-[12px] text-[#5a8fa3] hover:text-[#2E2E2E] transition-colors cursor-pointer">
                         Voir tous les détails et comparer →
                     </Link>
                 </div>
@@ -262,7 +262,7 @@ export default function LandingLegalPage() {
                         <p className="text-white/40 text-[13px] mb-8 max-w-[400px] mx-auto leading-relaxed">
                             Rejoignez les 200+ cabinets qui utilisent Le Droit Agent pour automatiser leur recherche et structurer leurs dossiers.
                         </p>
-                        <Link href="/signup?vertical=legal"
+                        <Link href="/signup/legal"
                             className="inline-flex items-center gap-2 bg-white text-luna-charcoal px-7 py-3.5 rounded-[12px] text-[13px] hover:bg-gray-50 transition-colors cursor-pointer">
                             Essai gratuit 14 jours <ArrowRight size={14} />
                         </Link>
@@ -287,7 +287,7 @@ export default function LandingLegalPage() {
                             <h4 className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#6B7280] mb-3">Produit</h4>
                             <div className="space-y-2">
                                 <a href="#features" className="block text-[12px] text-[#6B7280] hover:text-[#2E2E2E] transition-colors cursor-pointer">Fonctionnalités</a>
-                                <Link href="/pricing?vertical=legal" className="block text-[12px] text-[#6B7280] hover:text-[#2E2E2E] transition-colors cursor-pointer">Tarifs</Link>
+                                <Link href="/pricing" className="block text-[12px] text-[#6B7280] hover:text-[#2E2E2E] transition-colors cursor-pointer">Tarifs</Link>
                             </div>
                         </div>
                         <div>
@@ -300,8 +300,8 @@ export default function LandingLegalPage() {
                         <div>
                             <h4 className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#6B7280] mb-3">Compte</h4>
                             <div className="space-y-2">
-                                <Link href="/login?vertical=legal" className="block text-[12px] text-luna-text-muted hover:text-luna-charcoal transition-colors cursor-pointer">Connexion</Link>
-                                <Link href="/signup?vertical=legal" className="block text-[12px] text-luna-text-muted hover:text-luna-charcoal transition-colors cursor-pointer">Essai gratuit</Link>
+                                <Link href="/login/legal" className="block text-[12px] text-luna-text-muted hover:text-luna-charcoal transition-colors cursor-pointer">Connexion</Link>
+                                <Link href="/signup/legal" className="block text-[12px] text-luna-text-muted hover:text-luna-charcoal transition-colors cursor-pointer">Essai gratuit</Link>
                             </div>
                         </div>
                     </div>

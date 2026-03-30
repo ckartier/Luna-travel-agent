@@ -1,8 +1,39 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import { verifyAuth } from '@/src/lib/firebase/apiAuth';
-import fs from 'fs';
-import path from 'path';
+import { google } from 'googleapis';
+
+async function checkGmailConnection(): Promise<boolean> {
+    const hasEnvConfig = !!(
+        process.env.APP_GMAIL_CLIENT_ID &&
+        process.env.APP_GMAIL_CLIENT_SECRET &&
+        process.env.APP_GMAIL_REFRESH_TOKEN &&
+        process.env.APP_GMAIL_REDIRECT_URI
+    );
+
+    if (!hasEnvConfig) return false;
+
+    try {
+        const oauth2Client = new google.auth.OAuth2(
+            process.env.APP_GMAIL_CLIENT_ID,
+            process.env.APP_GMAIL_CLIENT_SECRET,
+            process.env.APP_GMAIL_REDIRECT_URI
+        );
+        oauth2Client.setCredentials({
+            refresh_token: process.env.APP_GMAIL_REFRESH_TOKEN,
+        });
+
+        const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+        const timeoutMs = 4000;
+        await Promise.race([
+            gmail.users.getProfile({ userId: 'me' }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('gmail_status_timeout')), timeoutMs)),
+        ]);
+        return true;
+    } catch {
+        return false;
+    }
+}
 
 /**
  * GET /api/crm/google-status
@@ -16,19 +47,12 @@ export async function GET(request: Request) {
 
     // Check which services are configured
     const geminiConfigured = !!process.env.GEMINI_API_KEY;
-    const gmailConfigured = !!(
-        process.env.APP_GMAIL_CLIENT_ID &&
-        process.env.APP_GMAIL_CLIENT_SECRET &&
-        process.env.APP_GMAIL_REFRESH_TOKEN
-    );
+    const gmailConfigured = await checkGmailConnection();
     const groqConfigured = !!process.env.GROQ_API_KEY;
+    const isCloudRuntime = !!(process.env.K_SERVICE || process.env.FUNCTION_TARGET || process.env.FIREBASE_CONFIG);
 
-    // Check TTS credentials file
-    const keyPath = path.join(process.cwd(), 'luna-travel-agent-firebase-adminsdk-fbsvc-b2c7ba5ed8.json');
-    let ttsConfigured = false;
-    try {
-        ttsConfigured = fs.existsSync(keyPath);
-    } catch {}
+    // In cloud, Google TTS can use ADC. Locally, keep the explicit credential check.
+    const ttsConfigured = isCloudRuntime || !!process.env.FIREBASE_PRIVATE_KEY;
 
     return NextResponse.json({
         services: [

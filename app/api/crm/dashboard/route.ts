@@ -4,6 +4,7 @@ import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 import { requireSubscription } from '@/src/lib/checkSubscription';
 import { rateLimitResponse, getRateLimitKey } from '@/src/lib/rateLimit';
 import { adminDb } from '@/src/lib/firebase/admin';
+import { computePrestationScoresFromTrips } from '@/src/lib/analytics/prestationScores';
 
 /**
  * GET /api/crm/dashboard
@@ -40,6 +41,7 @@ export async function GET(req: NextRequest) {
 
         // KPIs
         const invoices = invoicesSnap.docs.map(d => d.data());
+        const tripsData = tripsSnap.docs.map(d => d.data() as Record<string, unknown>);
         const revenue = invoices.filter(i => i.status !== 'CANCELLED').reduce((s, i) => s + (i.totalAmount || 0), 0);
         const paidRevenue = invoices.filter(i => i.status === 'PAID').reduce((s, i) => s + (i.totalAmount || 0), 0);
         const activeTrips = tripsSnap.docs.filter(d => {
@@ -47,10 +49,19 @@ export async function GET(req: NextRequest) {
             return s && s !== 'COMPLETED' && s !== 'CANCELLED';
         }).length;
 
+        const prestationScores = computePrestationScoresFromTrips(
+            tripsData.map((trip) => ({
+                amount: trip.amount,
+                totalClientPrice: trip.totalClientPrice,
+                commissionAmount: trip.commissionAmount,
+                selectedItems: trip.selectedItems,
+            }))
+        );
+
         // This month's stats
         const now = new Date();
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const inMonth = (d: any) => {
+        const inMonth = (d: { createdAt?: { toDate?: () => Date } }) => {
             const ts = d.createdAt?.toDate?.() || new Date(0);
             return ts >= monthStart;
         };
@@ -123,12 +134,19 @@ export async function GET(req: NextRequest) {
             },
             thisMonth: { trips: monthTrips, quotes: monthQuotes, invoices: monthInvoices },
             monthlyRevenue,
+            prestationScores: {
+                top: prestationScores.slice(0, 10),
+                totalPrestations: prestationScores.length,
+                totalSales: prestationScores.reduce((sum, item) => sum + item.salesCount, 0),
+                topScore: prestationScores[0]?.score || 0,
+            },
             reminders,
             activity,
             alerts,
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[Dashboard] Error:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        const message = error instanceof Error ? error.message : 'Unknown dashboard error';
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

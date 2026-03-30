@@ -37,7 +37,7 @@ export const travelVertical: VerticalConfig = {
             label: '',
             collapsible: false,
             links: [
-                { name: { fr: 'Dashboard', en: 'Dashboard', es: 'Panel' }, href: '/crm', icon: 'LayoutDashboard', featureKey: 'dashboard' },
+                { name: { fr: 'Dashboard', en: 'Dashboard', es: 'Panel' }, href: '/crm/travel', icon: 'LayoutDashboard', featureKey: 'dashboard' },
                 { name: { fr: 'Boîte de Réception', en: 'Inbox', es: 'Bandeja de entrada' }, href: '/crm/mails', icon: 'Mail', featureKey: 'mails' },
                 { name: { fr: 'Pipeline', en: 'Pipeline', es: 'Pipeline' }, href: '/crm/pipeline', icon: 'Trello', featureKey: 'pipeline' },
                 { name: { fr: 'Planning', en: 'Planning', es: 'Planificación' }, href: '/crm/planning', icon: 'Calendar', featureKey: 'planning' },

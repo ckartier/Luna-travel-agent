@@ -1,8 +1,9 @@
 const fs = require('fs');
 
 try {
-  // Read the new JSON file
-  const jsonContent = fs.readFileSync('luna-travel-agent-firebase-adminsdk-fbsvc-b2c7ba5ed8.json', 'utf8');
+  const jsonFile = process.argv[2] || process.env.FIREBASE_SA_JSON || 'firebase-service-account.json';
+  // Read the service account JSON file
+  const jsonContent = fs.readFileSync(jsonFile, 'utf8');
   const serviceAccount = JSON.parse(jsonContent);
   const newPrivateKey = serviceAccount.private_key;
   
@@ -19,11 +20,11 @@ try {
   if (envFile.match(keyRegex)) {
     envFile = envFile.replace(keyRegex, `FIREBASE_PRIVATE_KEY=${base64Key}`);
     fs.writeFileSync('.env.local', envFile);
-    console.log("✅ Successfully updated FIREBASE_PRIVATE_KEY in .env.local with new base64 encoded key.");
+    console.log(`✅ Successfully updated FIREBASE_PRIVATE_KEY in .env.local from ${jsonFile}.`);
   } else {
     // If not found, append it
     fs.appendFileSync('.env.local', `\nFIREBASE_PRIVATE_KEY=${base64Key}\n`);
-    console.log("✅ Appended FIREBASE_PRIVATE_KEY to .env.local.");
+    console.log(`✅ Appended FIREBASE_PRIVATE_KEY to .env.local from ${jsonFile}.`);
   }
 } catch (err) {
   console.error("❌ Error updating key:", err.message);

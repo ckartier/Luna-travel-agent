@@ -1,0 +1,16 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800' viewBox='0 0 1200 800'>
+  <rect width='1200' height='800' fill='#FFFFFF'/>
+
+  <!-- Icon height aligned to wordmark line height -->
+  <g stroke='#111111' fill='none' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round' transform='translate(205 238)'>
+    <path d='M24 104 L24 52 L80 12 L136 52 L136 104'/>
+    <path d='M24 52 L80 104 L136 52'/>
+    <circle cx='80' cy='12' r='3.5' fill='#111111'/>
+    <circle cx='24' cy='52' r='3.5' fill='#111111'/>
+    <circle cx='136' cy='52' r='3.5' fill='#111111'/>
+    <circle cx='80' cy='104' r='3.5' fill='#111111'/>
+  </g>
+
+  <!-- Tighter letter spacing -->
+  <text x='390' y='336' font-family='Outfit, Inter, sans-serif' font-size='110' font-weight='500' fill='#111111' letter-spacing='-1.5'>Monum</text>
+</svg>

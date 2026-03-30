@@ -45,7 +45,9 @@
 
   /* ── Primary Button ── */
   .btn-primary {
-    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-[12px] text-[14px] font-medium transition-all cursor-pointer border-none;
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-none text-[13px] font-medium transition-all cursor-pointer border-none;
+    font-family: var(--font-sans);
+    letter-spacing: 0.01em;
     background-color: var(--color-luna-primary);
     color: white;
     box-shadow: var(--shadow-luna-sm);
@@ -58,7 +60,9 @@
 
   /* ── Secondary Button ── */
   .btn-secondary {
-    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-[12px] text-[14px] font-medium transition-all cursor-pointer;
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-none text-[13px] font-medium transition-all cursor-pointer;
+    font-family: var(--font-sans);
+    letter-spacing: 0.01em;
     background-color: transparent;
     color: #2E2E2E;
     border: 1px solid #E5E7EB;
@@ -71,7 +75,9 @@
 
   /* ── Category Buttons ── */
   .btn-cat {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-[12px] text-[14px] font-medium transition-all cursor-pointer border-none;
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-none text-[13px] font-medium transition-all cursor-pointer border-none;
+    font-family: var(--font-sans);
+    letter-spacing: 0.01em;
     color: #2E2E2E;
     box-shadow: var(--shadow-luna-sm);
   }
@@ -131,7 +137,9 @@
   /* Legacy Mappings — now with soft shadows */
   .btn-expert,
   .btn-super-agent {
-    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-[12px] text-[14px] font-medium transition-all cursor-pointer border-none;
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-none text-[13px] font-medium transition-all cursor-pointer border-none;
+    font-family: var(--font-sans);
+    letter-spacing: 0.01em;
     background-color: var(--color-luna-primary);
     color: white;
     box-shadow: var(--shadow-luna-sm);
@@ -151,20 +159,19 @@
   }
 
   /* ══════════════════════════════════════════════
-     CRM-Wide Soft Shadow Cascade
-     ══════════════════════════════════════════════
-     Applies soft shadows and smooth corners to
-     common patterns used across all 34 CRM pages
+     CRM Layout Foundation (Premium / Stable)
      ══════════════════════════════════════════════ */
 
-  /* Cards, panels inside CRM content area (not root/sidebar) */
-  .crm-root main .bg-white {
-    border-radius: 16px;
+  .crm-root {
+    --crm-frame-max-width: 1660px;
   }
 
-  /* Exclude the root CRM shell itself */
-  .crm-root.bg-white {
-    border-radius: 0;
+  .crm-root .crm-page-frame {
+    max-width: var(--crm-frame-max-width);
+  }
+
+  .crm-root main {
+    scrollbar-gutter: stable;
   }
 
   /* Table wrappers */
@@ -264,15 +271,20 @@
   }
 
   /* ══════════════════════════════════════════════
-     CRM Subtle Zoom Hover — Clickable Elements
-     ══════════════════════════════════════════════
-     Gentle scale-up on hover for all interactive
-     elements: buttons, links, inputs, selects…
+     CRM Interaction polish (no aggressive zoom)
      ══════════════════════════════════════════════ */
 
   .crm-root button,
   .crm-root a,
-  .crm-root [role="button"],
+  .crm-root [role="button"] {
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.2s ease,
+      border-color 0.2s ease,
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
   .crm-root input[type="text"],
   .crm-root input[type="email"],
   .crm-root input[type="password"],
@@ -283,56 +295,28 @@
   .crm-root input[type="date"],
   .crm-root select,
   .crm-root textarea {
-    transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                box-shadow 0.2s ease,
-                border-color 0.2s ease,
-                background-color 0.2s ease;
-    will-change: transform;
+    transition:
+      box-shadow 0.2s ease,
+      border-color 0.2s ease,
+      background-color 0.2s ease;
   }
 
-  .crm-root a:hover,
-  .crm-root [role="button"]:hover,
-  .crm-root input[type="text"]:hover,
-  .crm-root input[type="email"]:hover,
-  .crm-root input[type="password"]:hover,
-  .crm-root input[type="number"]:hover,
-  .crm-root input[type="search"]:hover,
-  .crm-root input[type="tel"]:hover,
-  .crm-root input[type="url"]:hover,
-  .crm-root input[type="date"]:hover,
-  .crm-root select:hover,
-  .crm-root textarea:hover {
-    transform: scale(1.03);
+  .crm-root button:hover,
+  .crm-root [role="button"]:hover {
+    transform: translateY(-1px);
   }
 
-  /* Boutons : même zoom que les autres éléments interactifs */
-  .crm-root button:hover {
-    transform: scale(1.03);
+  .crm-root button:active,
+  .crm-root [role="button"]:active {
+    transform: translateY(0);
   }
 
-  /* Sidebar Navigation Items: Overriding global prevent to apply custom zoom & terminal animation */
   .crm-root .sidebar-item {
-    transform-origin: left center; /* Avoid clipping on the right when zooming */
+    transform-origin: left center;
   }
 
   .crm-root .sidebar-item:hover {
-    transform: scale(1.04) !important; /* slightly smaller zoom to prevent container overflow cut-off */
-  }
-
-  @keyframes terminalTypingReveal {
-    0% { clip-path: inset(0 100% 0 0); }
-    100% { clip-path: inset(0 0 0 0); }
-  }
-
-  .crm-root .sidebar-item .sidebar-text {
-    /* Animation on arrival (page load) - significantly slower */
-    animation: terminalTypingReveal 1.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-  }
-
-  /* Prevent zoom on root-level layout elements (fallback) */
-  .crm-root > aside,
-  .crm-root > nav {
-    transform: none !important;
+    transform: translateX(1px);
   }
 
   /* ── Scrollbar Hide ── */
@@ -343,4 +327,222 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none; /* Chrome/Safari/WebKit */
   }
+}
+
+.editor-shell {
+  background:
+    radial-gradient(circle at 12% 10%, rgba(255,255,255,0.85), transparent 30%),
+    radial-gradient(circle at 88% 4%, rgba(255,255,255,0.58), transparent 24%),
+    linear-gradient(180deg, #f5f0e8 0%, #efe8df 100%);
+}
+
+.editor-panel {
+  border: 1px solid rgba(196, 183, 171, 0.72);
+  background: linear-gradient(180deg, rgba(255,255,255,0.86), rgba(250,248,245,0.96));
+  box-shadow: 0 18px 50px rgba(80, 61, 50, 0.08);
+  backdrop-filter: blur(14px);
+}
+
+.floating-preview {
+  animation: editor-fade-up 420ms ease-out both;
+}
+
+.preview-shell {
+  position: relative;
+}
+
+.preview-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 107, 101, 0.45) transparent;
+}
+
+.preview-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.preview-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.preview-scroll::-webkit-scrollbar-thumb {
+  background: rgba(124, 107, 101, 0.35);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.subtle-shine {
+  position: relative;
+}
+
+.subtle-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 10%, rgba(255,255,255,0.52) 32%, transparent 56%);
+  opacity: 0.45;
+  pointer-events: none;
+  transform: translateX(-42%);
+  animation: editor-sheen 7s ease-in-out infinite;
+}
+
+.preview-focus-card {
+  box-shadow: 0 18px 48px rgba(52, 39, 31, 0.12);
+}
+
+.editor-expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 320ms ease,
+    opacity 220ms ease,
+    margin-top 220ms ease;
+}
+
+.editor-expand--open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 0.5rem;
+}
+
+.editor-expand-inner {
+  overflow: hidden;
+}
+
+.save-cta {
+  position: relative;
+  isolation: isolate;
+  animation: save-cta-brightness 2.8s ease-in-out infinite;
+}
+
+.loading-modal-panel {
+  animation: loading-modal-rise 260ms ease-out both;
+}
+
+.loading-orbit {
+  animation: loading-orbit-spin 1.2s linear infinite;
+}
+
+.loading-dot {
+  animation: loading-dot-pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes loading-modal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes loading-orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loading-dot-pulse {
+  from {
+    transform: translateX(-50%) scale(0.9);
+    opacity: 0.7;
+  }
+  to {
+    transform: translateX(-50%) scale(1.15);
+    opacity: 1;
+  }
+}
+
+@keyframes editor-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes editor-sheen {
+  0%, 100% {
+    transform: translateX(-42%);
+  }
+  50% {
+    transform: translateX(38%);
+  }
+}
+
+@keyframes save-cta-brightness {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    filter: brightness(1);
+    box-shadow: 0 10px 30px rgba(41, 31, 26, 0.18);
+  }
+  50% {
+    transform: translateY(-1px) scale(1.005);
+    filter: brightness(1.1);
+    box-shadow: 0 14px 34px rgba(41, 31, 26, 0.24);
+  }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+  .screen-only { display: none !important; }
+  .print-only { display: block !important; }
+
+  .pdf-modal-shell,
+  .pdf-modal-frame,
+  .pdf-modal-body {
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    backdrop-filter: none !important;
+  }
+
+  .print-page {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    page-break-after: always;
+    min-height: 274mm;
+    border-radius: 0 !important;
+  }
+
+  .print-page:last-child { page-break-after: auto; }
+  .print-cover-page { padding: 0 !important; }
+  .print-two-up-page { display: flex; flex-direction: column; }
+  .print-experience { min-height: 122mm; }
+  .print-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .print-copy { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .print-note { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .print-table table { table-layout: fixed; }
+  .print-table td, .print-table th { vertical-align: top; }
+  .preview-focus-card { box-shadow: none !important; }
+  .save-cta { animation: none !important; }
+  @page { size: A4; margin: 10mm; }
+}
+
+@media screen {
+  .print-only { display: none; }
+  .screen-only { display: block; }
 }

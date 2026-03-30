@@ -5,6 +5,22 @@ import { verifyAuth } from '@/src/lib/firebase/apiAuth';
 
 export const dynamic = 'force-dynamic';
 
+function toMillis(value: any): number {
+    if (!value) return 0;
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+        const parsed = Date.parse(value);
+        return Number.isNaN(parsed) ? 0 : parsed;
+    }
+    if (typeof value?.toMillis === 'function') return value.toMillis();
+    return 0;
+}
+
+function pickMostRecent<T extends { updatedAtMs: number }>(items: T[]): T | undefined {
+    if (items.length === 0) return undefined;
+    return [...items].sort((a, b) => b.updatedAtMs - a.updatedAtMs)[0];
+}
+
 async function resolveTenantIdFromRequest(request: NextRequest): Promise<string | Response | null> {
     const authHeader = request.headers.get('Authorization');
 
@@ -22,9 +38,48 @@ async function resolveTenantIdFromRequest(request: NextRequest): Promise<string 
     const tenantIdFromQuery = request.nextUrl.searchParams.get('tenantId');
     if (tenantIdFromQuery) return tenantIdFromQuery;
 
-    // Backward-compatible fallback for single-tenant deployments.
-    const tenantsSnap = await adminDb.collection('tenants').limit(1).get();
+    const envTenantId = process.env.LUNA_TENANT_ID
+        || process.env.DEFAULT_PUBLIC_TENANT_ID
+        || process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
+    if (envTenantId) return envTenantId;
+
+    // Backward-compatible fallback:
+    // - single tenant => use it
+    // - multi-tenant => prefer Luna/Conciergerie storefront when identifiable
+    const tenantsSnap = await adminDb.collection('tenants').limit(20).get();
     if (tenantsSnap.empty) return null;
+    if (tenantsSnap.size === 1) return tenantsSnap.docs[0].id;
+
+    const checks = await Promise.all(
+        tenantsSnap.docs.map(async (tenantDoc) => {
+            const [configSnap, catalogSnap] = await Promise.all([
+                adminDb.collection('tenants').doc(tenantDoc.id).collection('site_config').doc('main').get(),
+                adminDb.collection('tenants').doc(tenantDoc.id).collection('catalog').limit(1).get(),
+            ]);
+            const data = configSnap.data() || {};
+            const businessName = String(data?.business?.name || '').toLowerCase();
+            const siteName = String(data?.global?.siteName || '').toLowerCase();
+            const isLuna = businessName.includes('luna') || businessName.includes('conciergerie') || siteName.includes('luna');
+            const updatedAtMs = toMillis(data?.updatedAt) || toMillis(data?.createdAt) || toMillis(configSnap.updateTime);
+            return { tenantId: tenantDoc.id, isLuna, hasConfig: configSnap.exists, hasCatalog: !catalogSnap.empty, updatedAtMs };
+        })
+    );
+
+    const lunaWithCatalog = pickMostRecent(checks.filter((c) => c.isLuna && c.hasCatalog));
+    if (lunaWithCatalog) return lunaWithCatalog.tenantId;
+
+    const anyWithCatalog = pickMostRecent(checks.filter((c) => c.hasCatalog));
+    if (anyWithCatalog) return anyWithCatalog.tenantId;
+
+    const lunaWithConfig = pickMostRecent(checks.filter((c) => c.isLuna && c.hasConfig));
+    if (lunaWithConfig) return lunaWithConfig.tenantId;
+
+    const anyWithConfig = pickMostRecent(checks.filter((c) => c.hasConfig));
+    if (anyWithConfig) return anyWithConfig.tenantId;
+
+    const lunaTenant = pickMostRecent(checks.filter((c) => c.isLuna));
+    if (lunaTenant) return lunaTenant.tenantId;
+
     return tenantsSnap.docs[0].id;
 }
 
@@ -179,7 +234,9 @@ export async function GET(request: NextRequest) {
                 createdAt: FieldValue.serverTimestamp(),
                 updatedAt: FieldValue.serverTimestamp(),
             });
-            return NextResponse.json(DEFAULT_SITE_CONFIG);
+            return NextResponse.json(DEFAULT_SITE_CONFIG, {
+                headers: { 'x-tenant-id': tenantId },
+            });
         }
 
         // Merge defaults for any missing top-level keys (e.g. business added after initial config)
@@ -192,7 +249,9 @@ export async function GET(request: NextRequest) {
             business: { ...DEFAULT_SITE_CONFIG.business, ...(data.business || {}) },
             dividers: { ...DEFAULT_SITE_CONFIG.dividers, ...(data.dividers || {}) },
         };
-        return NextResponse.json(merged);
+        return NextResponse.json(merged, {
+            headers: { 'x-tenant-id': tenantId },
+        });
     } catch (error: any) {
         console.error('Error fetching site config:', error);
         return NextResponse.json(DEFAULT_SITE_CONFIG);

@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import { verifyAuth } from '@/src/lib/firebase/apiAuth';
-import path from 'path';
 
 /* ═══════════════════════════════════════════════════
    TTS Provider Configuration
@@ -10,10 +9,8 @@ import path from 'path';
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || 'rbFGGoDXFHtVghjHuS3E';
-
-// Google Cloud TTS fallback
-const keyPath = path.join(process.cwd(), 'luna-travel-agent-firebase-adminsdk-fbsvc-b2c7ba5ed8.json');
 let googleTtsClient: any = null;
+const isCloudRuntime = !!(process.env.K_SERVICE || process.env.FUNCTION_TARGET || process.env.FIREBASE_CONFIG);
 
 /* ═══════════════════════════════════════════════════
    Kokoro TTS — truly lazy singleton (never loaded unless needed)
@@ -85,7 +82,29 @@ async function getGoogleTtsClient() {
   if (googleTtsClient) return googleTtsClient;
   try {
     const textToSpeech = await import('@google-cloud/text-to-speech');
-    googleTtsClient = new textToSpeech.TextToSpeechClient({ keyFilename: keyPath });
+    if (isCloudRuntime) {
+      // On Firebase/Cloud Run, prefer ADC instead of shipping a service account key.
+      googleTtsClient = new textToSpeech.TextToSpeechClient();
+      return googleTtsClient;
+    }
+
+    const rawPrivateKey = process.env.FIREBASE_PRIVATE_KEY;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    if (!rawPrivateKey || !clientEmail) return null;
+
+    let privateKey = rawPrivateKey;
+    if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
+      privateKey = Buffer.from(privateKey, 'base64').toString('utf8');
+    } else if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+      privateKey = privateKey.substring(1, privateKey.length - 1);
+    }
+
+    googleTtsClient = new textToSpeech.TextToSpeechClient({
+      credentials: {
+        client_email: clientEmail,
+        private_key: privateKey.replace(/\\n/g, '\n'),
+      },
+    });
     return googleTtsClient;
   } catch {
     return null;

@@ -13,7 +13,7 @@ export default function LunaCRMEntry() {
         // Clear any legal override from sessionStorage/localStorage
         sessionStorage.removeItem('luna-vertical-override');
         localStorage.removeItem('luna-vertical');
-        router.replace('/crm?vertical=travel');
+        router.replace('/crm/travel');
     }, [router]);
     return (
         <div className="flex-1 flex items-center justify-center min-h-screen">

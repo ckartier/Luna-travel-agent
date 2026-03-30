@@ -99,9 +99,9 @@ const DEFAULT_HUB_CONFIG = {
     nav: {
         menuItems: [
             { label: 'Dashboard', href: '/hub/dashboard' },
-            { label: 'CRM Travel', href: '/crm/luna' },
-            { label: 'CRM Legal', href: '/crm/avocat?vertical=legal' },
-            { label: 'CRM Monum', href: '/crm/monum?vertical=monum' },
+            { label: 'CRM Travel', href: '/login/travel' },
+            { label: 'CRM Legal', href: '/login/legal' },
+            { label: 'CRM Monum', href: '/login/monum' },
         ],
     },
     business: {
